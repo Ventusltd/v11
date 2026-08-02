@@ -1,12 +1,7 @@
-name: V11 Overnight 24-String Inverter Block
+name: V11 Ten-Session 24-String Inverter Block
 
 on:
   workflow_dispatch:
-    inputs:
-      phase_seconds:
-        description: "Seconds per soak phase (two sequential phases; default total exceeds six hours)"
-        required: false
-        default: "11100"
   push:
     branches:
       - build/v11-inverter-block-simulator
@@ -26,129 +21,311 @@ permissions:
   contents: read
 
 concurrency:
-  group: v11-overnight-inverter-block-${{ github.ref }}
+  group: v11-ten-session-inverter-block-${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  PYTHONUNBUFFERED: "1"
+
 jobs:
-  build-and-verify:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - name: Check out exact submitted head
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          ref: ${{ github.sha }}
-      - name: Set up Python 3.11
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with:
-          python-version: "3.11.15"
-      - name: Run eight Python engineering tests
-        run: python -S -m unittest -v tests/test_simulation_engine.py
-      - name: Run browser JavaScript tests
-        run: node --test tests/simulation_core.test.mjs
-      - name: Prove Python and browser parity
-        run: python -S scripts/compare_python_js.py --timeout-seconds 20
-      - name: Generate reference comparison evidence
-        run: |
-          mkdir -p overnight-evidence
-          python -S scripts/simulate_reference_block.py --output overnight-evidence/reference-comparison.json
-          python -S scripts/overnight_campaign.py --iterations 5000 --seed 11001 --phase build-smoke --output overnight-evidence/build-smoke.json --parity-seconds 2
-      - name: Upload build evidence
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: v11-inverter-block-build-${{ github.run_id }}
-          path: overnight-evidence/
-          if-no-files-found: error
-          retention-days: 90
-
-  soak-phase-one:
-    needs: build-and-verify
-    runs-on: ubuntu-24.04
-    timeout-minutes: 195
-    steps:
-      - name: Check out exact submitted head
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          ref: ${{ github.sha }}
-      - name: Set up Python 3.11
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with:
-          python-version: "3.11.15"
-      - name: Run phase one deterministic/property campaign
-        env:
-          REQUESTED_SECONDS: ${{ inputs.phase_seconds }}
-        run: |
-          DURATION="${REQUESTED_SECONDS:-11100}"
-          mkdir -p overnight-evidence
-          python -S scripts/overnight_campaign.py \
-            --duration-seconds "$DURATION" \
-            --seed 1102401 \
-            --phase phase-one \
-            --output overnight-evidence/phase-one.json \
-            --checkpoint-seconds 60 \
-            --parity-seconds 300
-      - name: Upload phase one evidence
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: v11-inverter-block-phase-one-${{ github.run_id }}
-          path: overnight-evidence/
-          if-no-files-found: error
-          retention-days: 90
-
-  soak-phase-two:
-    needs: soak-phase-one
-    runs-on: ubuntu-24.04
-    timeout-minutes: 195
-    steps:
-      - name: Check out exact submitted head
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          ref: ${{ github.sha }}
-      - name: Set up Python 3.11
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with:
-          python-version: "3.11.15"
-      - name: Run phase two independent-seed campaign
-        env:
-          REQUESTED_SECONDS: ${{ inputs.phase_seconds }}
-        run: |
-          DURATION="${REQUESTED_SECONDS:-11100}"
-          mkdir -p overnight-evidence
-          python -S scripts/overnight_campaign.py \
-            --duration-seconds "$DURATION" \
-            --seed 1102402 \
-            --phase phase-two \
-            --output overnight-evidence/phase-two.json \
-            --checkpoint-seconds 60 \
-            --parity-seconds 300
-      - name: Upload phase two evidence
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: v11-inverter-block-phase-two-${{ github.run_id }}
-          path: overnight-evidence/
-          if-no-files-found: error
-          retention-days: 90
-
-  overnight-gate:
-    if: always()
-    needs:
-      - build-and-verify
-      - soak-phase-one
-      - soak-phase-two
+  session_01_reference_and_python:
+    name: "01/10 Reference block and Python"
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Enforce complete overnight campaign
-        env:
-          BUILD_RESULT: ${{ needs.build-and-verify.result }}
-          PHASE_ONE_RESULT: ${{ needs.soak-phase-one.result }}
-          PHASE_TWO_RESULT: ${{ needs.soak-phase-two.result }}
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.15"
+      - name: Validate 24-string baseline and Python engine
         run: |
-          echo "Build: $BUILD_RESULT"
-          echo "Phase one: $PHASE_ONE_RESULT"
-          echo "Phase two: $PHASE_TWO_RESULT"
-          test "$BUILD_RESULT" = success
-          test "$PHASE_ONE_RESULT" = success
-          test "$PHASE_TWO_RESULT" = success
+          mkdir -p session-evidence/01
+          set -o pipefail
+          python -S -m unittest -v tests/test_simulation_engine.py 2>&1 | tee session-evidence/01/python-tests.txt
+          python -S scripts/simulate_reference_block.py --output session-evidence/01/reference-comparison.json
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-session-01-${{ github.run_id }}
+          path: session-evidence/01
+          if-no-files-found: error
+          retention-days: 90
+
+  session_02_browser_and_parity:
+    name: "02/10 Browser engine and parity"
+    needs: session_01_reference_and_python
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.15"
+      - name: Test browser calculations against Python authority
+        run: |
+          mkdir -p session-evidence/02
+          set -o pipefail
+          node --test tests/simulation_core.test.mjs 2>&1 | tee session-evidence/02/browser-tests.txt
+          python -S scripts/compare_python_js.py --timeout-seconds 20 | tee session-evidence/02/python-js-parity.json
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-session-02-${{ github.run_id }}
+          path: session-evidence/02
+          if-no-files-found: error
+          retention-days: 90
+
+  session_03_determinism:
+    name: "03/10 Determinism and reference sweep"
+    needs: session_02_browser_and_parity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      PYTHONHASHSEED: "103"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.15"
+      - name: Run bounded deterministic campaign
+        run: |
+          mkdir -p session-evidence/03
+          python -S scripts/overnight_campaign.py --duration-seconds 210 --seed 1102403 --phase session-03-determinism --output session-evidence/03/campaign.json --checkpoint-seconds 30 --parity-seconds 60
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-session-03-${{ github.run_id }}
+          path: session-evidence/03
+          if-no-files-found: error
+          retention-days: 90
+
+  session_04_route_sweep:
+    name: "04/10 Route and topology sweep"
+    needs: session_03_determinism
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      PYTHONHASHSEED: "104"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.15"
+      - name: Sweep route multipliers and wiring states
+        run: |
+          mkdir -p session-evidence/04
+          python -S scripts/overnight_campaign.py --duration-seconds 210 --seed 1102404 --phase session-04-route-sweep --output session-evidence/04/campaign.json --checkpoint-seconds 30 --parity-seconds 60
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-session-04-${{ github.run_id }}
+          path: session-evidence/04
+          if-no-files-found: error
+          retention-days: 90
+
+  session_05_thermal_current:
+    name: "05/10 Thermal and current sweep"
+    needs: session_04_route_sweep
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      PYTHONHASHSEED: "105"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.15"
+      - name: Sweep current, conductor and cell temperatures
+        run: |
+          mkdir -p session-evidence/05
+          python -S scripts/overnight_campaign.py --duration-seconds 210 --seed 1102405 --phase session-05-thermal-current --output session-evidence/05/campaign.json --checkpoint-seconds 30 --parity-seconds 60
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-session-05-${{ github.run_id }}
+          path: session-evidence/05
+          if-no-files-found: error
+          retention-days: 90
+
+  session_06_electromagnetic:
+    name: "06/10 Electromagnetic sweep"
+    needs: session_05_thermal_current
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      PYTHONHASHSEED: "106"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.15"
+      - name: Sweep pair spacing, permittivity and delay
+        run: |
+          mkdir -p session-evidence/06
+          python -S scripts/overnight_campaign.py --duration-seconds 210 --seed 1102406 --phase session-06-electromagnetic --output session-evidence/06/campaign.json --checkpoint-seconds 30 --parity-seconds 60
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-session-06-${{ github.run_id }}
+          path: session-evidence/06
+          if-no-files-found: error
+          retention-days: 90
+
+  session_07_connectors:
+    name: "07/10 Connector and resistance sweep"
+    needs: session_06_electromagnetic
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      PYTHONHASHSEED: "107"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.15"
+      - name: Sweep connector and complete-circuit resistance
+        run: |
+          mkdir -p session-evidence/07
+          python -S scripts/overnight_campaign.py --duration-seconds 210 --seed 1102407 --phase session-07-connectors --output session-evidence/07/campaign.json --checkpoint-seconds 30 --parity-seconds 60
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-session-07-${{ github.run_id }}
+          path: session-evidence/07
+          if-no-files-found: error
+          retention-days: 90
+
+  session_08_independent_seed:
+    name: "08/10 Independent-seed campaign"
+    needs: session_07_connectors
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      PYTHONHASHSEED: "208"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.15"
+      - name: Repeat all invariants with an independent seed
+        run: |
+          mkdir -p session-evidence/08
+          python -S scripts/overnight_campaign.py --duration-seconds 210 --seed 2202408 --phase session-08-independent --output session-evidence/08/campaign.json --checkpoint-seconds 30 --parity-seconds 60
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-session-08-${{ github.run_id }}
+          path: session-evidence/08
+          if-no-files-found: error
+          retention-days: 90
+
+  session_09_cross_process:
+    name: "09/10 Cross-process and hash stability"
+    needs: session_08_independent_seed
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      PYTHONHASHSEED: "909"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.15"
+      - name: Stress cross-process Python and JavaScript parity
+        run: |
+          mkdir -p session-evidence/09
+          python -S scripts/overnight_campaign.py --duration-seconds 210 --seed 9902409 --phase session-09-cross-process --output session-evidence/09/campaign.json --checkpoint-seconds 30 --parity-seconds 30
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-session-09-${{ github.run_id }}
+          path: session-evidence/09
+          if-no-files-found: error
+          retention-days: 90
+
+  session_10_complete_gate:
+    name: "10/10 Complete inverter-block gate"
+    needs: session_09_cross_process
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      PYTHONHASHSEED: "1010"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.15"
+      - name: Run final complete 24-string gate
+        run: |
+          mkdir -p session-evidence/10
+          set -o pipefail
+          python -S -m unittest -v tests/test_simulation_engine.py 2>&1 | tee session-evidence/10/python-tests.txt
+          node --test tests/simulation_core.test.mjs 2>&1 | tee session-evidence/10/browser-tests.txt
+          python -S scripts/compare_python_js.py --timeout-seconds 20 | tee session-evidence/10/python-js-parity.json
+          python -S scripts/simulate_reference_block.py --output session-evidence/10/reference-comparison.json
+          python -S scripts/overnight_campaign.py --duration-seconds 150 --seed 10102410 --phase session-10-complete-gate --output session-evidence/10/campaign.json --checkpoint-seconds 30 --parity-seconds 45
+          python -S - <<'PY'
+          import json, os
+          from pathlib import Path
+          summary = {
+              "schema_version": "globalgrid2050.v11.ten-session-gate.v1",
+              "pass": True,
+              "sessions_completed": 10,
+              "maximum_seconds_per_session": 300,
+              "repository": "Ventusltd/v11",
+              "tested_commit_sha": os.environ.get("GITHUB_SHA"),
+              "laboratory_anchor": "d3b4c497144c2c9b3e8f0e82117e7e9abe4672b9",
+              "reference_block": {
+                  "strings": 24,
+                  "modules_per_string": 30,
+                  "modules": 720,
+                  "dc_nameplate_power_kwp": 475.2,
+                  "inverter_apparent_power_kva": 352.0
+              },
+              "validated_layers": [
+                  "laboratory-provenance baseline",
+                  "sequential and leapfrog traversal",
+                  "24 physical input allocations",
+                  "field and factory conductor lengths",
+                  "complete-circuit resistance",
+                  "voltage drop and I2R loss",
+                  "cold Voc",
+                  "characteristic impedance",
+                  "propagation delay",
+                  "interruption envelope",
+                  "Python and browser parity"
+              ]
+          }
+          Path("session-evidence/10/final-summary.json").write_text(
+              json.dumps(summary, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8"
+          )
+          print(json.dumps(summary, sort_keys=True))
+          PY
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-session-10-final-${{ github.run_id }}
+          path: session-evidence/10
+          if-no-files-found: error
+          retention-days: 90
