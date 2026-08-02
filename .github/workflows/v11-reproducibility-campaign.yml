@@ -1,0 +1,57 @@
+name: V11 Reproducibility Campaign
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [build/v11-inverter-block-simulator]
+    paths:
+      - "v11_simulation/**"
+      - "browser/**"
+      - "scripts/overnight_campaign.py"
+      - "scripts/compare_python_js.py"
+      - ".github/workflows/v11-reproducibility-campaign.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v11-reproducibility-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  reproducibility:
+    name: "Seed ${{ matrix.seed }} / hash ${{ matrix.hashseed }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {seed: 4101, hashseed: 1}
+          - {seed: 4102, hashseed: 2}
+          - {seed: 4103, hashseed: 3}
+          - {seed: 4104, hashseed: 5}
+          - {seed: 4105, hashseed: 8}
+          - {seed: 4106, hashseed: 13}
+          - {seed: 4107, hashseed: 21}
+          - {seed: 4108, hashseed: 34}
+          - {seed: 4109, hashseed: 55}
+          - {seed: 4110, hashseed: 89}
+    env:
+      PYTHONHASHSEED: ${{ matrix.hashseed }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: "3.11.15"}
+      - run: |
+          mkdir -p reproducibility-evidence
+          python -S scripts/overnight_campaign.py --duration-seconds 210 --seed ${{ matrix.seed }} --phase reproducibility-${{ matrix.hashseed }} --output reproducibility-evidence/run-${{ matrix.hashseed }}.json --checkpoint-seconds 30 --parity-seconds 45
+          python -S scripts/compare_python_js.py --timeout-seconds 20 > reproducibility-evidence/parity-${{ matrix.hashseed }}.json
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-reproducibility-${{ matrix.hashseed }}-${{ github.run_id }}
+          path: reproducibility-evidence
+          if-no-files-found: error
+          retention-days: 90
