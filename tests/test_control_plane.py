@@ -31,7 +31,7 @@ class ControlPlaneTests(unittest.TestCase):
         self.assertTrue(result["pass"])
         self.assertEqual(result["active_unit"], "V11-001")
         self.assertEqual(result["laboratory_mode"], "read_only")
-        self.assertEqual(result["missing_generated_outputs"], ["index.html"])
+        self.assertEqual(result["missing_generated_outputs"], [])
 
     def test_programme_mismatch_rejected(self):
         plan = deepcopy(self.plan)

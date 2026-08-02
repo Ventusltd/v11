@@ -44,8 +44,10 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      - name: Check out repository
+      - name: Check out exact review head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -53,24 +55,30 @@ jobs:
           python-version: "3.11"
 
       - name: Create evidence directory
-        run: mkdir -p .v11-validation
+        run: mkdir -p v11-validation
 
       - name: Validate machine control plane
         id: validator
         continue-on-error: true
-        run: python -S scripts/validate_control_plane.py | tee .v11-validation/control-plane.json
+        run: |
+          set -o pipefail
+          python -S scripts/validate_control_plane.py | tee v11-validation/control-plane.json
 
       - name: Run six focused tests
         id: tests
         if: always()
         continue-on-error: true
-        run: python -S -m unittest -v tests/test_control_plane.py 2>&1 | tee .v11-validation/tests.txt
+        run: |
+          set -o pipefail
+          python -S -m unittest -v tests/test_control_plane.py 2>&1 | tee v11-validation/tests.txt
 
       - name: Check deterministic projections
         id: projections
         if: always()
         continue-on-error: true
-        run: python -S scripts/generate_control_plane_projection.py --check | tee .v11-validation/projections.txt
+        run: |
+          set -o pipefail
+          python -S scripts/generate_control_plane_projection.py --check | tee v11-validation/projections.txt
 
       - name: Write validation summary
         if: always()
@@ -80,12 +88,16 @@ jobs:
           PROJECTION_RESULT: ${{ steps.projections.outcome }}
         run: |
           python -S - <<'PY'
-          import json, os
+          import json, os, subprocess
           from pathlib import Path
+          tested_sha = subprocess.check_output(
+              ["git", "rev-parse", "HEAD"], text=True
+          ).strip()
           payload = {
               "schema_version": "globalgrid2050.v11.control-plane-validation.v1",
               "repository": "Ventusltd/v11",
-              "commit_sha": os.environ["GITHUB_SHA"],
+              "tested_commit_sha": tested_sha,
+              "workflow_sha": os.environ["GITHUB_SHA"],
               "validator": os.environ["VALIDATOR_RESULT"],
               "six_focused_tests": os.environ["TEST_RESULT"],
               "projection_check": os.environ["PROJECTION_RESULT"],
@@ -94,7 +106,7 @@ jobs:
               payload[key] == "success"
               for key in ("validator", "six_focused_tests", "projection_check")
           )
-          Path(".v11-validation/summary.json").write_text(
+          Path("v11-validation/summary.json").write_text(
               json.dumps(payload, indent=2, sort_keys=True) + "\n",
               encoding="utf-8",
           )
@@ -105,8 +117,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: v11-control-plane-${{ github.sha }}
-          path: .v11-validation/
+          name: v11-control-plane-${{ github.run_id }}
+          path: v11-validation/
           if-no-files-found: error
           retention-days: 90
 
