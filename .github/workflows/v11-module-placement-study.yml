@@ -1,0 +1,76 @@
+name: V11 Module Placement Study
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - build/v11-inverter-block-simulator
+    paths:
+      - "scripts/module_layout_campaign.py"
+      - "tests/test_module_layout_campaign.py"
+      - "docs/studies/module-placement-and-layout-distillation.md"
+      - "reference/lab_inverter_block_24_strings.json"
+      - ".github/workflows/v11-module-placement-study.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v11-module-placement-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  placement-tests:
+    name: "01/10 placement kernel tests"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.15"
+      - run: python -S -m unittest -v tests/test_module_layout_campaign.py
+
+  placement-campaign:
+    name: "${{ matrix.label }}"
+    needs: placement-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      max-parallel: 9
+      matrix:
+        include:
+          - { label: "02/10 row shift", mode: row-shift, seed: 3102 }
+          - { label: "03/10 local module move", mode: module-move, seed: 3103 }
+          - { label: "04/10 physical-position swap", mode: swap, seed: 3104 }
+          - { label: "05/10 staggered rows", mode: stagger, seed: 3105 }
+          - { label: "06/10 compact geometry", mode: compact, seed: 3106 }
+          - { label: "07/10 mixed geometry A", mode: mixed, seed: 3107 }
+          - { label: "08/10 mixed geometry B", mode: mixed, seed: 3108 }
+          - { label: "09/10 independent row shift", mode: row-shift, seed: 4109 }
+          - { label: "10/10 independent module move", mode: module-move, seed: 4110 }
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.15"
+      - name: Run bounded placement optimisation
+        run: |
+          mkdir -p placement-evidence
+          python -S scripts/module_layout_campaign.py \
+            --mode "${{ matrix.mode }}" \
+            --seed "${{ matrix.seed }}" \
+            --duration-seconds 210 \
+            --output "placement-evidence/${{ matrix.mode }}-${{ matrix.seed }}.json"
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-module-placement-${{ matrix.mode }}-${{ matrix.seed }}-${{ github.run_id }}
+          path: placement-evidence/
+          if-no-files-found: error
+          retention-days: 90
