@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>V11 Control Plane</title>
+<style>
+:root{--bg:#0b0d10;--panel:#14181d;--text:#edf1f5;--muted:#9da8b3;--line:#2a3139;--accent:#f2c94c}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,sans-serif}
+main{max-width:1100px;margin:auto;padding:48px 24px 80px} h1{font-size:clamp(2.4rem,7vw,5.5rem);line-height:.95;margin:0 0 18px}
+h2{margin-top:40px} .eyebrow,.state{color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px} .card{background:var(--panel);border:1px solid var(--line);padding:20px}
+.card strong{display:block;font-size:1.25rem;margin-top:6px} table{width:100%;border-collapse:collapse;background:var(--panel)}
+th,td{text-align:left;padding:12px;border-bottom:1px solid var(--line)} code{overflow-wrap:anywhere} .warning{border-left:4px solid var(--accent);padding:14px 18px;background:var(--panel)}
+a{color:var(--text)} footer{color:var(--muted);margin-top:48px}
+</style>
+</head>
+<body><main>
+<p class="eyebrow">GlobalGrid2050 engineering authority</p>
+<h1>V11 Control Plane</h1>
+<p>Deterministic status projection from V11 machine-state files. This page displays authority; it does not create it.</p>
+<div class="warning"><strong>V11-001 is under validation.</strong> No final TEST PASS is claimed and no later unit is authorised.</div>
+<section class="grid">
+<div class="card">Active repository<strong>Ventusltd/v11</strong></div>
+<div class="card">Active unit<strong>V11-001 — Active repository control plane</strong></div>
+<div class="card">Validation<strong>pending</strong></div>
+<div class="card">Next unit<strong>None authorised</strong></div>
+</section>
+<h2>Current objective</h2><p>Establish the V11-native control plane without claiming laboratory capabilities as current V11 authority.</p>
+<h2>Programme units</h2><table><thead><tr><th>ID</th><th>Unit</th><th>State</th></tr></thead><tbody><tr><td><code>V11-001</code></td><td>Active repository control plane</td><td><span class='state'>active</span></td></tr><tr><td><code>V11-002</code></td><td>Clean installation and one start command</td><td><span class='state'>planned</span></td></tr><tr><td><code>V11-003</code></td><td>Laboratory resource adapter</td><td><span class='state'>planned</span></td></tr><tr><td><code>V11-004</code></td><td>First migrated engineering capability</td><td><span class='state'>planned</span></td></tr></tbody></table>
+<h2>Capabilities</h2><table><thead><tr><th>ID</th><th>Capability</th><th>State</th></tr></thead><tbody><tr><td><code>CAP-CONTROL-PLANE</code></td><td>V11 engineering control plane</td><td><span class='state'>under_validation</span></td></tr><tr><td><code>CAP-CLEAN-START</code></td><td>Clean installation and one start command</td><td><span class='state'>planned</span></td></tr><tr><td><code>CAP-LAB-ADAPTER</code></td><td>Pinned read-only laboratory resource adapter</td><td><span class='state'>planned</span></td></tr><tr><td><code>CAP-FIRST-ENGINEERING</code></td><td>First migrated engineering capability</td><td><span class='state'>awaiting_product_owner_selection</span></td></tr></tbody></table>
+<h2>Read-only laboratory resource</h2>
+<div class="card"><p><strong>Ventusltd/solar-electrical-topology-analysis-engine-text-based</strong></p><p>Anchor: <code>d3b4c497144c2c9b3e8f0e82117e7e9abe4672b9</code></p><p>Mode: <span class="state">read_only</span></p><p>Laboratory results are not current V11 authority.</p></div>
+<h2>Validation commands</h2>
+<pre><code>python -S scripts/validate_control_plane.py
+python -S -m unittest -v tests/test_control_plane.py
+python -S scripts/generate_control_plane_projection.py --check</code></pre>
+<footer>Programme <code>v11-native-control-plane-20260802</code> · generated deterministically with no runtime timestamp.</footer>
+</main></body></html>
