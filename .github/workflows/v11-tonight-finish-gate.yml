@@ -1,0 +1,93 @@
+name: V11 Tonight Finish Gate
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [build/v11-inverter-block-simulator]
+    paths:
+      - "v11_simulation/**"
+      - "browser/**"
+      - "reference/**"
+      - "scripts/**"
+      - "tests/**"
+      - ".github/workflows/v11-tonight-finish-gate.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v11-tonight-finish-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  finish:
+    name: "${{ matrix.label }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        include:
+          - {label: "01/10 Python inverter engine", kind: simulation-python}
+          - {label: "02/10 Browser inverter engine", kind: simulation-js}
+          - {label: "03/10 Python browser parity", kind: parity}
+          - {label: "04/10 Python layout engine", kind: layout-python}
+          - {label: "05/10 Browser layout engine", kind: layout-js}
+          - {label: "06/10 Placement campaign tests", kind: placement-python}
+          - {label: "07/10 Browser HTTP acceptance", kind: http}
+          - {label: "08/10 Engineering randomized smoke", kind: engineering}
+          - {label: "09/10 Module movement smoke", kind: movement}
+          - {label: "10/10 Complete product gate", kind: complete}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.15"
+      - name: Run bounded latest-head qualification
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p finish-evidence/${{ matrix.kind }}
+          case "${{ matrix.kind }}" in
+            simulation-python)
+              python -S -m unittest -v tests/test_simulation_engine.py 2>&1 | tee finish-evidence/${{ matrix.kind }}/result.txt ;;
+            simulation-js)
+              node --test tests/simulation_core.test.mjs 2>&1 | tee finish-evidence/${{ matrix.kind }}/result.txt ;;
+            parity)
+              python -S scripts/compare_python_js.py --timeout-seconds 20 | tee finish-evidence/${{ matrix.kind }}/parity.json ;;
+            layout-python)
+              python -S -m unittest -v tests/test_layout_engine.py 2>&1 | tee finish-evidence/${{ matrix.kind }}/result.txt ;;
+            layout-js)
+              node --test tests/layout_core.test.mjs 2>&1 | tee finish-evidence/${{ matrix.kind }}/result.txt ;;
+            placement-python)
+              python -S -m unittest -v tests/test_module_layout_campaign.py 2>&1 | tee finish-evidence/${{ matrix.kind }}/result.txt ;;
+            http)
+              python3 -m http.server 8765 >/tmp/v11-http.log 2>&1 & server=$!; trap 'kill $server' EXIT
+              for i in {1..20}; do curl -fsS http://127.0.0.1:8765/browser/simulator.html -o /tmp/simulator.html && break; sleep 1; done
+              curl -fsS http://127.0.0.1:8765/browser/layout-studio.html -o /tmp/layout.html
+              curl -fsS http://127.0.0.1:8765/browser/simulation-core.mjs -o /tmp/simulation-core.mjs
+              curl -fsS http://127.0.0.1:8765/browser/layout-core.mjs -o /tmp/layout-core.mjs
+              grep -q "Complete 24-string inverter block" /tmp/simulator.html
+              grep -q "Module Layout Studio" /tmp/layout.html
+              cp /tmp/simulator.html /tmp/layout.html finish-evidence/${{ matrix.kind }}/ ;;
+            engineering)
+              python -S scripts/simulate_reference_block.py --output finish-evidence/${{ matrix.kind }}/reference.json
+              python -S scripts/overnight_campaign.py --iterations 5000 --seed 82026 --phase tonight-finish --output finish-evidence/${{ matrix.kind }}/campaign.json --parity-seconds 20 ;;
+            movement)
+              python -S scripts/module_layout_campaign.py --mode mixed --seed 82027 --duration-seconds 120 --output finish-evidence/${{ matrix.kind }}/movement.json ;;
+            complete)
+              python -S -m unittest -v tests/test_simulation_engine.py tests/test_layout_engine.py tests/test_module_layout_campaign.py 2>&1 | tee finish-evidence/${{ matrix.kind }}/python.txt
+              node --test tests/simulation_core.test.mjs tests/layout_core.test.mjs 2>&1 | tee finish-evidence/${{ matrix.kind }}/browser.txt
+              python -S scripts/compare_python_js.py --timeout-seconds 20 | tee finish-evidence/${{ matrix.kind }}/parity.json
+              python -S scripts/simulate_reference_block.py --output finish-evidence/${{ matrix.kind }}/reference.json ;;
+          esac
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-tonight-${{ matrix.kind }}-${{ github.run_id }}
+          path: finish-evidence/${{ matrix.kind }}
+          if-no-files-found: error
+          retention-days: 90
