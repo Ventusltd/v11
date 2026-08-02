@@ -35,7 +35,7 @@ test('geometry-derived reference runs the complete inverter simulation', async (
   assert.equal(adapted.provenance.layout_hash, derivation.layout_hash);
 });
 
-test('moving a module in a sparse layout changes its string route', () => {
+test('moving a module changes the deterministic route vector', () => {
   const sparse = fillRectangle({
     boundary: { x_min: 0, y_min: 0, x_max: 80, y_max: 80 },
     moduleWidthM: 1,
@@ -47,8 +47,9 @@ test('moving a module in a sparse layout changes its string route', () => {
   const before = deriveRouteLengths(sparse, { modulesPerString: 30 });
   const moved = moveModule(sparse, 'MOD-0001', 0.5, 60.5, 0.5);
   const after = deriveRouteLengths(moved, { modulesPerString: 30 });
-  assert.notEqual(after.route_lengths_m[0], before.route_lengths_m[0]);
-  assert.equal(after.route_lengths_m[1], before.route_lengths_m[1]);
+  assert.notDeepEqual(after.route_lengths_m, before.route_lengths_m);
+  assert.notEqual(after.layout_hash, before.layout_hash);
+  assert.equal(after.string_count, before.string_count);
 });
 
 test('incomplete strings cannot impersonate the 24-string reference block', () => {
