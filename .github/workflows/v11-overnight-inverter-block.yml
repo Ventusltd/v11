@@ -1,0 +1,154 @@
+name: V11 Overnight 24-String Inverter Block
+
+on:
+  workflow_dispatch:
+    inputs:
+      phase_seconds:
+        description: "Seconds per soak phase (two sequential phases; default total exceeds six hours)"
+        required: false
+        default: "11100"
+  push:
+    branches:
+      - build/v11-inverter-block-simulator
+    paths:
+      - "v11_simulation/**"
+      - "reference/lab_inverter_block_24_strings.json"
+      - "browser/**"
+      - "scripts/simulate_reference_block.py"
+      - "scripts/compare_python_js.py"
+      - "scripts/overnight_campaign.py"
+      - "tests/test_simulation_engine.py"
+      - "tests/simulation_core.test.mjs"
+      - "docs/provenance/lab-inverter-block.md"
+      - ".github/workflows/v11-overnight-inverter-block.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v11-overnight-inverter-block-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact submitted head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - name: Set up Python 3.11
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.15"
+      - name: Run eight Python engineering tests
+        run: python -S -m unittest -v tests/test_simulation_engine.py
+      - name: Run browser JavaScript tests
+        run: node --test tests/simulation_core.test.mjs
+      - name: Prove Python and browser parity
+        run: python -S scripts/compare_python_js.py --timeout-seconds 20
+      - name: Generate reference comparison evidence
+        run: |
+          mkdir -p overnight-evidence
+          python -S scripts/simulate_reference_block.py --output overnight-evidence/reference-comparison.json
+          python -S scripts/overnight_campaign.py --iterations 5000 --seed 11001 --phase build-smoke --output overnight-evidence/build-smoke.json --parity-seconds 2
+      - name: Upload build evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-inverter-block-build-${{ github.run_id }}
+          path: overnight-evidence/
+          if-no-files-found: error
+          retention-days: 90
+
+  soak-phase-one:
+    needs: build-and-verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 195
+    steps:
+      - name: Check out exact submitted head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - name: Set up Python 3.11
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.15"
+      - name: Run phase one deterministic/property campaign
+        env:
+          REQUESTED_SECONDS: ${{ inputs.phase_seconds }}
+        run: |
+          DURATION="${REQUESTED_SECONDS:-11100}"
+          mkdir -p overnight-evidence
+          python -S scripts/overnight_campaign.py \
+            --duration-seconds "$DURATION" \
+            --seed 1102401 \
+            --phase phase-one \
+            --output overnight-evidence/phase-one.json \
+            --checkpoint-seconds 60 \
+            --parity-seconds 300
+      - name: Upload phase one evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-inverter-block-phase-one-${{ github.run_id }}
+          path: overnight-evidence/
+          if-no-files-found: error
+          retention-days: 90
+
+  soak-phase-two:
+    needs: soak-phase-one
+    runs-on: ubuntu-24.04
+    timeout-minutes: 195
+    steps:
+      - name: Check out exact submitted head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - name: Set up Python 3.11
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.15"
+      - name: Run phase two independent-seed campaign
+        env:
+          REQUESTED_SECONDS: ${{ inputs.phase_seconds }}
+        run: |
+          DURATION="${REQUESTED_SECONDS:-11100}"
+          mkdir -p overnight-evidence
+          python -S scripts/overnight_campaign.py \
+            --duration-seconds "$DURATION" \
+            --seed 1102402 \
+            --phase phase-two \
+            --output overnight-evidence/phase-two.json \
+            --checkpoint-seconds 60 \
+            --parity-seconds 300
+      - name: Upload phase two evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-inverter-block-phase-two-${{ github.run_id }}
+          path: overnight-evidence/
+          if-no-files-found: error
+          retention-days: 90
+
+  overnight-gate:
+    if: always()
+    needs:
+      - build-and-verify
+      - soak-phase-one
+      - soak-phase-two
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Enforce complete overnight campaign
+        env:
+          BUILD_RESULT: ${{ needs.build-and-verify.result }}
+          PHASE_ONE_RESULT: ${{ needs.soak-phase-one.result }}
+          PHASE_TWO_RESULT: ${{ needs.soak-phase-two.result }}
+        run: |
+          echo "Build: $BUILD_RESULT"
+          echo "Phase one: $PHASE_ONE_RESULT"
+          echo "Phase two: $PHASE_TWO_RESULT"
+          test "$BUILD_RESULT" = success
+          test "$PHASE_ONE_RESULT" = success
+          test "$PHASE_TWO_RESULT" = success
