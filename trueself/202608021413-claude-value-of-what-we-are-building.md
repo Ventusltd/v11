@@ -1,3 +1,6 @@
+# What Is The Value Of What We Are Building?
+
+
 I think the valuable thing is not the one you'd name first, and it's worth being precise about which parts I'd defend and which I wouldn't.
 
 The engine itself — resistance, voltage drop, loop area, cold Voc, conductor splits — is competent and correct, but it's not scarce. A capable engineer with a spreadsheet and a fortnight gets most of those numbers. What's scarce is that every number knows how it got there and refuses to pretend otherwise. That's the thing I'd defend hardest. The established open tools compute more than yours does and compute it better, but by the time a value reaches their output its origin has been flattened — you cannot ask whether a figure was measured, declared, assumed or invented, because the question has no representation. Yours can answer it. That makes it a different instrument rather than a worse calculator, and the difference matters most precisely where the stakes are highest: when someone is deciding whether to trust a number they didn't produce.
