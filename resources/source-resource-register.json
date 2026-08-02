@@ -1,0 +1,26 @@
+{
+  "schema_version": "globalgrid2050.v11.source-resource-register.v1",
+  "programme_id": "v11-native-control-plane-20260802",
+  "resources": [
+    {
+      "resource_id": "LAB-ROOT-001",
+      "repository": "Ventusltd/solar-electrical-topology-analysis-engine-text-based",
+      "repository_url": "https://github.com/Ventusltd/solar-electrical-topology-analysis-engine-text-based",
+      "anchor_commit": "d3b4c497144c2c9b3e8f0e82117e7e9abe4672b9",
+      "mode": "read_only",
+      "verification_state": "repository_commit_verified",
+      "licence": "GPL-3.0",
+      "permitted_uses": [
+        "inspect engineering code and tests",
+        "cite historical receipts and workflow artefacts",
+        "adapt or reimplement one capability with provenance"
+      ],
+      "prohibited_actions": [
+        "write branches or commits",
+        "open or merge pull requests",
+        "advance laboratory programme state",
+        "claim laboratory capability as current V11 authority"
+      ]
+    }
+  ]
+}

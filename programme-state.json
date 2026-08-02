@@ -1,0 +1,35 @@
+{
+  "schema_version": "globalgrid2050.v11.programme-state.v1",
+  "programme_id": "v11-native-control-plane-20260802",
+  "active_repository": "Ventusltd/v11",
+  "programme_status": "active",
+  "current_unit": "V11-001",
+  "current_objective": "Establish the V11-native control plane without claiming laboratory capabilities as current V11 authority.",
+  "next_unit": null,
+  "operator_session": {
+    "limit_seconds": 300,
+    "review_required_after_session": true,
+    "session_number": 1,
+    "started_from_commit": "5a646d3d18f5b87150f2176734b25cd2388b0d8e"
+  },
+  "laboratory_resource": {
+    "repository": "Ventusltd/solar-electrical-topology-analysis-engine-text-based",
+    "mode": "read_only",
+    "anchor_commit": "d3b4c497144c2c9b3e8f0e82117e7e9abe4672b9",
+    "capabilities_are_current_v11_authority": false
+  },
+  "validation": {
+    "status": "pending",
+    "workflow": "V11 Control Plane Validation",
+    "run_id": null,
+    "commit_sha": null
+  },
+  "current_quantum_spawn": "quantum_spawn/202608021556-v11-single-active-repository-and-laboratory-resource-boundary-chatgpt.md",
+  "build_plan": "build-plans/v11-native-control-plane.json",
+  "execution_ledger": "docs/build-ledger/202608-v11-control-plane.md",
+  "capability_matrix": "capabilities/v11-capability-matrix.json",
+  "source_resource_register": "resources/source-resource-register.json",
+  "generated_outputs": [
+    "index.html"
+  ]
+}

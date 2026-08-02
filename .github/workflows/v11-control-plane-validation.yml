@@ -1,0 +1,134 @@
+name: V11 Control Plane Validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "programme-state.json"
+      - "build-plans/**"
+      - "capabilities/**"
+      - "resources/**"
+      - "docs/build-ledger/**"
+      - "operator-sessions/**"
+      - "scripts/**"
+      - "tests/**"
+      - "README.md"
+      - "index.html"
+      - ".github/workflows/v11-control-plane-validation.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "programme-state.json"
+      - "build-plans/**"
+      - "capabilities/**"
+      - "resources/**"
+      - "docs/build-ledger/**"
+      - "operator-sessions/**"
+      - "scripts/**"
+      - "tests/**"
+      - "README.md"
+      - "index.html"
+      - ".github/workflows/v11-control-plane-validation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v11-control-plane-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out exact review head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create evidence directory
+        run: mkdir -p v11-validation
+
+      - name: Validate machine control plane
+        id: validator
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python -S scripts/validate_control_plane.py | tee v11-validation/control-plane.json
+
+      - name: Run six focused tests
+        id: tests
+        if: always()
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python -S -m unittest -v tests/test_control_plane.py 2>&1 | tee v11-validation/tests.txt
+
+      - name: Check deterministic projections
+        id: projections
+        if: always()
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python -S scripts/generate_control_plane_projection.py --check | tee v11-validation/projections.txt
+
+      - name: Write validation summary
+        if: always()
+        env:
+          VALIDATOR_RESULT: ${{ steps.validator.outcome }}
+          TEST_RESULT: ${{ steps.tests.outcome }}
+          PROJECTION_RESULT: ${{ steps.projections.outcome }}
+        run: |
+          python -S - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          tested_sha = subprocess.check_output(
+              ["git", "rev-parse", "HEAD"], text=True
+          ).strip()
+          payload = {
+              "schema_version": "globalgrid2050.v11.control-plane-validation.v1",
+              "repository": "Ventusltd/v11",
+              "tested_commit_sha": tested_sha,
+              "workflow_sha": os.environ["GITHUB_SHA"],
+              "validator": os.environ["VALIDATOR_RESULT"],
+              "six_focused_tests": os.environ["TEST_RESULT"],
+              "projection_check": os.environ["PROJECTION_RESULT"],
+          }
+          payload["pass"] = all(
+              payload[key] == "success"
+              for key in ("validator", "six_focused_tests", "projection_check")
+          )
+          Path("v11-validation/summary.json").write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(payload, sort_keys=True))
+          PY
+
+      - name: Upload validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v11-control-plane-${{ github.run_id }}
+          path: v11-validation/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Enforce validation gate
+        if: always()
+        env:
+          VALIDATOR_RESULT: ${{ steps.validator.outcome }}
+          TEST_RESULT: ${{ steps.tests.outcome }}
+          PROJECTION_RESULT: ${{ steps.projections.outcome }}
+        run: |
+          test "$VALIDATOR_RESULT" = success
+          test "$TEST_RESULT" = success
+          test "$PROJECTION_RESULT" = success

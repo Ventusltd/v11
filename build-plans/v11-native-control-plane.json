@@ -1,0 +1,73 @@
+{
+  "schema_version": "globalgrid2050.v11.build-plan.v1",
+  "programme_id": "v11-native-control-plane-20260802",
+  "title": "V11 native foundation and first capability migration",
+  "prepared_against_head": "5a646d3d18f5b87150f2176734b25cd2388b0d8e",
+  "programme_status": "active",
+  "active_unit": "V11-001",
+  "next_unit": null,
+  "operator_protocol": {
+    "session_limit_seconds": 300,
+    "review_required_after_every_session": true,
+    "session_advances_programme": false,
+    "final_pass_requires_validation": true
+  },
+  "laboratory_policy": {
+    "repository": "Ventusltd/solar-electrical-topology-analysis-engine-text-based",
+    "anchor_commit": "d3b4c497144c2c9b3e8f0e82117e7e9abe4672b9",
+    "mode": "read_only",
+    "laboratory_result_is_v11_authority": false
+  },
+  "units": [
+    {
+      "id": "V11-001",
+      "ordinal": 1,
+      "title": "Active repository control plane",
+      "status": "active",
+      "build_scope": "Create V11 programme state, build plan, evidence and ledger directories, capability matrix, source-resource register, validation workflow and deterministic browser projection.",
+      "test_scope": "Prove all control surfaces agree, the laboratory is read-only and no laboratory capability is represented as implemented in V11.",
+      "acceptance": "A fresh worker can recover the active repository, current unit, objective, laboratory anchor, capability state and validation state without conversation history.",
+      "source_references": [
+        "LAB-B026 control lessons at d3b4c497144c2c9b3e8f0e82117e7e9abe4672b9"
+      ],
+      "evidence": null
+    },
+    {
+      "id": "V11-002",
+      "ordinal": 2,
+      "title": "Clean installation and one start command",
+      "status": "planned",
+      "build_scope": "Create a V11-owned installation and startup contract rather than wrapping a mutable laboratory checkout.",
+      "test_scope": "A fresh V11 clone installs and starts through one documented command.",
+      "acceptance": "The V11 browser reaches a ready state without remembered preparation.",
+      "source_references": [
+        "LAB-B026-08"
+      ],
+      "evidence": null
+    },
+    {
+      "id": "V11-003",
+      "ordinal": 3,
+      "title": "Laboratory resource adapter",
+      "status": "planned",
+      "build_scope": "Create a read-only process for identifying and verifying selected laboratory resources at pinned commits.",
+      "test_scope": "Verify one source by repository, commit, path and content identity without writing to the source repository.",
+      "acceptance": "V11 can consume a named laboratory resource with complete provenance.",
+      "source_references": [
+        "laboratory resource boundary"
+      ],
+      "evidence": null
+    },
+    {
+      "id": "V11-004",
+      "ordinal": 4,
+      "title": "First migrated engineering capability",
+      "status": "planned",
+      "build_scope": "Migrate or reimplement one Product Owner-selected engineering capability with exact source provenance.",
+      "test_scope": "Prove the selected behaviour independently inside V11.",
+      "acceptance": "The capability becomes V11 authority only after V11 validation passes.",
+      "source_references": [],
+      "evidence": null
+    }
+  ]
+}

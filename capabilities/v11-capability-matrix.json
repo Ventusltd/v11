@@ -1,0 +1,39 @@
+{
+  "schema_version": "globalgrid2050.v11.capability-matrix.v1",
+  "programme_id": "v11-native-control-plane-20260802",
+  "capabilities": [
+    {
+      "id": "CAP-CONTROL-PLANE",
+      "name": "V11 engineering control plane",
+      "state": "under_validation",
+      "authority_repository": "Ventusltd/v11",
+      "evidence": null
+    },
+    {
+      "id": "CAP-CLEAN-START",
+      "name": "Clean installation and one start command",
+      "state": "planned",
+      "authority_repository": "Ventusltd/v11",
+      "evidence": null
+    },
+    {
+      "id": "CAP-LAB-ADAPTER",
+      "name": "Pinned read-only laboratory resource adapter",
+      "state": "planned",
+      "authority_repository": "Ventusltd/v11",
+      "evidence": null
+    },
+    {
+      "id": "CAP-FIRST-ENGINEERING",
+      "name": "First migrated engineering capability",
+      "state": "awaiting_product_owner_selection",
+      "authority_repository": "Ventusltd/v11",
+      "evidence": null
+    }
+  ],
+  "laboratory_capabilities": {
+    "state": "resource_only",
+    "current_v11_authority": false,
+    "anchor_commit": "d3b4c497144c2c9b3e8f0e82117e7e9abe4672b9"
+  }
+}
