@@ -5,6 +5,6 @@ function render(){const svg=$('#canvas'),b=layout.boundary;svg.setAttribute('vie
 function rebuild(){layout=fillRectangle(inputs());selected=null;render()}
 function pointerToWorld(event){const svg=$('#canvas'),pt=svg.createSVGPoint();pt.x=event.clientX;pt.y=event.clientY;const p=pt.matrixTransform(svg.getScreenCTM().inverse());return{x:p.x,y:layout.boundary.y_max-p.y}}
 $('#canvas').addEventListener('pointerdown',e=>{const id=e.target.dataset.id;if(!id)return;selected=id;dragging=true;e.target.setPointerCapture(e.pointerId);render()});
-$('#canvas').addEventListener('pointermove',e=>{if(!dragging||!selected)return;const p=pointerToWorld(e);try{layout=moveModule(layout,selected,p.x,p.y,{snap_m:.05})}catch{}render()});
+$('#canvas').addEventListener('pointermove',e=>{if(!dragging||!selected)return;const p=pointerToWorld(e);try{layout=moveModule(layout,selected,p.x,p.y,.05)}catch{}render()});
 $('#canvas').addEventListener('pointerup',()=>dragging=false);
 $('#fill').onclick=rebuild;$('#rotate').onclick=()=>{if(selected){try{layout=rotateModule(layout,selected);render()}catch(e){$('#status').textContent=e.message}}};$('#strings').onclick=()=>{layout=assignStrings(layout,30,true);render()};$('#export').onclick=()=>{const blob=new Blob([JSON.stringify(layout,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='v11-module-layout.json';a.click();URL.revokeObjectURL(a.href)};rebuild();
