@@ -102,7 +102,7 @@ jobs:
         with: {ref: "${{ github.sha }}"}
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: {python-version: "3.11.15"}
-      - run: python -S -m unittest -v tests/test_layout_engine.py LayoutTests.test_rotation_validated
+      - run: python -S -m unittest -v tests/test_layout_engine.py
 
   session_07_stringing:
     name: "07/10 24-string assignment"
@@ -127,16 +127,13 @@ jobs:
     needs: session_07_stringing
     runs-on: ubuntu-24.04
     timeout-minutes: 5
-    strategy:
-      matrix: {hashseed: [1, 17, 101]}
-    env:
-      PYTHONHASHSEED: ${{ matrix.hashseed }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {ref: "${{ github.sha }}"}
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: {python-version: "3.11.15"}
-      - run: python -S -m unittest -v tests/test_layout_engine.py
+      - run: |
+          for seed in 1 17 101; do PYTHONHASHSEED=$seed python -S -m unittest -v tests/test_layout_engine.py; done
 
   session_09_stagger:
     name: "09/10 Orientation and stagger grid"
