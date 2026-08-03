@@ -1,0 +1,86 @@
+name: V11 Live Simulator
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [build/v11-inverter-block-simulator]
+    paths:
+      - "browser/**"
+      - "reference/**"
+      - "v11_simulation/**"
+      - "scripts/compare_python_js.py"
+      - "tests/**"
+      - ".github/workflows/v11-live-demo.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: v11-live-simulator-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Validate and package live simulator
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out exact deployment head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.15"
+      - name: Run product acceptance tests
+        run: |
+          set -euo pipefail
+          python -S -m unittest -v tests/test_simulation_engine.py tests/test_layout_engine.py tests/test_module_layout_campaign.py
+          node --test tests/simulation_core.test.mjs tests/layout_core.test.mjs tests/layout_simulation_bridge.test.mjs tests/workbench_analysis.test.mjs
+          python -S scripts/compare_python_js.py --timeout-seconds 20
+          node --check browser/workbench.mjs
+          node --check browser/layout-simulation-bridge.mjs
+          node --check browser/workbench-analysis.mjs
+      - name: Build static Pages artifact
+        run: |
+          set -euo pipefail
+          rm -rf site
+          mkdir -p site
+          cp -R browser reference site/
+          cat > site/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>V11 Solar DC Simulator</title><meta http-equiv="refresh" content="0;url=browser/workbench.html"></head><body><p><a href="browser/workbench.html">Open the V11 integrated solar DC workbench</a></p><script>location.replace('browser/workbench.html')</script></body></html>
+          HTML
+          touch site/.nojekyll
+          test -s site/browser/workbench.html
+          test -s site/browser/workbench.mjs
+          test -s site/reference/lab_inverter_block_24_strings.json
+          grep -q "Integrated solar DC workbench" site/browser/workbench.html
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+          retention-days: 7
+
+  deploy:
+    name: Publish live simulator
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
