@@ -25,6 +25,12 @@ PATHS = (
     ("delta_leapfrog_minus_sequential", "circuit_loss_kw"),
 )
 
+HASH_PATHS = (
+    ("sequential", "simulation_hash"),
+    ("leapfrog", "simulation_hash"),
+    ("comparison_hash",),
+)
+
 
 def pick(payload: dict, path: tuple[str, ...]):
     value = payload
@@ -51,7 +57,17 @@ def compare(overrides: dict, *, timeout_seconds: float) -> dict:
         right = float(pick(javascript_result, path))
         if not math.isclose(left, right, rel_tol=1e-11, abs_tol=1e-10):
             mismatches.append({"path": ".".join(path), "python": left, "javascript": right})
-    return {"pass": not mismatches, "checked_metrics": len(PATHS), "mismatches": mismatches}
+    for path in HASH_PATHS:
+        left = pick(python_result, path)
+        right = pick(javascript_result, path)
+        if left != right:
+            mismatches.append({"path": ".".join(path), "python": left, "javascript": right})
+    return {
+        "pass": not mismatches,
+        "checked_metrics": len(PATHS),
+        "checked_hashes": len(HASH_PATHS),
+        "mismatches": mismatches,
+    }
 
 
 def main() -> int:
