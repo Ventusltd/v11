@@ -86,7 +86,7 @@ def _rehash(layout: dict[str, Any]) -> dict[str, Any]:
     return layout
 
 def fill_rectangle(*, boundary: Mapping[str, float], module_width_m: float, module_height_m: float, gap_x_m: float = 0.02, gap_y_m: float = 0.02, orientation: str = "portrait", stagger_m: float = 0.0, obstacles: list[dict[str, Any]] | None = None, limit: int | None = None) -> dict[str, Any]:
-    if orientation not in {"portrait", "landscape"}:
+    if orientation not in {"portrait","landscape"}:
         raise LayoutError("orientation must be portrait or landscape")
     width = _num("module_width_m", module_width_m, 0.001)
     height = _num("module_height_m", module_height_m, 0.001)
@@ -124,8 +124,31 @@ def move_module(layout: Mapping[str, Any], module_id: str, x_m: float, y_m: floa
     target = next((module for module in result["modules"] if module["id"] == module_id), None)
     if target is None:
         raise LayoutError(f"unknown module {module_id}")
-    target["x_m"] = round(round(_num("x_m", x_m)/snap)*snap, 9)
-    target["y_m"] = round(round(_num("y_m", y_m)/snap)*snap, 9)
+
+    requested_x = _num("x_m", x_m)
+    requested_y = _num("y_m", y_m)
+    if math.isclose(requested_x, float(target["x_m"]), rel_tol=0.0, abs_tol=1e-12) and math.isclose(requested_y, float(target["y_m"]), rel_tol=0.0, abs_tol=1e-12):
+        return _rehash(result)
+
+    raw = deepcopy(result)
+    raw_target = next(module for module in raw["modules"] if module["id"] == module_id)
+    raw_target["x_m"] = requested_x
+    raw_target["y_m"] = requested_y
+    raw_errors = validate_layout(raw)
+    if raw_errors:
+        raise LayoutError("; ".join(raw_errors))
+
+    boundary = _boundary(result)
+    dimensions = footprint({**target, "x_m": 0.0, "y_m": 0.0})
+    minimum_x = boundary["x_min"] + dimensions["width"]/2
+    maximum_x = boundary["x_max"] - dimensions["width"]/2
+    minimum_y = boundary["y_min"] + dimensions["height"]/2
+    maximum_y = boundary["y_max"] - dimensions["height"]/2
+    snapped_x = round(round(requested_x/snap)*snap, 9)
+    snapped_y = round(round(requested_y/snap)*snap, 9)
+    target["x_m"] = round(min(max(snapped_x, minimum_x), maximum_x), 9)
+    target["y_m"] = round(min(max(snapped_y, minimum_y), maximum_y), 9)
+
     errors = validate_layout(result)
     if errors:
         raise LayoutError("; ".join(errors))

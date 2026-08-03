@@ -18,6 +18,14 @@ class LayoutTests(unittest.TestCase):
     def test_move_snaps(self):
         moved=move_module(self.isolated(),'MOD-0001',5.26,5.24,snap_m=.05); self.assertEqual(moved['modules'][0]['x_m'],5.25); self.assertEqual(moved['modules'][0]['y_m'],5.25)
 
+    def test_boundary_flush_noop_survives_snap(self):
+        layout=fill_rectangle(boundary={'x_min':0,'y_min':0,'x_max':10,'y_max':10},module_width_m=1.134,module_height_m=2.384,limit=1)
+        original=layout['modules'][0]
+        moved=move_module(layout,original['id'],original['x_m'],original['y_m'],snap_m=.05)
+        self.assertEqual(moved['modules'][0]['x_m'],original['x_m'])
+        self.assertEqual(moved['modules'][0]['y_m'],original['y_m'])
+        self.assertEqual(validate_layout(moved),[])
+
     def test_colliding_move_rejected(self):
         with self.assertRaises(LayoutError): move_module(self.base(2),'MOD-0001',1.6,1.0)
 
