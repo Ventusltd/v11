@@ -8,6 +8,13 @@ Current authority: PR 3, branch `build/v11-inverter-block-simulator`. The labora
 - [ ] Confirm the latest-head Chromium E2E job is green and record its run ID, elapsed time and artefact.
 - [ ] Confirm one public simulator URL with exact endpoint evidence; prefer GitHub Pages and retain the immutable raw.githack fallback.
 
+## Chromium gate status
+
+- Exact branch-push run and job enumeration remains unavailable through the connected GitHub run lookup; the only visible run for the prior head was Control Plane Validation `30812392124`, which passed and did not exercise the Chromium gate.
+- The prior E2E workflow still depended on a system-browser probe in the Finish Gate and allowed Playwright Chromium installation to occur inside the outer 100-second test command.
+- This repair provisions the pinned Playwright Chromium browser before the 100-second command in both authoritative workflows, makes the test require that exact browser, and makes rejection verification compare the complete post-rejection layout hash.
+- Implementation is not complete until a latest-head Chromium run is green and its run ID, elapsed time and evidence artefact are recorded.
+
 ## Engineering authority
 
 - [ ] Compare every Python and JavaScript per-string field by `string_id`, not only totals and hashes.
@@ -21,4 +28,4 @@ Current authority: PR 3, branch `build/v11-inverter-block-simulator`. The labora
 
 ## Next pass
 
-Read the newest head and exact Chromium E2E logs. Repair only a proven test, browser or workflow defect; otherwise proceed to complete per-string parity.
+Read the newest head and exact Chromium E2E logs. Do not advance to parity, topology, routing or other build-plan work until the latest-head browser gate is green. Repair only a proven browser or workflow defect.

@@ -2,7 +2,6 @@
 import assert from 'node:assert/strict';
 import { access, readFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
 
 const port = Number(process.env.V11_E2E_PORT ?? 8765);
@@ -11,28 +10,13 @@ let server;
 let browser;
 let testTimeout;
 
-async function run(command, args, label) {
-  await new Promise((resolve, reject) => {
-    const child = spawn(command, args, { cwd: process.cwd(), stdio: 'inherit' });
-    child.once('error', reject);
-    child.once('exit', (code) => {
-      if (code === 0) resolve();
-      else reject(new Error(`${label} failed with exit code ${code}`));
-    });
-  });
-}
-
-async function ensurePlaywrightChromium() {
+async function requirePlaywrightChromium() {
   const executablePath = chromium.executablePath();
   try {
     await access(executablePath);
-    return executablePath;
-  } catch {}
-
-  const cliPath = fileURLToPath(new URL('../node_modules/playwright-core/cli.js', import.meta.url));
-  await access(cliPath);
-  await run(process.execPath, [cliPath, 'install', 'chromium'], 'Playwright Chromium installation');
-  await access(executablePath);
+  } catch {
+    throw new Error(`Pinned Playwright Chromium is not installed at ${executablePath}; provision it before starting the 100-second browser test`);
+  }
   return executablePath;
 }
 
@@ -68,7 +52,7 @@ function findById(items, id, label) {
 }
 
 try {
-  const executablePath = await ensurePlaywrightChromium();
+  const executablePath = await requirePlaywrightChromium();
   const started = performance.now();
   testTimeout = setTimeout(() => {
     console.error('Chromium workbench acceptance exceeded 100 seconds');
@@ -161,16 +145,20 @@ try {
   moduleLocator = page.locator(`#canvas .module[data-id="${candidate.id}"]`);
   const movedBox = await moduleLocator.boundingBox();
   assert.ok(movedBox, 'cannot measure moved module');
-  const xBeforeRejectedMove = await moduleLocator.getAttribute('x');
   await page.mouse.move(movedBox.x + movedBox.width / 2, movedBox.y + movedBox.height / 2);
   await page.mouse.down();
-  await page.mouse.move(canvasBox.x - 10, movedBox.y + movedBox.height / 2, { steps: 4 });
+  await page.mouse.move(canvasBox.x - 10, movedBox.y + movedBox.height / 2, { steps: 1 });
   await page.waitForFunction(() => document.querySelector('#status')?.classList.contains('error'), null, { timeout: 5000 });
   assert.match(await page.locator('#status').textContent(), /outside boundary/i);
   await page.mouse.up();
   await page.waitForFunction(() => document.querySelector('#status')?.classList.contains('ok'), null, { timeout: 30000 });
-  const xAfterRejectedMove = await page.locator(`#canvas .module[data-id="${candidate.id}"]`).getAttribute('x');
-  assert.equal(xAfterRejectedMove, xBeforeRejectedMove, 'rejected boundary move changed geometry');
+
+  const rejectedPackage = JSON.parse(await downloadText(page, '#export'));
+  const rejectedModule = rejectedPackage.layout.modules.find((module) => module.id === candidate.id);
+  assert.ok(rejectedModule, `post-rejection package missing ${candidate.id}`);
+  assert.equal(rejectedPackage.layout.layout_hash, movedPackage.layout.layout_hash, 'rejected boundary move changed layout hash');
+  assert.equal(Number(rejectedModule.x_m), Number(movedModule.x_m), 'rejected boundary move changed x geometry');
+  assert.equal(Number(rejectedModule.y_m), Number(movedModule.y_m), 'rejected boundary move changed y geometry');
 
   const csv = await downloadText(page, '#export-csv');
   const csvLines = csv.trim().split(/\r?\n/);
