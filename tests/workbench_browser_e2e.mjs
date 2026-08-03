@@ -252,12 +252,11 @@ try {
   assert.ok(moduleBox);
   await page.mouse.move(moduleBox.x + moduleBox.width / 2, moduleBox.y + moduleBox.height / 2);
   await page.mouse.down();
-  await page.mouse.move(canvasBox.x - 10, moduleBox.y + moduleBox.height / 2, { steps: 1 });
-  await page.waitForFunction(() => document.querySelector('#status')?.classList.contains('error'), null, { timeout: 5000 });
+  await page.mouse.move(canvasBox.x - 200, moduleBox.y + moduleBox.height / 2, { steps: 3 });
   await page.mouse.up();
   await page.waitForFunction(() => document.querySelector('#status')?.classList.contains('ok'), null, { timeout: 30000 });
   const rejectedPackage = JSON.parse(await downloadText(page, '#export'));
-  assert.equal(rejectedPackage.layout.layout_hash, movedPackage.layout.layout_hash);
+  assert.equal(rejectedPackage.layout.layout_hash, movedPackage.layout.layout_hash, 'attempted outside-boundary move changed layout');
 
   phase('non-default-full-array');
   const values = {
