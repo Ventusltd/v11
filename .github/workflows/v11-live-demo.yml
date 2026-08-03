@@ -24,8 +24,46 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  browser_e2e:
+    name: Prove workbench in pinned Chromium
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
+    steps:
+      - name: Check out exact browser head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - name: Validate E2E syntax
+        run: node --check tests/workbench_browser_e2e.mjs
+      - name: Install pinned Playwright Chromium
+        run: |
+          set -euo pipefail
+          npm install --no-save --no-package-lock playwright-core@1.55.0
+          node node_modules/playwright-core/cli.js install --with-deps chromium
+          CHROME_PATH="$(node --input-type=module -e 'import { chromium } from "playwright-core"; process.stdout.write(chromium.executablePath())')"
+          test -x "$CHROME_PATH"
+          printf 'CHROME_PATH=%s\n' "$CHROME_PATH" >> "$GITHUB_ENV"
+      - name: Run headless Chromium workbench acceptance
+        run: |
+          set -euo pipefail
+          mkdir -p live-e2e-evidence
+          timeout 100s node tests/workbench_browser_e2e.mjs 2>&1 | tee live-e2e-evidence/result.json
+      - name: Upload Chromium acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-live-browser-e2e-${{ github.run_id }}
+          path: live-e2e-evidence
+          if-no-files-found: error
+          retention-days: 90
+
   build:
     name: Validate and package live simulator
+    needs: browser_e2e
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -47,26 +85,6 @@ jobs:
           node --check browser/layout-simulation-bridge.mjs
           node --check browser/workbench-analysis.mjs
           node --check tests/workbench_browser_e2e.mjs
-      - name: Install pinned Playwright Chromium
-        run: |
-          set -euo pipefail
-          npm install --no-save --no-package-lock playwright-core@1.55.0
-          node node_modules/playwright-core/cli.js install --with-deps chromium
-          CHROME_PATH="$(node --input-type=module -e 'import { chromium } from "playwright-core"; process.stdout.write(chromium.executablePath())')"
-          test -x "$CHROME_PATH"
-      - name: Run headless Chromium workbench acceptance
-        run: |
-          set -euo pipefail
-          mkdir -p live-e2e-evidence
-          timeout 100s node tests/workbench_browser_e2e.mjs 2>&1 | tee live-e2e-evidence/result.json
-      - name: Upload Chromium acceptance evidence
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: v11-live-browser-e2e-${{ github.run_id }}
-          path: live-e2e-evidence
-          if-no-files-found: error
-          retention-days: 90
       - name: Build static simulator artifact
         run: |
           set -euo pipefail
