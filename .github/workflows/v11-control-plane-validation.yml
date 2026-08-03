@@ -10,11 +10,16 @@ on:
       - "resources/**"
       - "docs/build-ledger/**"
       - "operator-sessions/**"
+      - "browser/**"
+      - "reference/**"
       - "scripts/**"
       - "tests/**"
+      - "BUILD_PLAN.md"
       - "README.md"
       - "index.html"
       - ".github/workflows/v11-control-plane-validation.yml"
+      - ".github/workflows/v11-live-demo.yml"
+      - ".github/workflows/v11-tonight-finish-gate.yml"
   push:
     branches:
       - main
@@ -25,11 +30,16 @@ on:
       - "resources/**"
       - "docs/build-ledger/**"
       - "operator-sessions/**"
+      - "browser/**"
+      - "reference/**"
       - "scripts/**"
       - "tests/**"
+      - "BUILD_PLAN.md"
       - "README.md"
       - "index.html"
       - ".github/workflows/v11-control-plane-validation.yml"
+      - ".github/workflows/v11-live-demo.yml"
+      - ".github/workflows/v11-tonight-finish-gate.yml"
 
 permissions:
   contents: read
@@ -132,3 +142,41 @@ jobs:
           test "$VALIDATOR_RESULT" = success
           test "$TEST_RESULT" = success
           test "$PROJECTION_RESULT" = success
+
+  browser_e2e:
+    name: Visible pinned-Chromium workbench E2E
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.cache/ms-playwright
+    steps:
+      - name: Check out exact review head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Validate E2E syntax
+        run: node --check tests/workbench_browser_e2e.mjs
+
+      - name: Install pinned Playwright Chromium
+        run: |
+          set -euo pipefail
+          npm install --no-save --no-package-lock playwright-core@1.55.0
+          node node_modules/playwright-core/cli.js install --with-deps chromium
+          CHROME_PATH="$(node --input-type=module -e 'import { chromium } from "playwright-core"; process.stdout.write(chromium.executablePath())')"
+          test -x "$CHROME_PATH"
+
+      - name: Run bounded browser acceptance
+        run: |
+          set -euo pipefail
+          mkdir -p browser-e2e-evidence
+          timeout 100s node tests/workbench_browser_e2e.mjs 2>&1 | tee browser-e2e-evidence/result.json
+
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v11-visible-browser-e2e-${{ github.run_id }}
+          path: browser-e2e-evidence/
+          if-no-files-found: error
+          retention-days: 90
