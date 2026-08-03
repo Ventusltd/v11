@@ -57,6 +57,9 @@ jobs:
           touch site/.nojekyll
           test -s site/browser/workbench.html
           test -s site/browser/workbench.mjs
+          test -s site/browser/layout-core.mjs
+          test -s site/browser/layout-simulation-bridge.mjs
+          test -s site/browser/workbench-analysis.mjs
           test -s site/reference/lab_inverter_block_24_strings.json
           grep -q "Integrated solar DC workbench" site/browser/workbench.html
       - name: Configure GitHub Pages
@@ -80,7 +83,82 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  verify:
+    name: Verify public simulator endpoints
+    needs: deploy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Verify published HTML, modules and reference
+        env:
+          PAGE_URL: ${{ needs.deploy.outputs.page_url }}
+          TESTED_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          : "${PAGE_URL:?deploy-pages did not emit page_url}"
+          base="${PAGE_URL%/}/"
+          mkdir -p live-demo-evidence
+          ready=0
+          for attempt in {1..30}; do
+            if curl -fsSL "${base}browser/workbench.html" -o live-demo-evidence/workbench.html; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          test "$ready" -eq 1
+          curl -fsSL "$base" -o live-demo-evidence/index.html
+          curl -fsSL "${base}browser/workbench.mjs" -o live-demo-evidence/workbench.mjs
+          curl -fsSL "${base}browser/layout-core.mjs" -o live-demo-evidence/layout-core.mjs
+          curl -fsSL "${base}browser/layout-simulation-bridge.mjs" -o live-demo-evidence/layout-simulation-bridge.mjs
+          curl -fsSL "${base}browser/workbench-analysis.mjs" -o live-demo-evidence/workbench-analysis.mjs
+          curl -fsSL "${base}reference/lab_inverter_block_24_strings.json" -o live-demo-evidence/reference.json
+          grep -q "V11 Solar DC Simulator" live-demo-evidence/index.html
+          grep -q "Integrated solar DC workbench" live-demo-evidence/workbench.html
+          grep -q "simulateComparison" live-demo-evidence/workbench.mjs
+          grep -q "export function moveModule" live-demo-evidence/layout-core.mjs
+          grep -q "referenceFromLayout" live-demo-evidence/layout-simulation-bridge.mjs
+          grep -q "buildEngineeringPackage" live-demo-evidence/workbench-analysis.mjs
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          reference = json.loads(Path('live-demo-evidence/reference.json').read_text())
+          assert reference['array']['string_count'] == 24
+          assert reference['array']['modules_per_string'] == 30
+          summary = {
+              'schema_version': 'globalgrid2050.v11.live-demo-verification.v1',
+              'page_url': os.environ['PAGE_URL'],
+              'tested_sha': os.environ['TESTED_SHA'],
+              'run_id': int(os.environ['RUN_ID']),
+              'verified_paths': [
+                  '/',
+                  '/browser/workbench.html',
+                  '/browser/workbench.mjs',
+                  '/browser/layout-core.mjs',
+                  '/browser/layout-simulation-bridge.mjs',
+                  '/browser/workbench-analysis.mjs',
+                  '/reference/lab_inverter_block_24_strings.json',
+              ],
+              'reference_boundary': {'strings': 24, 'modules_per_string': 30, 'modules': 720},
+          }
+          Path('live-demo-evidence/summary.json').write_text(json.dumps(summary, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(summary, sort_keys=True))
+          PY
+      - name: Upload live verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-live-verification-${{ github.run_id }}
+          path: live-demo-evidence
+          if-no-files-found: error
+          retention-days: 90
