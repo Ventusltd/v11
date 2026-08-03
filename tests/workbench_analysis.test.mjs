@@ -61,7 +61,7 @@ test('reports deterministic diagnostic extremes', () => {
   assert.equal(diagnostics.longest_route.string_id, 'STR-02');
   assert.equal(diagnostics.highest_sequential_loss.string_id, 'STR-02');
   assert.equal(diagnostics.field_cable_saving_m, 100);
-  assert.equal(diagnostics.circuit_loss_delta_kw, -0.03);
+  assert.ok(Math.abs(diagnostics.circuit_loss_delta_kw - (-0.03)) <= 1e-12);
 });
 
 test('rejects missing and duplicate string identities', () => {
