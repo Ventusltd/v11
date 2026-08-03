@@ -45,6 +45,19 @@ The V8 laboratory page is a read-only visual/behaviour reference. No laboratory 
 - Explicit physical edit moved `MOD-0709` while retaining `STR-24` and electrical index `19`; resulting layout hash `sha256:6f2f62b145f5716af7f0fd130924131a3eb508ad7ccc3f566e542cabda402939`.
 - Outside-boundary movement was rejected without changing the accepted edited layout.
 
+## Documentation-head validation receipt
+
+- Tested SHA: `913253216d23e70997faa4534a11b4d2434b3de0`.
+- Workflow: `V11 Control Plane Validation`, run `30857251084`, successful.
+- Control-plane job: `91831014989`, successful.
+- Visible pinned-Chromium job: `91831015013`, successful.
+- Immutable public-endpoint job: `91831015033`, successful.
+- Browser elapsed time: `2.628 seconds`, below the `100 seconds` browser cap.
+- Browser evidence artefact: `8872943720`, digest `sha256:8e165fe88b8497ae627fcdd46ff46ff3af10fbec78f07e993a39a8919d9e4812`.
+- Public endpoint artefact: `8872934826`, digest `sha256:defcbab1c21d30f104b1e289942113ce37d493f8cb508fd2ab55401fcd2aa514`.
+- Control-plane artefact: `8872933406`, digest `sha256:f6b35f27a310944a41d053e43bcb138e3efc758fbbeb35be743ef09442762b1b`.
+- Reconfirmed: 24 strips, 720 cells, 12 MPPTs, 24 physical inputs, authorised sequential/leapfrog traversal, safe scrolling, explicit edit identity retention and 12 × 20 non-default operation.
+
 ## Existing evidence
 
 - Chromium authority: run `30835051238`, job `91758073073`, artefact `8864492249`.
@@ -64,4 +77,4 @@ The V8 laboratory page is a read-only visual/behaviour reference. No laboratory 
 
 ## Next pass
 
-Consume the PR-visible `V11 Control Plane Validation` receipt for this documentation head. If green, update the GlobalGrid2050 `/v11/` monitor to the exact immutable tested SHA `db751da384c4ef63d6055c38a7b312b33578cc22`, then improve mobile readability with compact MPPT headers, safe horizontal strip scrolling and a sticky selected-string summary. If red, repair only the first proven defect. Do not advance to parity or deeper routing until the monitor and mobile full-array surface are green.
+Consume the PR-visible `V11 Control Plane Validation` receipt for the mobile-readability head. If green, update the GlobalGrid2050 `/v11/` monitor to the exact immutable green SHA and record its public URL. If red, repair only the first proven browser or endpoint defect. Do not advance to explicit terminal routing until the monitor and mobile full-array surface are green.

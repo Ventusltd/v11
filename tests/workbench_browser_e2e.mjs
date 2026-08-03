@@ -165,6 +165,34 @@ try {
   assert.equal(new Set(identities.map((item) => item.input)).size, 24);
   assert.equal(new Set(identities.map((item) => item.mppt)).size, 12);
 
+  phase('verify-mobile-readability');
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileStyles = await page.evaluate(() => {
+    const header = getComputedStyle(document.querySelector('.mppt-header'));
+    const strip = getComputedStyle(document.querySelector('.strip-scroll'));
+    const detail = getComputedStyle(document.querySelector('#selected-detail'));
+    const detailScroll = getComputedStyle(document.querySelector('#selected-detail .detail-scroll'));
+    return {
+      contract: document.querySelector('meta[name="mobile-topology-contract"]')?.content ?? '',
+      mppt_header_font_size: header.fontSize,
+      mppt_header_padding_top: header.paddingTop,
+      strip_overflow_x: strip.overflowX,
+      strip_touch_action: strip.touchAction,
+      selected_summary_position: detail.position,
+      selected_diagram_display: detailScroll.display,
+      selected_summary_text: document.querySelector('#selected-detail-note')?.textContent ?? '',
+    };
+  });
+  assert.equal(mobileStyles.contract, 'compact-mppt-headers safe-horizontal-strip-scroll sticky-selected-string-summary');
+  assert.equal(mobileStyles.mppt_header_font_size, '11px');
+  assert.equal(mobileStyles.mppt_header_padding_top, '5px');
+  assert.equal(mobileStyles.strip_overflow_x, 'auto');
+  assert.match(mobileStyles.strip_touch_action, /pan-x/);
+  assert.equal(mobileStyles.selected_summary_position, 'sticky');
+  assert.equal(mobileStyles.selected_diagram_display, 'none');
+  assert.match(mobileStyles.selected_summary_text, /STR-01/);
+  await page.setViewportSize({ width: 1600, height: 1200 });
+
   phase('verify-v8-traversals');
   await page.locator('#topology-board .string-strip[data-string-id="STR-01"]').click();
   let evidence = await page.evaluate(() => window.__v11TopologyEvidence);
@@ -307,6 +335,7 @@ try {
     phase: 'complete',
     browser: executablePath,
     elapsed_seconds: Number(elapsedSeconds.toFixed(3)),
+    mobile_readability: mobileStyles,
     default_array: {
       strings: 24,
       modules_per_string: 30,
