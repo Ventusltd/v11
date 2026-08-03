@@ -1,15 +1,35 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>V11 Integrated Solar DC Workbench</title>
-<style>:root{--bg:#090b0f;--panel:#131820;--line:#303946;--text:#edf3f8;--muted:#a8b3be;--gold:#f2c94c;--cyan:#56ccf2;--red:#eb5757;--green:#6fcf97}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace}main{max-width:1600px;margin:auto;padding:22px}.head{display:flex;justify-content:space-between;gap:16px;align-items:end;flex-wrap:wrap}h1{font:800 clamp(2rem,4vw,4.5rem)/.95 system-ui;margin:.2em 0}.eyebrow{color:var(--gold);font-weight:800}.grid{display:grid;grid-template-columns:340px 1fr;gap:18px;margin-top:20px}.panel{background:var(--panel);border:1px solid var(--line);padding:16px}.controls{display:grid;grid-template-columns:1fr 1fr;gap:9px}.controls label{display:grid;gap:3px;color:var(--muted)}input,button{width:100%;padding:9px;background:#080b10;color:var(--text);border:1px solid var(--line)}button{background:var(--gold);color:#111;font-weight:900;cursor:pointer}.wide{grid-column:1/-1}.stage{overflow:auto}svg{width:100%;height:620px;background:#071019;border:1px solid var(--line);touch-action:none}.module{fill:#1d6f9d;stroke:#9bdcff;stroke-width:.04;cursor:grab}.module.selected{fill:var(--gold);stroke:#fff}.inverter{fill:var(--red)}.route{stroke:var(--gold);stroke-width:.05;opacity:.6}.metrics{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;margin:18px 0}.metric{background:var(--panel);border:1px solid var(--line);padding:13px}.metric small{display:block;color:var(--muted)}.metric strong{font-size:1.25rem;color:var(--gold)}table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:7px;border-bottom:1px solid var(--line);text-align:right}th:first-child,td:first-child{text-align:left}th{position:sticky;top:0;background:#171d25;color:var(--gold)}.table{max-height:440px;overflow:auto}.ok{color:var(--green)}.error{color:var(--red)}@media(max-width:900px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}svg{height:480px}}</style></head>
-<body><main><div class="head"><div><div class="eyebrow">GLOBALGRID2050 · V11</div><h1>Integrated solar DC workbench</h1><p>Move the 720-module layout and immediately recalculate the complete 24-string inverter block.</p></div><div><a href="simulator.html" style="color:var(--cyan)">Circuit view</a> · <a href="layout-studio.html" style="color:var(--cyan)">Layout view</a></div></div>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>V11 Integrated Solar DC Workbench</title>
+<style>
+:root{--bg:#090b0f;--panel:#131820;--line:#303946;--text:#edf3f8;--muted:#a8b3be;--gold:#f2c94c;--cyan:#56ccf2;--red:#eb5757;--green:#6fcf97}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace}
+main{max-width:1600px;margin:auto;padding:22px}.head{display:flex;justify-content:space-between;gap:16px;align-items:end;flex-wrap:wrap}
+h1{font:800 clamp(2rem,4vw,4.5rem)/.95 system-ui;margin:.2em 0}.eyebrow{color:var(--gold);font-weight:800}.grid{display:grid;grid-template-columns:340px 1fr;gap:18px;margin-top:20px}
+.panel{background:var(--panel);border:1px solid var(--line);padding:16px}.controls{display:grid;grid-template-columns:1fr 1fr;gap:9px}.controls label{display:grid;gap:3px;color:var(--muted)}
+input,button{width:100%;padding:9px;background:#080b10;color:var(--text);border:1px solid var(--line)}button{background:var(--gold);color:#111;font-weight:900;cursor:pointer}.secondary{background:#1f2935;color:var(--text)}.wide{grid-column:1/-1}
+.stage{overflow:auto}svg{width:100%;height:620px;background:#071019;border:1px solid var(--line);touch-action:none}.module{fill:#1d6f9d;stroke:#9bdcff;stroke-width:.04;cursor:grab}.module.selected{fill:var(--gold);stroke:#fff}.module.attention-module{stroke:var(--red);stroke-width:.1}.inverter{fill:var(--red)}.route{stroke:var(--gold);stroke-width:.05;opacity:.55}.route.attention-route{stroke:var(--red);stroke-width:.12;opacity:1}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;margin:18px 0}.metric{background:var(--panel);border:1px solid var(--line);padding:13px}.metric small{display:block;color:var(--muted)}.metric strong{font-size:1.25rem;color:var(--gold)}
+.diagnostics{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 18px}.diagnostics span{background:#241d12;border:1px solid #6b5622;padding:8px 10px;color:#e5d7ae}.diagnostics strong{color:var(--gold)}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:7px;border-bottom:1px solid var(--line);text-align:right}th:first-child,td:first-child{text-align:left}th{position:sticky;top:0;background:#171d25;color:var(--gold)}.attention-row{background:#3b201d}.table{max-height:440px;overflow:auto}.ok{color:var(--green)}.error{color:var(--red)}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}svg{height:480px}}
+</style>
+</head>
+<body><main>
+<div class="head"><div><div class="eyebrow">GLOBALGRID2050 · V11</div><h1>Integrated solar DC workbench</h1><p>Move the 720-module layout and immediately recalculate the complete 24-string inverter block. Highlighted strings are diagnostic extremes, not compliance failures.</p></div><div><a href="simulator.html" style="color:var(--cyan)">Circuit view</a> · <a href="layout-studio.html" style="color:var(--cyan)">Layout view</a></div></div>
 <div class="grid"><aside class="panel"><h2>Geometry and circuit</h2><div class="controls">
 <label>Boundary width m<input id="bw" type="number" value="42" step="1"></label><label>Boundary height m<input id="bh" type="number" value="62" step="1"></label>
 <label>Module width m<input id="mw" type="number" value="1.134" step="0.001"></label><label>Module height m<input id="mh" type="number" value="2.384" step="0.001"></label>
 <label>Gap X m<input id="gx" type="number" value="0.03" step="0.01"></label><label>Gap Y m<input id="gy" type="number" value="0.05" step="0.01"></label>
 <label>Current A<input id="current" type="number" value="17.31" step="0.01"></label><label>Temperature °C<input id="temperature" type="number" value="70" step="1"></label>
 <label>Route allowance<input id="allowance" type="number" value="1.10" step="0.01"></label><label>Intra-string factor<input id="intra" type="number" value="0.50" step="0.05"></label>
-<button id="reset" class="wide">Reset 24 × 30 layout</button><button id="simulate" class="wide">Recalculate geometry + electrical</button><button id="export" class="wide">Export integrated JSON</button></div>
+<button id="reset" class="wide">Reset 24 × 30 layout</button><button id="simulate" class="wide">Recalculate geometry + electrical</button><button id="export" class="wide secondary">Export engineering JSON</button><button id="export-csv" class="wide secondary">Export per-string CSV</button></div>
 <p id="selection">Select and drag a module.</p><p id="status">Loading…</p></aside>
 <section class="stage"><svg id="canvas" viewBox="0 0 42 62" aria-label="720 module layout"></svg></section></div>
-<div id="metrics" class="metrics"></div><section class="panel"><h2>Geometry-derived string results</h2><div class="table"><table><thead><tr><th>String</th><th>Route m</th><th>Centroid X</th><th>Centroid Y</th><th>Seq loss W</th><th>Leap loss W</th><th>ΔV seq V</th><th>RT delay µs</th></tr></thead><tbody id="rows"></tbody></table></div></section>
-</main><script type="module" src="./workbench.mjs"></script></body></html>
+<div id="metrics" class="metrics"></div><div id="diagnostics" class="diagnostics" aria-live="polite"></div>
+<section class="panel"><h2>Geometry-derived string results</h2><div class="table"><table><thead><tr><th>String</th><th>Route m</th><th>Centroid X</th><th>Centroid Y</th><th>Seq loss W</th><th>Leap loss W</th><th>ΔV seq V</th><th>ΔV seq %</th><th>RT delay µs</th></tr></thead><tbody id="rows"></tbody></table></div></section>
+</main><script type="module" src="./workbench.mjs"></script></body>
+</html>
