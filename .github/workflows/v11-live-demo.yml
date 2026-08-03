@@ -10,6 +10,7 @@ on:
       - "v11_simulation/**"
       - "scripts/compare_python_js.py"
       - "tests/**"
+      - "LIVE_DEMO.md"
       - ".github/workflows/v11-live-demo.yml"
 
 permissions:
@@ -44,7 +45,7 @@ jobs:
           node --check browser/workbench.mjs
           node --check browser/layout-simulation-bridge.mjs
           node --check browser/workbench-analysis.mjs
-      - name: Build static Pages artifact
+      - name: Build static simulator artifact
         run: |
           set -euo pipefail
           rm -rf site
@@ -72,11 +73,81 @@ jobs:
           path: site
           retention-days: 7
 
-  deploy:
-    name: Publish live simulator
+  fallback:
+    name: Verify public fallback simulator
     needs: build
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Verify exact-commit raw.githack endpoints
+        env:
+          TESTED_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          base="https://rawcdn.githack.com/${REPOSITORY}/${TESTED_SHA}/"
+          mkdir -p fallback-evidence
+          fetch() {
+            path="$1"
+            output="$2"
+            ready=0
+            for attempt in {1..30}; do
+              if curl -fsSL "${base}${path}" -o "$output"; then
+                ready=1
+                break
+              fi
+              sleep 2
+            done
+            test "$ready" -eq 1
+          }
+          fetch "browser/workbench.html" fallback-evidence/workbench.html
+          fetch "browser/workbench.mjs" fallback-evidence/workbench.mjs
+          fetch "browser/layout-core.mjs" fallback-evidence/layout-core.mjs
+          fetch "browser/layout-simulation-bridge.mjs" fallback-evidence/layout-simulation-bridge.mjs
+          fetch "browser/workbench-analysis.mjs" fallback-evidence/workbench-analysis.mjs
+          fetch "reference/lab_inverter_block_24_strings.json" fallback-evidence/reference.json
+          grep -q "Integrated solar DC workbench" fallback-evidence/workbench.html
+          grep -q "simulateComparison" fallback-evidence/workbench.mjs
+          grep -q "export function moveModule" fallback-evidence/layout-core.mjs
+          grep -q "referenceFromLayout" fallback-evidence/layout-simulation-bridge.mjs
+          grep -q "buildEngineeringPackage" fallback-evidence/workbench-analysis.mjs
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          reference = json.loads(Path('fallback-evidence/reference.json').read_text())
+          assert reference['array']['string_count'] == 24
+          assert reference['array']['modules_per_string'] == 30
+          repository = os.environ['REPOSITORY']
+          sha = os.environ['TESTED_SHA']
+          summary = {
+              'schema_version': 'globalgrid2050.v11.live-fallback-verification.v1',
+              'tested_sha': sha,
+              'run_id': int(os.environ['RUN_ID']),
+              'immutable_demo_url': f'https://rawcdn.githack.com/{repository}/{sha}/browser/workbench.html',
+              'stable_demo_url': f'https://raw.githack.com/{repository}/v11-live-demo/browser/workbench.html',
+              'reference_boundary': {'strings': 24, 'modules_per_string': 30, 'modules': 720},
+          }
+          Path('fallback-evidence/summary.json').write_text(json.dumps(summary, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(summary, sort_keys=True))
+          PY
+      - name: Upload fallback verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-live-fallback-${{ github.run_id }}
+          path: fallback-evidence
+          if-no-files-found: error
+          retention-days: 90
+
+  deploy:
+    name: Publish preferred GitHub Pages simulator
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    continue-on-error: true
     permissions:
       pages: write
       id-token: write
@@ -90,9 +161,10 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-  verify:
-    name: Verify public simulator endpoints
+  verify_pages:
+    name: Verify preferred Pages endpoints
     needs: deploy
+    if: needs.deploy.result == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -107,58 +179,49 @@ jobs:
           set -euo pipefail
           : "${PAGE_URL:?deploy-pages did not emit page_url}"
           base="${PAGE_URL%/}/"
-          mkdir -p live-demo-evidence
+          mkdir -p pages-evidence
           ready=0
           for attempt in {1..30}; do
-            if curl -fsSL "${base}browser/workbench.html" -o live-demo-evidence/workbench.html; then
+            if curl -fsSL "${base}browser/workbench.html" -o pages-evidence/workbench.html; then
               ready=1
               break
             fi
             sleep 2
           done
           test "$ready" -eq 1
-          curl -fsSL "$base" -o live-demo-evidence/index.html
-          curl -fsSL "${base}browser/workbench.mjs" -o live-demo-evidence/workbench.mjs
-          curl -fsSL "${base}browser/layout-core.mjs" -o live-demo-evidence/layout-core.mjs
-          curl -fsSL "${base}browser/layout-simulation-bridge.mjs" -o live-demo-evidence/layout-simulation-bridge.mjs
-          curl -fsSL "${base}browser/workbench-analysis.mjs" -o live-demo-evidence/workbench-analysis.mjs
-          curl -fsSL "${base}reference/lab_inverter_block_24_strings.json" -o live-demo-evidence/reference.json
-          grep -q "V11 Solar DC Simulator" live-demo-evidence/index.html
-          grep -q "Integrated solar DC workbench" live-demo-evidence/workbench.html
-          grep -q "simulateComparison" live-demo-evidence/workbench.mjs
-          grep -q "export function moveModule" live-demo-evidence/layout-core.mjs
-          grep -q "referenceFromLayout" live-demo-evidence/layout-simulation-bridge.mjs
-          grep -q "buildEngineeringPackage" live-demo-evidence/workbench-analysis.mjs
+          curl -fsSL "$base" -o pages-evidence/index.html
+          curl -fsSL "${base}browser/workbench.mjs" -o pages-evidence/workbench.mjs
+          curl -fsSL "${base}browser/layout-core.mjs" -o pages-evidence/layout-core.mjs
+          curl -fsSL "${base}browser/layout-simulation-bridge.mjs" -o pages-evidence/layout-simulation-bridge.mjs
+          curl -fsSL "${base}browser/workbench-analysis.mjs" -o pages-evidence/workbench-analysis.mjs
+          curl -fsSL "${base}reference/lab_inverter_block_24_strings.json" -o pages-evidence/reference.json
+          grep -q "V11 Solar DC Simulator" pages-evidence/index.html
+          grep -q "Integrated solar DC workbench" pages-evidence/workbench.html
+          grep -q "simulateComparison" pages-evidence/workbench.mjs
+          grep -q "export function moveModule" pages-evidence/layout-core.mjs
+          grep -q "referenceFromLayout" pages-evidence/layout-simulation-bridge.mjs
+          grep -q "buildEngineeringPackage" pages-evidence/workbench-analysis.mjs
           python3 - <<'PY'
           import json, os
           from pathlib import Path
-          reference = json.loads(Path('live-demo-evidence/reference.json').read_text())
+          reference = json.loads(Path('pages-evidence/reference.json').read_text())
           assert reference['array']['string_count'] == 24
           assert reference['array']['modules_per_string'] == 30
           summary = {
-              'schema_version': 'globalgrid2050.v11.live-demo-verification.v1',
+              'schema_version': 'globalgrid2050.v11.pages-verification.v1',
               'page_url': os.environ['PAGE_URL'],
               'tested_sha': os.environ['TESTED_SHA'],
               'run_id': int(os.environ['RUN_ID']),
-              'verified_paths': [
-                  '/',
-                  '/browser/workbench.html',
-                  '/browser/workbench.mjs',
-                  '/browser/layout-core.mjs',
-                  '/browser/layout-simulation-bridge.mjs',
-                  '/browser/workbench-analysis.mjs',
-                  '/reference/lab_inverter_block_24_strings.json',
-              ],
               'reference_boundary': {'strings': 24, 'modules_per_string': 30, 'modules': 720},
           }
-          Path('live-demo-evidence/summary.json').write_text(json.dumps(summary, indent=2, sort_keys=True) + '\n')
+          Path('pages-evidence/summary.json').write_text(json.dumps(summary, indent=2, sort_keys=True) + '\n')
           print(json.dumps(summary, sort_keys=True))
           PY
-      - name: Upload live verification evidence
+      - name: Upload Pages verification evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: v11-live-verification-${{ github.run_id }}
-          path: live-demo-evidence
+          name: v11-live-pages-${{ github.run_id }}
+          path: pages-evidence
           if-no-files-found: error
           retention-days: 90
