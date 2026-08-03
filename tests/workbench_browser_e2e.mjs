@@ -2,22 +2,38 @@
 import assert from 'node:assert/strict';
 import { access, readFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
 
-const started = performance.now();
 const port = Number(process.env.V11_E2E_PORT ?? 8765);
 const baseUrl = `http://127.0.0.1:${port}`;
 let server;
 let browser;
+let testTimeout;
 
-async function firstExecutable(candidates) {
-  for (const candidate of candidates.filter(Boolean)) {
-    try {
-      await access(candidate);
-      return candidate;
-    } catch {}
-  }
-  throw new Error('No system Chromium/Chrome executable found');
+async function run(command, args, label) {
+  await new Promise((resolve, reject) => {
+    const child = spawn(command, args, { cwd: process.cwd(), stdio: 'inherit' });
+    child.once('error', reject);
+    child.once('exit', (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`${label} failed with exit code ${code}`));
+    });
+  });
+}
+
+async function ensurePlaywrightChromium() {
+  const executablePath = chromium.executablePath();
+  try {
+    await access(executablePath);
+    return executablePath;
+  } catch {}
+
+  const cliPath = fileURLToPath(new URL('../node_modules/playwright-core/cli.js', import.meta.url));
+  await access(cliPath);
+  await run(process.execPath, [cliPath, 'install', 'chromium'], 'Playwright Chromium installation');
+  await access(executablePath);
+  return executablePath;
 }
 
 async function waitForServer() {
@@ -52,6 +68,13 @@ function findById(items, id, label) {
 }
 
 try {
+  const executablePath = await ensurePlaywrightChromium();
+  const started = performance.now();
+  testTimeout = setTimeout(() => {
+    console.error('Chromium workbench acceptance exceeded 100 seconds');
+    process.exit(124);
+  }, 100_000);
+
   server = spawn('python3', ['-m', 'http.server', String(port), '--bind', '127.0.0.1'], {
     cwd: process.cwd(),
     stdio: ['ignore', 'ignore', 'pipe'],
@@ -63,13 +86,6 @@ try {
   });
   await waitForServer();
 
-  const executablePath = await firstExecutable([
-    process.env.CHROME_PATH,
-    '/usr/bin/google-chrome',
-    '/usr/bin/google-chrome-stable',
-    '/usr/bin/chromium',
-    '/usr/bin/chromium-browser',
-  ]);
   browser = await chromium.launch({
     executablePath,
     headless: true,
@@ -102,23 +118,32 @@ try {
   assert.equal(initialPackage.layout.modules.length, 720);
   assert.equal(initialPackage.strings.length, 24);
 
-  const minimumY = Math.min(...initialPackage.layout.modules.map((module) => Number(module.y_m)));
-  const firstRow = initialPackage.layout.modules.filter((module) => Math.abs(Number(module.y_m) - minimumY) <= 1e-9);
-  const candidate = firstRow.reduce((selected, module) => (
-    Number(module.x_m) > Number(selected.x_m) ? module : selected
-  ));
-  assert.ok(candidate.string_id);
+  const maximumY = Math.max(...initialPackage.layout.modules.map((module) => Number(module.y_m)));
+  const topRow = initialPackage.layout.modules
+    .filter((module) => Math.abs(Number(module.y_m) - maximumY) <= 1e-9)
+    .sort((left, right) => Number(left.x_m) - Number(right.x_m));
+  const candidate = topRow[Math.floor(topRow.length / 2)];
+  assert.ok(candidate?.string_id, 'top-row drag candidate has no string identity');
   assert.ok(Number.isInteger(Number(candidate.electrical_index)));
   const initialString = findById(initialPackage.strings, candidate.string_id, 'initial engineering package');
 
   let moduleLocator = page.locator(`#canvas .module[data-id="${candidate.id}"]`);
   const moduleBox = await moduleLocator.boundingBox();
-  assert.ok(moduleBox, `cannot locate ${candidate.id}`);
+  const canvasBox = await page.locator('#canvas').boundingBox();
+  const viewBox = await page.locator('#canvas').evaluate((svg) => ({
+    width: svg.viewBox.baseVal.width,
+    height: svg.viewBox.baseVal.height,
+  }));
+  assert.ok(moduleBox && canvasBox, `cannot locate ${candidate.id} or canvas`);
+  assert.ok(viewBox.height > 0 && canvasBox.height > 0, 'canvas has no usable vertical scale');
+
   const centreX = moduleBox.x + moduleBox.width / 2;
   const centreY = moduleBox.y + moduleBox.height / 2;
+  const legalMoveM = 0.5;
+  const legalMovePixels = legalMoveM * canvasBox.height / viewBox.height;
   await page.mouse.move(centreX, centreY);
   await page.mouse.down();
-  await page.mouse.move(centreX + 3, centreY, { steps: 4 });
+  await page.mouse.move(centreX, centreY - legalMovePixels, { steps: 8 });
   await page.mouse.up();
   await page.waitForFunction(() => document.querySelector('#status')?.classList.contains('ok'), null, { timeout: 30000 });
 
@@ -127,6 +152,7 @@ try {
   assert.ok(movedModule, `moved package missing ${candidate.id}`);
   assert.equal(movedModule.string_id, candidate.string_id, 'drag changed string identity');
   assert.equal(Number(movedModule.electrical_index), Number(candidate.electrical_index), 'drag changed electrical index');
+  assert.ok(Number(movedModule.y_m) > Number(candidate.y_m), 'geometry-derived drag did not move the module into empty top space');
   assert.notEqual(movedPackage.layout.layout_hash, initialPackage.layout.layout_hash, 'legal drag did not change layout hash');
   const movedString = findById(movedPackage.strings, candidate.string_id, 'moved engineering package');
   assert.notEqual(movedString.one_way_route_m, initialString.one_way_route_m, 'legal drag did not change route length');
@@ -134,8 +160,7 @@ try {
 
   moduleLocator = page.locator(`#canvas .module[data-id="${candidate.id}"]`);
   const movedBox = await moduleLocator.boundingBox();
-  const canvasBox = await page.locator('#canvas').boundingBox();
-  assert.ok(movedBox && canvasBox, 'cannot measure moved module or canvas');
+  assert.ok(movedBox, 'cannot measure moved module');
   const xBeforeRejectedMove = await moduleLocator.getAttribute('x');
   await page.mouse.move(movedBox.x + movedBox.width / 2, movedBox.y + movedBox.height / 2);
   await page.mouse.down();
@@ -175,6 +200,7 @@ try {
   console.error(error.stack ?? error.message);
   process.exitCode = 1;
 } finally {
+  if (testTimeout) clearTimeout(testTimeout);
   if (browser) await browser.close().catch(() => {});
   if (server && !server.killed) server.kill('SIGTERM');
 }
