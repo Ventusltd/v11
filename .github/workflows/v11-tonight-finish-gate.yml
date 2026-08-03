@@ -33,7 +33,7 @@ jobs:
           - {label: "02/10 Browser inverter engine", kind: simulation-js}
           - {label: "03/10 Python browser parity", kind: parity}
           - {label: "04/10 Python layout engine", kind: layout-python}
-          - {label: "05/10 Browser layout + bridge", kind: layout-js}
+          - {label: "05/10 Browser layout + workbench", kind: layout-js}
           - {label: "06/10 Placement campaign tests", kind: placement-python}
           - {label: "07/10 Browser HTTP acceptance", kind: http}
           - {label: "08/10 Engineering randomized smoke", kind: engineering}
@@ -61,25 +61,30 @@ jobs:
             layout-python)
               python -S -m unittest -v tests/test_layout_engine.py 2>&1 | tee finish-evidence/${{ matrix.kind }}/result.txt ;;
             layout-js)
-              node --test tests/layout_core.test.mjs tests/layout_simulation_bridge.test.mjs 2>&1 | tee finish-evidence/${{ matrix.kind }}/result.txt ;;
+              node --test tests/layout_core.test.mjs tests/layout_simulation_bridge.test.mjs tests/workbench_analysis.test.mjs 2>&1 | tee finish-evidence/${{ matrix.kind }}/result.txt ;;
             placement-python)
               python -S -m unittest -v tests/test_module_layout_campaign.py 2>&1 | tee finish-evidence/${{ matrix.kind }}/result.txt ;;
             http)
               node --check browser/workbench.mjs
               node --check browser/layout-simulation-bridge.mjs
+              node --check browser/workbench-analysis.mjs
               python3 -m http.server 8765 >/tmp/v11-http.log 2>&1 & server=$!; trap 'kill $server' EXIT
               for i in {1..20}; do curl -fsS http://127.0.0.1:8765/browser/workbench.html -o /tmp/workbench.html && break; sleep 1; done
               curl -fsS http://127.0.0.1:8765/browser/simulator.html -o /tmp/simulator.html
               curl -fsS http://127.0.0.1:8765/browser/layout-studio.html -o /tmp/layout.html
               curl -fsS http://127.0.0.1:8765/browser/workbench.mjs -o /tmp/workbench.mjs
               curl -fsS http://127.0.0.1:8765/browser/layout-simulation-bridge.mjs -o /tmp/bridge.mjs
+              curl -fsS http://127.0.0.1:8765/browser/workbench-analysis.mjs -o /tmp/workbench-analysis.mjs
               grep -q "Integrated solar DC workbench" /tmp/workbench.html
               grep -q 'id="canvas"' /tmp/workbench.html
               grep -q 'id="simulate"' /tmp/workbench.html
               grep -q 'id="export"' /tmp/workbench.html
+              grep -q 'id="export-csv"' /tmp/workbench.html
+              grep -q 'id="diagnostics"' /tmp/workbench.html
               grep -q "Complete 24-string inverter block" /tmp/simulator.html
               grep -q "Module Layout Studio" /tmp/layout.html
-              cp /tmp/workbench.html /tmp/simulator.html /tmp/layout.html /tmp/workbench.mjs /tmp/bridge.mjs finish-evidence/${{ matrix.kind }}/ ;;
+              grep -q "workbench-analysis.mjs" /tmp/workbench.mjs
+              cp /tmp/workbench.html /tmp/simulator.html /tmp/layout.html /tmp/workbench.mjs /tmp/bridge.mjs /tmp/workbench-analysis.mjs finish-evidence/${{ matrix.kind }}/ ;;
             engineering)
               python -S scripts/simulate_reference_block.py --output finish-evidence/${{ matrix.kind }}/reference.json
               python -S scripts/overnight_campaign.py --iterations 5000 --seed 82026 --phase tonight-finish --output finish-evidence/${{ matrix.kind }}/campaign.json --parity-seconds 20 ;;
@@ -87,9 +92,10 @@ jobs:
               python -S scripts/module_layout_campaign.py --mode mixed --seed 82027 --duration-seconds 120 --output finish-evidence/${{ matrix.kind }}/movement.json ;;
             complete)
               python -S -m unittest -v tests/test_simulation_engine.py tests/test_layout_engine.py tests/test_module_layout_campaign.py 2>&1 | tee finish-evidence/${{ matrix.kind }}/python.txt
-              node --test tests/simulation_core.test.mjs tests/layout_core.test.mjs tests/layout_simulation_bridge.test.mjs 2>&1 | tee finish-evidence/${{ matrix.kind }}/browser.txt
+              node --test tests/simulation_core.test.mjs tests/layout_core.test.mjs tests/layout_simulation_bridge.test.mjs tests/workbench_analysis.test.mjs 2>&1 | tee finish-evidence/${{ matrix.kind }}/browser.txt
               node --check browser/workbench.mjs
               node --check browser/layout-simulation-bridge.mjs
+              node --check browser/workbench-analysis.mjs
               python -S scripts/compare_python_js.py --timeout-seconds 20 | tee finish-evidence/${{ matrix.kind }}/parity.json
               python -S scripts/simulate_reference_block.py --output finish-evidence/${{ matrix.kind }}/reference.json ;;
           esac
