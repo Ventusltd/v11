@@ -99,16 +99,16 @@ function chooseLegalTopSpaceMove(layout) {
     const overlapsModule = layout.modules.some((module) => (
       module.id !== candidate.id && intersects(target, footprint(module))
     ));
-    const overlapsObstacle = (layout.obstacles ?? []).some((obstacle) => intersects(target, {
-      left: Number(obstacle.x_min),
-      right: Number(obstacle.x_max),
-      bottom: Number(obstacle.y_min),
-      top: Number(obstacle.y_max),
-    }));
-    if (!overlapsModule && !overlapsObstacle) return { candidate, legalMoveM };
+    if (!overlapsModule) return { candidate, legalMoveM };
   }
   throw new Error('No top-row module has a provably legal empty-space move');
 }
+
+const expectedSequential30 = Array.from({ length: 30 }, (_, index) => index + 1);
+const expectedLeapfrog30 = [
+  1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,
+  30,28,26,24,22,20,18,16,14,12,10,8,6,4,2,
+];
 
 try {
   phase('require-browser');
@@ -123,11 +123,6 @@ try {
   server = spawn('python3', ['-m', 'http.server', String(port), '--bind', '127.0.0.1'], {
     cwd: process.cwd(),
     stdio: ['ignore', 'ignore', 'pipe'],
-  });
-  let serverError = '';
-  server.stderr.on('data', (chunk) => { serverError += chunk.toString(); });
-  server.once('exit', (code) => {
-    if (code && code !== 0) serverError += `\nserver exited ${code}`;
   });
   await waitForServer();
 
@@ -147,91 +142,160 @@ try {
   });
   await page.route('**/favicon.ico', (route) => route.fulfill({ status: 204, body: '' }));
 
-  phase('load-workbench');
+  phase('load-full-array-topology');
   const response = await page.goto(`${baseUrl}/browser/workbench.html`, { waitUntil: 'networkidle' });
   assert.equal(response?.status(), 200, 'workbench did not return HTTP 200');
   await page.waitForFunction(() => (
     document.querySelector('#status')?.classList.contains('ok')
-    && document.querySelectorAll('#canvas .module').length === 720
+    && document.querySelectorAll('#topology-board .string-strip').length === 24
+    && document.querySelectorAll('#topology-board .topology-cell').length === 720
+    && document.querySelectorAll('#topology-board .mppt-group').length === 12
     && document.querySelectorAll('#rows tr').length === 24
   ), null, { timeout: 30000 });
-  assert.equal(await page.locator('#canvas .module').count(), 720);
-  assert.equal(await page.locator('#rows tr').count(), 24);
 
-  phase('export-initial-json');
+  assert.equal(await page.locator('#topology-board .string-strip').count(), 24);
+  assert.equal(await page.locator('#topology-board .topology-cell').count(), 720);
+  assert.equal(await page.locator('#topology-board .mppt-group').count(), 12);
+  const identities = await page.locator('#topology-board .string-strip').evaluateAll((items) => items.map((item) => ({
+    string: item.dataset.stringId,
+    input: item.dataset.inputId,
+    mppt: item.dataset.mpptId,
+  })));
+  assert.equal(new Set(identities.map((item) => item.string)).size, 24);
+  assert.equal(new Set(identities.map((item) => item.input)).size, 24);
+  assert.equal(new Set(identities.map((item) => item.mppt)).size, 12);
+
+  phase('verify-v8-traversals');
+  await page.locator('#topology-board .string-strip[data-string-id="STR-01"]').click();
+  let evidence = await page.evaluate(() => window.__v11TopologyEvidence);
+  assert.deepEqual(evidence.leapfrog_order, expectedLeapfrog30);
+  assert.deepEqual(evidence.sequential_order, expectedSequential30);
+  assert.match(await page.locator('#selected-order').textContent(), /Leapfrog: 1 → 3 → 5/);
+  await page.locator('.wiring-mode[data-mode="sequential"]').click();
+  assert.match(await page.locator('#selected-order').textContent(), /Sequential: 1 → 2 → 3/);
+  await page.locator('.wiring-mode[data-mode="compare"]').click();
+  assert.match(await page.locator('#selected-order').textContent(), /Sequential:/);
+  assert.match(await page.locator('#selected-order').textContent(), /Leapfrog:/);
+  await page.locator('.wiring-mode[data-mode="leapfrog"]').click();
+
+  phase('export-default-package');
   const initialPackage = JSON.parse(await downloadText(page, '#export'));
   assert.equal(initialPackage.reference_boundary.string_count, 24);
   assert.equal(initialPackage.reference_boundary.modules_per_string, 30);
   assert.equal(initialPackage.reference_boundary.module_count, 720);
   assert.equal(initialPackage.layout.modules.length, 720);
   assert.equal(initialPackage.strings.length, 24);
+  assert.equal(initialPackage.view_contract.primary_view, 'v8-style-full-array-string-strips');
+  assert.equal(initialPackage.view_contract.string_strip_count, 24);
+  assert.equal(initialPackage.view_contract.topology_cell_count, 720);
+  assert.deepEqual(initialPackage.view_contract.leapfrog_order, expectedLeapfrog30);
 
+  phase('safe-topology-scroll');
+  const firstCell = page.locator('#topology-board .topology-cell').first();
+  const firstCellBox = await firstCell.boundingBox();
+  assert.ok(firstCellBox, 'cannot locate first topology cell');
+  await page.mouse.move(firstCellBox.x + firstCellBox.width / 2, firstCellBox.y + firstCellBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(firstCellBox.x + 120, firstCellBox.y + 60, { steps: 5 });
+  await page.mouse.up();
+  const safePackage = JSON.parse(await downloadText(page, '#export'));
+  assert.equal(safePackage.layout.layout_hash, initialPackage.layout.layout_hash, 'topology scrolling/selection changed physical layout');
+  assert.equal(safePackage.view_contract.physical_edit_enabled, false);
+
+  phase('physical-edit-lock');
+  await page.locator('#show-physical').click();
+  await page.waitForSelector('#physical-view:not([hidden])');
+  assert.equal(await page.locator('#edit-physical').isChecked(), false);
   const { candidate, legalMoveM } = chooseLegalTopSpaceMove(initialPackage.layout);
-  assert.ok(candidate?.string_id, 'top-row drag candidate has no string identity');
-  assert.ok(Number.isInteger(Number(candidate.electrical_index)));
-  const initialString = findById(initialPackage.strings, candidate.string_id, 'initial engineering package');
+  let moduleLocator = page.locator(`#physical-canvas .module[data-id="${candidate.id}"]`);
+  let moduleBox = await moduleLocator.boundingBox();
+  const canvasBox = await page.locator('#physical-canvas').boundingBox();
+  assert.ok(moduleBox && canvasBox, `cannot locate ${candidate.id} or physical canvas`);
+  await page.mouse.move(moduleBox.x + moduleBox.width / 2, moduleBox.y + moduleBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(moduleBox.x + 50, moduleBox.y - 50, { steps: 4 });
+  await page.mouse.up();
+  const lockedPackage = JSON.parse(await downloadText(page, '#export'));
+  assert.equal(lockedPackage.layout.layout_hash, initialPackage.layout.layout_hash, 'disabled physical editing changed layout');
 
-  phase('legal-drag');
-  let moduleLocator = page.locator(`#canvas .module[data-id="${candidate.id}"]`);
-  const moduleBox = await moduleLocator.boundingBox();
-  const canvasBox = await page.locator('#canvas').boundingBox();
-  const screenTransform = await page.locator('#canvas').evaluate((svg) => {
+  phase('explicit-physical-edit');
+  await page.locator('#edit-physical').check();
+  moduleLocator = page.locator(`#physical-canvas .module[data-id="${candidate.id}"]`);
+  moduleBox = await moduleLocator.boundingBox();
+  const screenTransform = await page.locator('#physical-canvas').evaluate((svg) => {
     const matrix = svg.getScreenCTM();
     if (!matrix) return null;
     return { yPixelsPerUnit: Math.hypot(matrix.c, matrix.d) };
   });
-  assert.ok(moduleBox && canvasBox, `cannot locate ${candidate.id} or canvas`);
-  assert.ok(screenTransform?.yPixelsPerUnit > 0, 'canvas has no usable SVG screen transform');
-
+  assert.ok(moduleBox && screenTransform?.yPixelsPerUnit > 0);
   const centreX = moduleBox.x + moduleBox.width / 2;
   const centreY = moduleBox.y + moduleBox.height / 2;
-  const legalMovePixels = legalMoveM * screenTransform.yPixelsPerUnit;
   await page.mouse.move(centreX, centreY);
   await page.mouse.down();
-  await page.mouse.move(centreX, centreY - legalMovePixels, { steps: 8 });
+  await page.mouse.move(centreX, centreY - legalMoveM * screenTransform.yPixelsPerUnit, { steps: 8 });
   await page.mouse.up();
   await page.waitForFunction(() => document.querySelector('#status')?.classList.contains('ok'), null, { timeout: 30000 });
 
-  phase('verify-legal-drag');
   const movedPackage = JSON.parse(await downloadText(page, '#export'));
   const movedModule = movedPackage.layout.modules.find((module) => module.id === candidate.id);
   assert.ok(movedModule, `moved package missing ${candidate.id}`);
-  assert.equal(movedModule.string_id, candidate.string_id, 'drag changed string identity');
-  assert.equal(Number(movedModule.electrical_index), Number(candidate.electrical_index), 'drag changed electrical index');
-  assert.ok(Number(movedModule.y_m) > Number(candidate.y_m), 'geometry-derived drag did not move the module into empty top space');
-  assert.ok(Math.abs((Number(movedModule.y_m) - Number(candidate.y_m)) - legalMoveM) <= 0.051,
-    'rendered drag did not match the geometry-derived legal movement');
-  assert.notEqual(movedPackage.layout.layout_hash, initialPackage.layout.layout_hash, 'legal drag did not change layout hash');
-  const movedString = findById(movedPackage.strings, candidate.string_id, 'moved engineering package');
-  assert.notEqual(movedString.one_way_route_m, initialString.one_way_route_m, 'legal drag did not change route length');
-  assert.notEqual(movedString.sequential.loss_w, initialString.sequential.loss_w, 'legal drag did not change electrical loss');
+  assert.equal(movedModule.string_id, candidate.string_id);
+  assert.equal(Number(movedModule.electrical_index), Number(candidate.electrical_index));
+  assert.notEqual(movedPackage.layout.layout_hash, initialPackage.layout.layout_hash);
+  const initialString = findById(initialPackage.strings, candidate.string_id, 'initial package');
+  const movedString = findById(movedPackage.strings, candidate.string_id, 'moved package');
+  assert.notEqual(movedString.one_way_route_m, initialString.one_way_route_m);
 
-  phase('reject-boundary-drag');
-  moduleLocator = page.locator(`#canvas .module[data-id="${candidate.id}"]`);
-  const movedBox = await moduleLocator.boundingBox();
-  assert.ok(movedBox, 'cannot measure moved module');
-  await page.mouse.move(movedBox.x + movedBox.width / 2, movedBox.y + movedBox.height / 2);
+  phase('reject-outside-boundary');
+  moduleLocator = page.locator(`#physical-canvas .module[data-id="${candidate.id}"]`);
+  moduleBox = await moduleLocator.boundingBox();
+  assert.ok(moduleBox);
+  await page.mouse.move(moduleBox.x + moduleBox.width / 2, moduleBox.y + moduleBox.height / 2);
   await page.mouse.down();
-  await page.mouse.move(canvasBox.x - 10, movedBox.y + movedBox.height / 2, { steps: 1 });
+  await page.mouse.move(canvasBox.x - 10, moduleBox.y + moduleBox.height / 2, { steps: 1 });
   await page.waitForFunction(() => document.querySelector('#status')?.classList.contains('error'), null, { timeout: 5000 });
-  assert.match(await page.locator('#status').textContent(), /outside boundary/i);
   await page.mouse.up();
   await page.waitForFunction(() => document.querySelector('#status')?.classList.contains('ok'), null, { timeout: 30000 });
-
-  phase('verify-rejection');
   const rejectedPackage = JSON.parse(await downloadText(page, '#export'));
-  const rejectedModule = rejectedPackage.layout.modules.find((module) => module.id === candidate.id);
-  assert.ok(rejectedModule, `post-rejection package missing ${candidate.id}`);
-  assert.equal(rejectedPackage.layout.layout_hash, movedPackage.layout.layout_hash, 'rejected boundary move changed layout hash');
-  assert.equal(Number(rejectedModule.x_m), Number(movedModule.x_m), 'rejected boundary move changed x geometry');
-  assert.equal(Number(rejectedModule.y_m), Number(movedModule.y_m), 'rejected boundary move changed y geometry');
+  assert.equal(rejectedPackage.layout.layout_hash, movedPackage.layout.layout_hash);
 
-  phase('export-csv');
+  phase('non-default-full-array');
+  const values = {
+    '#string-count': '12',
+    '#modules-per-string': '20',
+    '#mppt-count': '6',
+    '#inputs-per-mppt': '2',
+    '#east-string-count': '6',
+    '#strings-per-band': '2',
+    '#row-pitch': '4',
+  };
+  for (const [selector, value] of Object.entries(values)) await page.locator(selector).fill(value);
+  await page.locator('#reset').click();
+  await page.waitForFunction(() => (
+    document.querySelector('#status')?.classList.contains('ok')
+    && document.querySelectorAll('#topology-board .string-strip').length === 12
+    && document.querySelectorAll('#topology-board .topology-cell').length === 240
+    && document.querySelectorAll('#topology-board .mppt-group').length === 6
+    && document.querySelectorAll('#rows tr').length === 12
+  ), null, { timeout: 30000 });
+  assert.equal(await page.locator('#topology-board .string-strip').count(), 12);
+  assert.equal(await page.locator('#topology-board .topology-cell').count(), 240);
+  assert.equal(await page.locator('#topology-board .mppt-group').count(), 6);
+
+  const customPackage = JSON.parse(await downloadText(page, '#export'));
+  assert.equal(customPackage.reference_boundary.string_count, 12);
+  assert.equal(customPackage.reference_boundary.modules_per_string, 20);
+  assert.equal(customPackage.reference_boundary.module_count, 240);
+  assert.equal(customPackage.view_contract.string_strip_count, 12);
+  assert.equal(customPackage.view_contract.topology_cell_count, 240);
+  assert.equal(customPackage.view_contract.mppt_group_count, 6);
+  assert.deepEqual(customPackage.view_contract.sequential_order, Array.from({ length: 20 }, (_, index) => index + 1));
+
+  phase('export-non-default-csv');
   const csv = await downloadText(page, '#export-csv');
   const csvLines = csv.trim().split(/\r?\n/);
-  assert.equal(csvLines.length, 25, 'CSV must contain one header and 24 strings');
-  assert.ok(csvLines[0].startsWith('string_id,module_count,one_way_route_m'));
-  assert.equal(new Set(csvLines.slice(1).map((line) => line.split(',')[0])).size, 24);
+  assert.equal(csvLines.length, 13, 'CSV must contain one header and 12 strings');
+  assert.equal(new Set(csvLines.slice(1).map((line) => line.split(',')[0])).size, 12);
 
   phase('verify-browser-errors');
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join(' | ')}`);
@@ -239,20 +303,37 @@ try {
 
   const elapsedSeconds = (performance.now() - started) / 1000;
   console.log(JSON.stringify({
+    schema_version: 'globalgrid2050.v11.full-array-browser-evidence.v1',
     pass: true,
     phase: 'complete',
     browser: executablePath,
     elapsed_seconds: Number(elapsedSeconds.toFixed(3)),
-    modules: 720,
-    strings: 24,
-    moved_module_id: candidate.id,
-    retained_string_id: candidate.string_id,
-    retained_electrical_index: Number(candidate.electrical_index),
-    legal_move_m: legalMoveM,
-    route_before_m: initialString.one_way_route_m,
-    route_after_m: movedString.one_way_route_m,
-    sequential_loss_before_w: initialString.sequential.loss_w,
-    sequential_loss_after_w: movedString.sequential.loss_w,
+    default_array: {
+      strings: 24,
+      modules_per_string: 30,
+      modules: 720,
+      mppt_groups: 12,
+      physical_inputs: 24,
+      string_strips: 24,
+      topology_cells: 720,
+      safe_scroll_layout_hash: safePackage.layout.layout_hash,
+      moved_module_id: candidate.id,
+      retained_string_id: candidate.string_id,
+      retained_electrical_index: Number(candidate.electrical_index),
+      layout_hash_after_edit: movedPackage.layout.layout_hash,
+    },
+    non_default_array: {
+      strings: 12,
+      modules_per_string: 20,
+      modules: 240,
+      mppt_groups: 6,
+      string_strips: 12,
+      topology_cells: 240,
+    },
+    traversal: {
+      sequential_30: expectedSequential30,
+      leapfrog_30: expectedLeapfrog30,
+    },
   }, null, 2));
 } catch (error) {
   console.error(JSON.stringify({

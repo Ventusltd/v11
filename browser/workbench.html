@@ -3,33 +3,67 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V11 Integrated Solar DC Workbench</title>
+<title>V11 Full-Array Solar DC Topology Workbench</title>
 <style>
-:root{--bg:#090b0f;--panel:#131820;--line:#303946;--text:#edf3f8;--muted:#a8b3be;--gold:#f2c94c;--cyan:#56ccf2;--red:#eb5757;--green:#6fcf97}
+:root{--bg:#090b0f;--panel:#131820;--panel2:#0b1118;--line:#303946;--text:#edf3f8;--muted:#a8b3be;--gold:#f2c94c;--cyan:#56ccf2;--red:#eb5757;--green:#6fcf97;--purple:#bb86fc;--orange:#ff9f43}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace}
-main{max-width:1600px;margin:auto;padding:22px}.head{display:flex;justify-content:space-between;gap:16px;align-items:end;flex-wrap:wrap}
-h1{font:800 clamp(2rem,4vw,4.5rem)/.95 system-ui;margin:.2em 0}.eyebrow{color:var(--gold);font-weight:800}.grid{display:grid;grid-template-columns:340px 1fr;gap:18px;margin-top:20px}
-.panel{background:var(--panel);border:1px solid var(--line);padding:16px}.controls{display:grid;grid-template-columns:1fr 1fr;gap:9px}.controls label{display:grid;gap:3px;color:var(--muted)}
-input,button{width:100%;padding:9px;background:#080b10;color:var(--text);border:1px solid var(--line)}button{background:var(--gold);color:#111;font-weight:900;cursor:pointer}.secondary{background:#1f2935;color:var(--text)}.wide{grid-column:1/-1}
-.stage{overflow:auto}svg{width:100%;height:620px;background:#071019;border:1px solid var(--line);touch-action:none}.module{fill:#1d6f9d;stroke:#9bdcff;stroke-width:.04;cursor:grab}.module.selected{fill:var(--gold);stroke:#fff}.module.attention-module{stroke:var(--red);stroke-width:.1}.inverter{fill:var(--red)}.route{stroke:var(--gold);stroke-width:.05;opacity:.55}.route.attention-route{stroke:var(--red);stroke-width:.12;opacity:1}
+main{max-width:1800px;margin:auto;padding:22px}.head{display:flex;justify-content:space-between;gap:16px;align-items:end;flex-wrap:wrap}
+h1{font:800 clamp(2rem,4vw,4.2rem)/.95 system-ui;margin:.2em 0}.eyebrow{color:var(--gold);font-weight:800}.head p{max-width:1000px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:360px minmax(0,1fr);gap:18px;margin-top:20px}.panel{background:var(--panel);border:1px solid var(--line);padding:16px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:9px}.controls label{display:grid;gap:3px;color:var(--muted)}input,button{width:100%;padding:9px;background:#080b10;color:var(--text);border:1px solid var(--line)}
+button{background:var(--gold);color:#111;font-weight:900;cursor:pointer}.secondary{background:#1f2935;color:var(--text)}.wide{grid-column:1/-1}.toggle-line{display:flex!important;grid-template-columns:22px 1fr!important;align-items:center;gap:8px}.toggle-line input{width:auto}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}.toolbar button{width:auto;background:#101923;color:var(--text)}.toolbar button[aria-pressed="true"]{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset}
+.stage{min-width:0}.view{border:1px solid var(--line);background:#05090d;padding:12px}.view[hidden]{display:none!important}
+.topology-intro{color:var(--muted);margin:0 0 12px}.topology-board{display:grid;gap:14px}.mppt-group{border:1px solid var(--line);background:var(--panel2)}.mppt-header{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:9px 12px;border-bottom:1px solid var(--line);color:var(--gold);font-weight:900}.face-east .mppt-header{border-left:5px solid var(--cyan)}.face-west .mppt-header{border-left:5px solid var(--purple)}
+.strip-scroll{overflow-x:auto;border-top:1px solid #1e2b35}.strip-scroll:first-of-type{border-top:0}.string-strip{display:block;min-width:980px;width:100%;height:90px;background:#03080d;cursor:pointer}.string-strip.selected-strip{outline:2px solid var(--gold);outline-offset:-2px}
+.topology-cell{fill:#153d50;stroke:var(--cyan);stroke-width:1}.face-west .topology-cell{fill:#302348;stroke:var(--purple)}.topology-cell.selected-cell{fill:var(--gold);stroke:#fff}.inverter-block{fill:var(--orange);stroke:#ffd18a;stroke-width:1}.terminal{fill:#071019;stroke:#e7f4fb;stroke-width:1.5}.path-sequential{fill:none;stroke:#aeb8c2;stroke-width:2.2;opacity:.82}.path-leapfrog{fill:none;stroke:var(--cyan);stroke-width:2.6}.face-west .path-leapfrog{stroke:var(--purple)}.home-positive{stroke:var(--red)}.home-negative{stroke:#6bc3ff}
+.strip-label,.module-label,.path-label{fill:#e8f2f8;font-family:ui-monospace,monospace}.strip-label{font-size:11px;font-weight:800}.module-label{font-size:9px}.path-label{font-size:9px;fill:#a8b3be}.input-label{fill:#111;font-size:9px;font-weight:900}
+.detail{margin-top:14px;border:1px solid var(--line);background:#03080d;padding:12px}.detail h2{margin:0 0 8px}.detail-scroll{overflow-x:auto}.detail svg{display:block;min-width:1100px;width:100%;height:170px}.order-line{color:var(--cyan);overflow-wrap:anywhere}.detail-note{color:var(--muted)}
+#physical-canvas{display:block;min-width:820px;width:100%;height:620px;background:#071019;border:1px solid var(--line);touch-action:auto}.physical-scroll{overflow:auto}.physical-editing #physical-canvas{touch-action:none}.module{fill:#1d6f9d;stroke:#9bdcff;stroke-width:.04;cursor:default}.physical-editing .module{cursor:grab}.module.selected{fill:var(--gold);stroke:#fff}.module.attention-module{stroke:var(--red);stroke-width:.1}.inverter{fill:var(--red)}.route{stroke:var(--gold);stroke-width:.05;opacity:.55}.route.attention-route{stroke:var(--red);stroke-width:.12;opacity:1}
 .metrics{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;margin:18px 0}.metric{background:var(--panel);border:1px solid var(--line);padding:13px}.metric small{display:block;color:var(--muted)}.metric strong{font-size:1.25rem;color:var(--gold)}
 .diagnostics{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 18px}.diagnostics span{background:#241d12;border:1px solid #6b5622;padding:8px 10px;color:#e5d7ae}.diagnostics strong{color:var(--gold)}
-table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:7px;border-bottom:1px solid var(--line);text-align:right}th:first-child,td:first-child{text-align:left}th{position:sticky;top:0;background:#171d25;color:var(--gold)}.attention-row{background:#3b201d}.table{max-height:440px;overflow:auto}.ok{color:var(--green)}.error{color:var(--red)}
-@media(max-width:900px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}svg{height:480px}}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:7px;border-bottom:1px solid var(--line);text-align:right}th:first-child,td:first-child{text-align:left}th{position:sticky;top:0;background:#171d25;color:var(--gold)}.attention-row{background:#3b201d}.table{max-height:440px;overflow:auto}.ok{color:var(--green)}.error{color:var(--red)}.warning{color:var(--gold)}
+@media(max-width:900px){main{padding:12px}.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.string-strip{min-width:920px}.detail svg{min-width:1020px}#physical-canvas{min-width:760px;height:520px}}
 </style>
 </head>
 <body><main>
-<div class="head"><div><div class="eyebrow">GLOBALGRID2050 · V11</div><h1>Integrated solar DC workbench</h1><p>Move the 720-module layout and immediately recalculate the complete 24-string inverter block. Highlighted strings are diagnostic extremes, not compliance failures.</p></div><div><a href="simulator.html" style="color:var(--cyan)">Circuit view</a> · <a href="layout-studio.html" style="color:var(--cyan)">Layout view</a></div></div>
-<div class="grid"><aside class="panel"><h2>Geometry and circuit</h2><div class="controls">
-<label>Boundary width m<input id="bw" type="number" value="42" step="1"></label><label>Boundary height m<input id="bh" type="number" value="62" step="1"></label>
-<label>Module width m<input id="mw" type="number" value="1.134" step="0.001"></label><label>Module height m<input id="mh" type="number" value="2.384" step="0.001"></label>
-<label>Gap X m<input id="gx" type="number" value="0.03" step="0.01"></label><label>Gap Y m<input id="gy" type="number" value="0.05" step="0.01"></label>
-<label>Current A<input id="current" type="number" value="17.31" step="0.01"></label><label>Temperature °C<input id="temperature" type="number" value="70" step="1"></label>
-<label>Route allowance<input id="allowance" type="number" value="1.10" step="0.01"></label><label>Intra-string factor<input id="intra" type="number" value="0.50" step="0.05"></label>
-<button id="reset" class="wide">Reset 24 × 30 layout</button><button id="simulate" class="wide">Recalculate geometry + electrical</button><button id="export" class="wide secondary">Export engineering JSON</button><button id="export-csv" class="wide secondary">Export per-string CSV</button></div>
-<p id="selection">Select and drag a module.</p><p id="status">Loading…</p></aside>
-<section class="stage"><svg id="canvas" viewBox="0 0 42 62" aria-label="720 module layout"></svg></section></div>
+<div class="head"><div><div class="eyebrow">GLOBALGRID2050 · V11</div><h1>Full-array solar DC topology workbench</h1><p>V8-style sequential and leapfrog circuit diagrams expanded to every string, physical input and MPPT. The physical coordinate field remains available as a secondary engineering view.</p></div><div><a href="simulator.html" style="color:var(--cyan)">Circuit calculations</a> · <a href="layout-studio.html" style="color:var(--cyan)">Layout studio</a></div></div>
+<div class="grid">
+<aside class="panel"><h2>Array and circuit definition</h2><div class="controls">
+<label>Strings<input id="string-count" type="number" min="1" value="24" step="1"></label><label>Modules / string<input id="modules-per-string" type="number" min="2" value="30" step="1"></label>
+<label>MPPTs<input id="mppt-count" type="number" min="1" value="12" step="1"></label><label>Inputs / MPPT<input id="inputs-per-mppt" type="number" min="1" value="2" step="1"></label>
+<label>East-face strings<input id="east-string-count" type="number" min="0" value="12" step="1"></label><label>Strings / face band<input id="strings-per-band" type="number" min="1" value="2" step="1"></label>
+<label>Physical row pitch m<input id="row-pitch" type="number" min="0.1" value="2.50" step="0.1"></label><label>Inverter X m<input id="inverter-x" type="number" value="41" step="0.1"></label>
+<label>Inverter Y m<input id="inverter-y" type="number" value="31" step="0.1"></label><label>Boundary width m<input id="bw" type="number" value="42" step="1"></label>
+<label>Boundary height m<input id="bh" type="number" value="62" step="1"></label><label>Module width m<input id="mw" type="number" value="1.134" step="0.001"></label>
+<label>Module height m<input id="mh" type="number" value="2.384" step="0.001"></label><label>Gap X m<input id="gx" type="number" value="0.03" step="0.01"></label>
+<label>Gap Y m<input id="gy" type="number" value="0.05" step="0.01"></label><label>Current A<input id="current" type="number" value="17.31" step="0.01"></label>
+<label>Temperature °C<input id="temperature" type="number" value="70" step="1"></label><label>Route allowance<input id="allowance" type="number" value="1.10" step="0.01"></label>
+<label>Intra-string factor<input id="intra" type="number" value="0.50" step="0.05"></label>
+<button id="reset" class="wide">Build / rebuild full array</button><button id="simulate" class="wide">Recalculate geometry + electrical</button>
+<button id="reset-view" class="wide secondary">Reset topology view</button><button id="export" class="wide secondary">Export engineering JSON</button><button id="export-csv" class="wide secondary">Export per-string CSV</button>
+</div>
+<p id="active-boundary">Active array: —</p><p id="selection">Selected string: STR-01</p><p id="status">Loading…</p></aside>
+<section class="stage">
+<div class="toolbar" aria-label="Workbench view">
+<button id="show-topology" aria-pressed="true">Full-array topology</button><button id="show-physical" aria-pressed="false">Physical layout · debug</button>
+</div>
+<div id="topology-view" class="view">
+<div class="toolbar" aria-label="Wiring display mode">
+<button class="wiring-mode" data-mode="leapfrog" aria-pressed="true">Leapfrog</button><button class="wiring-mode" data-mode="sequential" aria-pressed="false">Sequential</button><button class="wiring-mode" data-mode="compare" aria-pressed="false">Compare</button>
+</div>
+<p class="topology-intro">Each strip is one complete electrical string. Click a strip for the fully numbered V8-style traversal.</p>
+<div id="topology-board" class="topology-board"></div>
+<section id="selected-detail" class="detail"><h2>Selected-string circuit</h2><div class="detail-scroll"><svg id="detail-canvas" viewBox="0 0 1100 170" aria-label="Selected string topology"></svg></div><p id="selected-order" class="order-line">—</p><p id="selected-detail-note" class="detail-note">—</p></section>
+</div>
+<div id="physical-view" class="view" hidden>
+<div class="toolbar"><label class="toggle-line"><input id="edit-physical" type="checkbox">Enable physical module editing</label></div>
+<p class="topology-intro">Coordinate layout used by the provisional route model. Editing is locked by default so mobile scrolling cannot move modules.</p>
+<div id="physical-shell" class="physical-scroll"><svg id="physical-canvas" viewBox="0 0 42 62" aria-label="Physical module coordinate layout"></svg></div>
+</div>
+</section>
+</div>
 <div id="metrics" class="metrics"></div><div id="diagnostics" class="diagnostics" aria-live="polite"></div>
-<section class="panel"><h2>Geometry-derived string results</h2><div class="table"><table><thead><tr><th>String</th><th>Route m</th><th>Centroid X</th><th>Centroid Y</th><th>Seq loss W</th><th>Leap loss W</th><th>ΔV seq V</th><th>ΔV seq %</th><th>RT delay µs</th></tr></thead><tbody id="rows"></tbody></table></div></section>
+<section class="panel"><h2>Geometry-derived string results</h2><div class="table"><table><thead><tr><th>String</th><th>Input</th><th>MPPT</th><th>Route m</th><th>Centroid X</th><th>Centroid Y</th><th>Seq loss W</th><th>Leap loss W</th><th>ΔV seq V</th><th>ΔV seq %</th><th>RT delay µs</th></tr></thead><tbody id="rows"></tbody></table></div></section>
 </main><script type="module" src="./workbench.mjs"></script></body>
 </html>

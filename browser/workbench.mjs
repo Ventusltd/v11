@@ -10,6 +10,7 @@ const positiveInt = (selector, label, minimum = 1) => {
   if (!Number.isInteger(value) || value < minimum) throw new Error(`${label} must be an integer >= ${minimum}`);
   return value;
 };
+const pad = (value, width = 2) => String(value).padStart(width, '0');
 const fmt = (value, digits = 2) => Number(value).toLocaleString(undefined, {
   minimumFractionDigits: digits,
   maximumFractionDigits: digits,
@@ -19,32 +20,25 @@ let referenceFixture;
 let activeReference;
 let activeDefinition;
 let layout;
-let selectedId = null;
+let selectedStringId = 'STR-01';
+let selectedModuleId = null;
 let latest = null;
 let calculationSerial = 0;
+let wiringMode = 'leapfrog';
+let activeView = 'topology';
+let physicalEditEnabled = false;
 let arrayEditorSelfCheck = null;
 
-function installArrayEditorUi() {
-  const controls = document.querySelector('.controls');
-  if (!controls) throw new Error('Workbench control panel is missing');
-  controls.insertAdjacentHTML('afterbegin', `
-    <label>Strings<input id="string-count" type="number" min="1" value="24" step="1"></label>
-    <label>Modules / string<input id="modules-per-string" type="number" min="2" value="30" step="1"></label>
-    <label>MPPTs<input id="mppt-count" type="number" min="1" value="12" step="1"></label>
-    <label>Inputs / MPPT<input id="inputs-per-mppt" type="number" min="1" value="2" step="1"></label>
-    <label>Strings / row<input id="strings-per-row" type="number" min="1" value="1" step="1"></label>
-    <label>Row pitch m<input id="row-pitch" type="number" min="0.1" value="2.50" step="0.1"></label>
-    <label>Inverter X m<input id="inverter-x" type="number" value="41" step="0.1"></label>
-    <label>Inverter Y m<input id="inverter-y" type="number" value="31" step="0.1"></label>
-  `);
-  const reset = document.querySelector('#reset');
-  if (reset) reset.textContent = 'Build / rebuild array';
-  const selection = document.querySelector('#selection');
-  if (selection) selection.insertAdjacentHTML('beforebegin', '<p id="active-boundary">Active array: —</p>');
-  const description = document.querySelector('.head p');
-  if (description) description.textContent = 'Define the array, place its inverter, move modules and recalculate every string. The committed 24 × 30 block remains the default, not a hard limit.';
-  const header = document.querySelector('table thead tr');
-  if (header) header.innerHTML = '<th>String</th><th>Input</th><th>MPPT</th><th>Route m</th><th>Centroid X</th><th>Centroid Y</th><th>Seq loss W</th><th>Leap loss W</th><th>ΔV seq V</th><th>ΔV seq %</th><th>RT delay µs</th>';
+function electricalOrder(count, strategy) {
+  if (strategy === 'sequential') return Array.from({ length: count }, (_, index) => index + 1);
+  if (strategy === 'leapfrog') {
+    const outward = [];
+    const returning = [];
+    for (let index = 1; index <= count; index += 2) outward.push(index);
+    for (let index = count % 2 === 0 ? count : count - 1; index >= 2; index -= 2) returning.push(index);
+    return outward.concat(returning);
+  }
+  throw new Error(`Unsupported wiring strategy: ${strategy}`);
 }
 
 function readArrayDefinition() {
@@ -52,22 +46,26 @@ function readArrayDefinition() {
   const modulesPerString = positiveInt('#modules-per-string', 'Modules per string', 2);
   const mpptCount = positiveInt('#mppt-count', 'MPPT count');
   const inputsPerMppt = positiveInt('#inputs-per-mppt', 'Inputs per MPPT');
-  const stringsPerRow = positiveInt('#strings-per-row', 'Strings per row');
+  const eastStringCount = positiveInt('#east-string-count', 'East-face string count', 0);
+  const stringsPerBand = positiveInt('#strings-per-band', 'Strings per face band');
   const physicalInputCount = mpptCount * inputsPerMppt;
-  if (stringCount > physicalInputCount) {
-    throw new Error(`${stringCount} strings exceeds ${physicalInputCount} physical inputs`);
-  }
+  if (stringCount > physicalInputCount) throw new Error(`${stringCount} strings exceeds ${physicalInputCount} physical inputs`);
+  if (eastStringCount > stringCount) throw new Error('East-face string count cannot exceed total string count');
+  const rowPitchM = number('#row-pitch');
+  const inverterPoint = { x_m: number('#inverter-x'), y_m: number('#inverter-y') };
   return {
-    schema_version: 'globalgrid2050.v11.array-definition.v1',
+    schema_version: 'globalgrid2050.v11.array-definition.v2',
     string_count: stringCount,
     modules_per_string: modulesPerString,
     module_count: stringCount * modulesPerString,
     mppt_count: mpptCount,
     inputs_per_mppt: inputsPerMppt,
     physical_dc_input_count: physicalInputCount,
-    strings_per_row: stringsPerRow,
-    row_pitch_m: number('#row-pitch'),
-    inverter_point: { x_m: number('#inverter-x'), y_m: number('#inverter-y') },
+    east_string_count: eastStringCount,
+    west_string_count: stringCount - eastStringCount,
+    strings_per_face_band: stringsPerBand,
+    row_pitch_m: rowPitchM,
+    inverter_point: inverterPoint,
   };
 }
 
@@ -87,12 +85,13 @@ function adaptedReference(definition) {
   adapted.provenance = {
     ...adapted.provenance,
     array_definition_schema: definition.schema_version,
-    adaptation: `${adapted.provenance.adaptation} User array cardinality and deterministic input allocation applied in V11 browser without mutating the committed fixture.`,
+    topology_view_schema: 'globalgrid2050.v11.full-array-string-strips.v1',
+    adaptation: `${adapted.provenance.adaptation} User array cardinality, east/west grouping and deterministic input allocation applied in V11 without mutating the committed fixture.`,
   };
   return adapted;
 }
 
-function buildLayout(definition) {
+function validateGeometry(definition) {
   const boundary = { x_min: 0, y_min: 0, x_max: number('#bw'), y_max: number('#bh') };
   const widthM = number('#mw');
   const heightM = number('#mh');
@@ -108,32 +107,33 @@ function buildLayout(definition) {
     if (!Number.isFinite(value) || value < minimum) throw new Error(`${label} is outside its allowed range`);
   }
   if (rowPitchM + 1e-12 < heightM + gapYM) {
-    throw new Error(`Row pitch ${rowPitchM} m is smaller than module height plus Y gap ${heightM + gapYM} m`);
+    throw new Error(`Physical row pitch ${rowPitchM} m is smaller than module height plus Y gap ${heightM + gapYM} m`);
   }
   const xPitch = widthM + gapXM;
-  const rows = Math.ceil(definition.string_count / definition.strings_per_row);
-  const usedSlots = Math.min(definition.strings_per_row, definition.string_count);
-  const requiredWidth = usedSlots * definition.modules_per_string * xPitch - gapXM;
-  const requiredHeight = heightM + (rows - 1) * rowPitchM;
+  const requiredWidth = definition.modules_per_string * xPitch - gapXM;
+  const requiredHeight = heightM + (definition.string_count - 1) * rowPitchM;
   if (requiredWidth > boundary.x_max - boundary.x_min + 1e-9 || requiredHeight > boundary.y_max - boundary.y_min + 1e-9) {
-    throw new Error(`Boundary cannot fit ${definition.module_count} modules: requires ${requiredWidth.toFixed(3)} m × ${requiredHeight.toFixed(3)} m`);
+    throw new Error(`Physical boundary cannot fit ${definition.module_count} modules: requires ${requiredWidth.toFixed(3)} m × ${requiredHeight.toFixed(3)} m`);
   }
+  return { boundary, widthM, heightM, gapXM, xPitch, rowPitchM };
+}
+
+function buildLayout(definition) {
+  const geometry = validateGeometry(definition);
   const modules = [];
   for (let stringOffset = 0; stringOffset < definition.string_count; stringOffset += 1) {
-    const physicalRow = Math.floor(stringOffset / definition.strings_per_row);
-    const slot = stringOffset % definition.strings_per_row;
-    const stringId = `STR-${String(stringOffset + 1).padStart(2, '0')}`;
+    const stringId = `STR-${pad(stringOffset + 1)}`;
     for (let electricalOffset = 0; electricalOffset < definition.modules_per_string; electricalOffset += 1) {
       const moduleOffset = modules.length;
       modules.push({
-        id: `MOD-${String(moduleOffset + 1).padStart(4, '0')}`,
-        x_m: +(boundary.x_min + widthM / 2 + (slot * definition.modules_per_string + electricalOffset) * xPitch).toFixed(9),
-        y_m: +(boundary.y_min + heightM / 2 + physicalRow * rowPitchM).toFixed(9),
-        width_m: widthM,
-        height_m: heightM,
+        id: `MOD-${pad(moduleOffset + 1, 4)}`,
+        x_m: +(geometry.boundary.x_min + geometry.widthM / 2 + electricalOffset * geometry.xPitch).toFixed(9),
+        y_m: +(geometry.boundary.y_min + geometry.heightM / 2 + stringOffset * geometry.rowPitchM).toFixed(9),
+        width_m: geometry.widthM,
+        height_m: geometry.heightM,
         rotation_deg: 0,
-        row: physicalRow,
-        column: slot * definition.modules_per_string + electricalOffset,
+        row: stringOffset,
+        column: electricalOffset,
         string_id: stringId,
         electrical_index: electricalOffset + 1,
       });
@@ -141,7 +141,7 @@ function buildLayout(definition) {
   }
   const result = {
     schema_version: 'globalgrid2050.v11.module-layout.v1',
-    boundary,
+    boundary: geometry.boundary,
     obstacles: [],
     array_definition: structuredClone(definition),
     modules,
@@ -150,21 +150,174 @@ function buildLayout(definition) {
   return result;
 }
 
-function resetLayout() {
-  const definition = readArrayDefinition();
-  const candidateLayout = buildLayout(definition);
-  activeDefinition = definition;
-  activeReference = adaptedReference(definition);
-  layout = candidateLayout;
-  selectedId = null;
-  latest = null;
-  calculationSerial += 1;
-  $('#active-boundary').textContent = `Active array: ${definition.string_count} strings × ${definition.modules_per_string} modules = ${definition.module_count} modules · ${definition.mppt_count} MPPTs × ${definition.inputs_per_mppt} inputs`;
-  renderLayout();
+function faceBandForString(stringNumber) {
+  const east = stringNumber <= activeDefinition.east_string_count;
+  const faceIndex = east ? stringNumber - 1 : stringNumber - activeDefinition.east_string_count - 1;
+  return {
+    face: east ? 'EAST' : 'WEST',
+    band: Math.floor(faceIndex / activeDefinition.strings_per_face_band) + 1,
+  };
 }
 
-function renderLayout(derivation = null, diagnosticIds = new Set()) {
-  const svg = $('#canvas');
+function resetLayout() {
+  const definition = readArrayDefinition();
+  activeDefinition = definition;
+  activeReference = adaptedReference(definition);
+  layout = buildLayout(definition);
+  selectedStringId = 'STR-01';
+  selectedModuleId = null;
+  latest = null;
+  calculationSerial += 1;
+  $('#active-boundary').textContent = `Active array: ${definition.string_count} strings × ${definition.modules_per_string} modules = ${definition.module_count} modules · ${definition.mppt_count} MPPTs × ${definition.inputs_per_mppt} inputs · east ${definition.east_string_count} / west ${definition.west_string_count}`;
+  $('#selection').textContent = `Selected string: ${selectedStringId}`;
+  renderTopology();
+  renderPhysical();
+}
+
+function moduleCentreX(index, detail = false) {
+  const cellWidth = detail ? 27 : 20;
+  const gap = detail ? 6 : 4;
+  const startX = detail ? 170 : 150;
+  return startX + (index - 1) * (cellWidth + gap) + cellWidth / 2;
+}
+
+function traversalPoints(count, strategy, detail = false) {
+  const inputX = detail ? 132 : 116;
+  const outwardY = detail ? 46 : 25;
+  const returnY = detail ? 126 : 66;
+  if (strategy === 'sequential') {
+    const points = [[inputX, outwardY]];
+    for (let index = 1; index <= count; index += 1) points.push([moduleCentreX(index, detail), outwardY]);
+    points.push([moduleCentreX(count, detail), returnY], [inputX, returnY]);
+    return points;
+  }
+  const points = [[inputX, outwardY]];
+  for (let index = 1; index <= count; index += 2) points.push([moduleCentreX(index, detail), outwardY]);
+  const highestEven = count % 2 === 0 ? count : count - 1;
+  if (highestEven >= 2) {
+    points.push([moduleCentreX(highestEven, detail), returnY]);
+    for (let index = highestEven - 2; index >= 2; index -= 2) points.push([moduleCentreX(index, detail), returnY]);
+  }
+  points.push([inputX, returnY]);
+  return points;
+}
+
+function pointsAttribute(points) {
+  return points.map(([x, y]) => `${x},${y}`).join(' ');
+}
+
+function pathMarkup(count, mode, detail, face) {
+  const faceClass = face === 'WEST' ? ' face-west-path' : '';
+  const sequential = `<polyline class="path-sequential${faceClass}" points="${pointsAttribute(traversalPoints(count, 'sequential', detail))}"/>`;
+  const leapfrog = `<polyline class="path-leapfrog${faceClass}" points="${pointsAttribute(traversalPoints(count, 'leapfrog', detail))}"/>`;
+  if (mode === 'sequential') return sequential;
+  if (mode === 'leapfrog') return leapfrog;
+  return `${sequential}${leapfrog}`;
+}
+
+function stripSvg(stringNumber, detail = false) {
+  const count = activeDefinition.modules_per_string;
+  const stringId = `STR-${pad(stringNumber)}`;
+  const inputId = `IN-${pad(stringNumber)}`;
+  const mpptNumber = Math.floor((stringNumber - 1) / activeDefinition.inputs_per_mppt) + 1;
+  const mpptId = `MPPT-${pad(mpptNumber)}`;
+  const { face, band } = faceBandForString(stringNumber);
+  const cellWidth = detail ? 27 : 20;
+  const cellHeight = detail ? 48 : 32;
+  const cellY = detail ? 62 : 29;
+  const startX = detail ? 170 : 150;
+  const gap = detail ? 6 : 4;
+  const width = startX + count * (cellWidth + gap) + 28;
+  const height = detail ? 165 : 88;
+  const labels = [];
+  const cells = [];
+  for (let index = 1; index <= count; index += 1) {
+    const x = startX + (index - 1) * (cellWidth + gap);
+    const selected = detail && stringId === selectedStringId ? ' selected-cell' : '';
+    cells.push(`<rect class="topology-cell${selected}" data-string-id="${stringId}" data-electrical-index="${index}" x="${x}" y="${cellY}" width="${cellWidth}" height="${cellHeight}" rx="2"/>`);
+    const showLabel = detail || index <= 3 || index > count - 3 || index % 5 === 0;
+    if (showLabel) labels.push(`<text class="module-label" x="${x + cellWidth / 2}" y="${cellY + cellHeight + (detail ? 18 : 13)}" text-anchor="middle">M${index}</text>`);
+  }
+  const yTop = detail ? 46 : 25;
+  const yBottom = detail ? 126 : 66;
+  const modeLabel = wiringMode === 'compare' ? 'SEQUENTIAL + LEAPFROG' : wiringMode.toUpperCase();
+  return `
+  <svg class="string-strip${stringId === selectedStringId ? ' selected-strip' : ''}" data-string-id="${stringId}" data-mppt-id="${mpptId}" data-input-id="${inputId}" viewBox="0 0 ${width} ${height}" role="button" tabindex="0" aria-label="${stringId} ${mpptId} ${inputId} ${modeLabel}">
+    <rect class="inverter-block" x="8" y="${detail ? 34 : 15}" width="${detail ? 105 : 92}" height="${detail ? 105 : 62}" rx="5"/>
+    <text class="input-label" x="${detail ? 60 : 54}" y="${detail ? 53 : 34}" text-anchor="middle">INVERTER</text>
+    <text class="input-label" x="${detail ? 60 : 54}" y="${detail ? 70 : 49}" text-anchor="middle">${inputId}</text>
+    <text class="input-label" x="${detail ? 60 : 54}" y="${detail ? 87 : 64}" text-anchor="middle">${mpptId}</text>
+    <circle class="terminal" cx="${detail ? 132 : 116}" cy="${yTop}" r="${detail ? 6 : 4}"/><circle class="terminal" cx="${detail ? 132 : 116}" cy="${yBottom}" r="${detail ? 6 : 4}"/>
+    <text class="strip-label" x="${startX}" y="${detail ? 21 : 12}">${stringId} · ${face} B${pad(band)} · ${mpptId} · ${inputId}</text>
+    <text class="path-label" x="${detail ? 120 : 106}" y="${yTop - 8}" text-anchor="end">− OUT →</text>
+    <text class="path-label" x="${detail ? 120 : 106}" y="${yBottom + 13}" text-anchor="end">← + RETURN</text>
+    ${cells.join('')}
+    ${pathMarkup(count, wiringMode, detail, face)}
+    ${labels.join('')}
+  </svg>`;
+}
+
+function renderSelectedDetail() {
+  const selectedNumber = Number(selectedStringId.split('-')[1]);
+  $('#detail-canvas').outerHTML = stripSvg(selectedNumber, true).replace('class="string-strip', 'id="detail-canvas" class="string-strip');
+  const order = wiringMode === 'compare'
+    ? `Sequential: ${electricalOrder(activeDefinition.modules_per_string, 'sequential').join(' → ')}\nLeapfrog: ${electricalOrder(activeDefinition.modules_per_string, 'leapfrog').join(' → ')}`
+    : `${wiringMode[0].toUpperCase()}${wiringMode.slice(1)}: ${electricalOrder(activeDefinition.modules_per_string, wiringMode).join(' → ')}`;
+  $('#selected-order').textContent = order;
+  const stringNumber = selectedNumber;
+  const { face, band } = faceBandForString(stringNumber);
+  const mpptId = `MPPT-${pad(Math.floor((stringNumber - 1) / activeDefinition.inputs_per_mppt) + 1)}`;
+  $('#selected-detail-note').textContent = `${selectedStringId} · ${face} face band ${band} · ${mpptId} · IN-${pad(stringNumber)}. Module positions stay fixed left-to-right; the line shows the selected electrical traversal.`;
+}
+
+function renderTopology() {
+  if (!activeDefinition) return;
+  const board = $('#topology-board');
+  const groups = [];
+  for (let mppt = 1; mppt <= activeDefinition.mppt_count; mppt += 1) {
+    const start = (mppt - 1) * activeDefinition.inputs_per_mppt + 1;
+    const end = Math.min(start + activeDefinition.inputs_per_mppt - 1, activeDefinition.string_count);
+    if (start > activeDefinition.string_count) break;
+    const strings = [];
+    for (let stringNumber = start; stringNumber <= end; stringNumber += 1) {
+      strings.push(`<div class="strip-scroll">${stripSvg(stringNumber)}</div>`);
+    }
+    const faces = new Set(Array.from({ length: end - start + 1 }, (_, offset) => faceBandForString(start + offset).face));
+    const faceClass = faces.size === 1 && faces.has('WEST') ? 'face-west' : 'face-east';
+    groups.push(`<section class="mppt-group ${faceClass}" data-mppt-id="MPPT-${pad(mppt)}"><div class="mppt-header"><span>MPPT-${pad(mppt)}</span><span>${[...faces].join(' / ')} · inputs ${pad(start)}–${pad(end)}</span></div>${strings.join('')}</section>`);
+  }
+  board.innerHTML = groups.join('');
+  board.querySelectorAll('.string-strip').forEach((strip) => {
+    const choose = () => {
+      selectedStringId = strip.dataset.stringId;
+      $('#selection').textContent = `Selected string: ${selectedStringId}`;
+      renderTopology();
+    };
+    strip.addEventListener('click', choose);
+    strip.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        choose();
+      }
+    });
+  });
+  renderSelectedDetail();
+  window.__v11TopologyEvidence = {
+    schema_version: 'globalgrid2050.v11.full-array-string-strips-evidence.v1',
+    wiring_mode: wiringMode,
+    selected_string_id: selectedStringId,
+    string_strip_count: board.querySelectorAll('.string-strip').length,
+    topology_cell_count: board.querySelectorAll('.topology-cell').length,
+    mppt_group_count: board.querySelectorAll('.mppt-group').length,
+    sequential_order: electricalOrder(activeDefinition.modules_per_string, 'sequential'),
+    leapfrog_order: electricalOrder(activeDefinition.modules_per_string, 'leapfrog'),
+    layout_hash: layout?.layout_hash ?? null,
+  };
+}
+
+function renderPhysical(derivation = latest?.derivation ?? null, diagnosticIds = latest?.diagnosticIds ?? new Set()) {
+  if (!layout) return;
+  const svg = $('#physical-canvas');
   const width = number('#bw');
   const height = number('#bh');
   svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
@@ -174,19 +327,20 @@ function renderLayout(derivation = null, diagnosticIds = new Set()) {
   }).join('') : '';
   const modules = layout.modules.map((module) => {
     const box = footprint(module);
-    const selected = module.id === selectedId ? ' selected' : '';
+    const selected = module.id === selectedModuleId ? ' selected' : '';
     const attention = diagnosticIds.has(module.string_id) ? ' attention-module' : '';
     return `<rect class="module${selected}${attention}" data-id="${module.id}" x="${box.left}" y="${height - box.top}" width="${box.width}" height="${box.height}"/>`;
   }).join('');
   const inverter = derivation ? `<circle class="inverter" cx="${derivation.inverter_point.x_m}" cy="${height - derivation.inverter_point.y_m}" r="0.45"/>` : '';
   svg.innerHTML = `${routes}${modules}${inverter}`;
-  svg.querySelectorAll('.module').forEach((element) => element.addEventListener('pointerdown', beginDrag));
+  $('#physical-shell').classList.toggle('physical-editing', physicalEditEnabled);
+  if (physicalEditEnabled) svg.querySelectorAll('.module').forEach((element) => element.addEventListener('pointerdown', beginDrag));
 }
 
 function svgPoint(event) {
-  const svg = $('#canvas');
+  const svg = $('#physical-canvas');
   const matrix = svg.getScreenCTM();
-  if (!matrix) throw new Error('Layout canvas is not available');
+  if (!matrix) throw new Error('Physical layout canvas is not available');
   const point = svg.createSVGPoint();
   point.x = event.clientX;
   point.y = event.clientY;
@@ -195,19 +349,24 @@ function svgPoint(event) {
 }
 
 function beginDrag(event) {
+  if (!physicalEditEnabled) return;
   event.preventDefault();
-  selectedId = event.target.dataset.id;
-  $('#selection').textContent = `Selected ${selectedId}`;
-  renderLayout(latest?.derivation ?? null, latest?.diagnosticIds ?? new Set());
+  selectedModuleId = event.target.dataset.id;
+  const module = layout.modules.find((item) => item.id === selectedModuleId);
+  if (module?.string_id) {
+    selectedStringId = module.string_id;
+    $('#selection').textContent = `Selected string: ${selectedStringId} · physical module ${selectedModuleId}`;
+  }
+  renderPhysical();
   const move = (pointerEvent) => {
     try {
       const point = svgPoint(pointerEvent);
-      layout = moveModule(layout, selectedId, point.x_m, point.y_m, 0.05);
+      layout = moveModule(layout, selectedModuleId, point.x_m, point.y_m, 0.05);
       latest = null;
       calculationSerial += 1;
-      renderLayout();
-      $('#status').textContent = 'Geometry changed — electrical results are being refreshed';
-      $('#status').className = '';
+      renderPhysical(null, new Set());
+      $('#status').textContent = 'Physical geometry changed — electrical results are being refreshed';
+      $('#status').className = 'warning';
     } catch (error) {
       $('#status').textContent = error.message;
       $('#status').className = 'error';
@@ -224,15 +383,27 @@ function beginDrag(event) {
   window.addEventListener('pointercancel', finish, { once: true });
 }
 
+function switchView(view) {
+  activeView = view;
+  $('#topology-view').hidden = view !== 'topology';
+  $('#physical-view').hidden = view !== 'physical';
+  $('#show-topology').setAttribute('aria-pressed', String(view === 'topology'));
+  $('#show-physical').setAttribute('aria-pressed', String(view === 'physical'));
+  if (view === 'topology') renderTopology();
+  else renderPhysical();
+}
+
+function setWiringMode(mode) {
+  wiringMode = mode;
+  document.querySelectorAll('.wiring-mode').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.mode === mode)));
+  renderTopology();
+}
+
 function metric(label, value, unit) {
   return `<div class="metric"><small>${label}</small><strong>${fmt(value)}${unit ? ` ${unit}` : ''}</strong></div>`;
 }
 function showError(error) {
   console.error(error);
-  $('#status').textContent = error.message;
-  $('#status').className = 'error';
-}
-function showDefinitionError(error) {
   $('#status').textContent = error.message;
   $('#status').className = 'error';
 }
@@ -269,7 +440,8 @@ async function calculate() {
     analysis.diagnostics.longest_round_trip_delay.string_id,
   ]);
   latest = { adapted, derivation, comparison, analysis, diagnosticIds };
-  renderLayout(derivation, diagnosticIds);
+  renderTopology();
+  renderPhysical(derivation, diagnosticIds);
   const seq = comparison.sequential;
   const leap = comparison.leapfrog;
   $('#metrics').innerHTML = [
@@ -285,7 +457,7 @@ async function calculate() {
     const attention = diagnosticIds.has(row.string_id) ? ' class="attention-row"' : '';
     return `<tr${attention}><td>${row.string_id}</td><td>${electrical.input_id}</td><td>${electrical.mppt_id}</td><td>${fmt(row.one_way_route_m, 1)}</td><td>${fmt(row.centroid_x_m, 1)}</td><td>${fmt(row.centroid_y_m, 1)}</td><td>${fmt(row.sequential.loss_w, 1)}</td><td>${fmt(row.leapfrog.loss_w, 1)}</td><td>${fmt(row.sequential.voltage_drop_v, 2)}</td><td>${fmt(row.sequential.voltage_drop_percent, 2)}</td><td>${fmt(row.sequential.round_trip_delay_us, 2)}</td></tr>`;
   }).join('');
-  $('#status').textContent = `Complete · ${activeDefinition.string_count} × ${activeDefinition.modules_per_string} · layout ${derivation.layout_hash.slice(0, 20)}…`;
+  $('#status').textContent = `Complete · ${activeDefinition.string_count} × ${activeDefinition.modules_per_string} · ${wiringMode} view · layout ${derivation.layout_hash.slice(0, 20)}…`;
   $('#status').className = 'ok';
   return latest;
 }
@@ -310,6 +482,19 @@ async function exportJson() {
   const payload = buildEngineeringPackage({ layout, adapted: result.adapted, derivation: result.derivation, comparison: result.comparison });
   payload.array_definition = structuredClone(activeDefinition);
   payload.array_editor_self_check = structuredClone(arrayEditorSelfCheck);
+  payload.view_contract = {
+    schema_version: 'globalgrid2050.v11.full-array-string-strips.v1',
+    primary_view: 'v8-style-full-array-string-strips',
+    active_view: activeView,
+    wiring_mode: wiringMode,
+    selected_string_id: selectedStringId,
+    string_strip_count: activeDefinition.string_count,
+    topology_cell_count: activeDefinition.module_count,
+    mppt_group_count: Math.ceil(activeDefinition.string_count / activeDefinition.inputs_per_mppt),
+    physical_edit_enabled: physicalEditEnabled,
+    sequential_order: electricalOrder(activeDefinition.modules_per_string, 'sequential'),
+    leapfrog_order: electricalOrder(activeDefinition.modules_per_string, 'leapfrog'),
+  };
   download('v11-integrated-engineering-package.json', JSON.stringify(payload, null, 2) + '\n', 'application/json');
 }
 async function exportCsv() {
@@ -318,9 +503,9 @@ async function exportCsv() {
 }
 
 async function verifyNonDefaultArray() {
-  const selectors = ['#string-count','#modules-per-string','#mppt-count','#inputs-per-mppt','#strings-per-row','#row-pitch'];
+  const selectors = ['#string-count','#modules-per-string','#mppt-count','#inputs-per-mppt','#east-string-count','#strings-per-band','#row-pitch'];
   const saved = Object.fromEntries(selectors.map((selector) => [selector, $(selector).value]));
-  const custom = {'#string-count':12,'#modules-per-string':20,'#mppt-count':6,'#inputs-per-mppt':2,'#strings-per-row':1,'#row-pitch':4};
+  const custom = {'#string-count':12,'#modules-per-string':20,'#mppt-count':6,'#inputs-per-mppt':2,'#east-string-count':6,'#strings-per-band':2,'#row-pitch':4};
   try {
     for (const [selector, value] of Object.entries(custom)) $(selector).value = String(value);
     const definition = readArrayDefinition();
@@ -340,13 +525,15 @@ async function verifyNonDefaultArray() {
       throw new Error('Non-default array self-check returned inconsistent input allocation');
     }
     return {
-      schema_version: 'globalgrid2050.v11.array-editor-self-check.v1',
+      schema_version: 'globalgrid2050.v11.array-editor-self-check.v2',
       pass: true,
       strings: 12,
       modules_per_string: 20,
       modules: 240,
       mppts: 6,
       inputs_per_mppt: 2,
+      string_strips: 12,
+      topology_cells: 240,
       final_input_id: finalString.input_id,
       final_mppt_id: finalString.mppt_id,
       layout_hash: candidateLayout.layout_hash,
@@ -362,11 +549,11 @@ async function rebuildAndCalculate() {
     resetLayout();
     await calculate();
   } catch (error) {
-    showDefinitionError(error);
+    showError(error);
   }
 }
+
 async function init() {
-  installArrayEditorUi();
   referenceFixture = await fetch('../reference/lab_inverter_block_24_strings.json').then((response) => {
     if (!response.ok) throw new Error(`Reference load failed: ${response.status}`);
     return response.json();
@@ -375,8 +562,24 @@ async function init() {
   window.__v11ArrayEditorEvidence = structuredClone(arrayEditorSelfCheck);
   $('#reset').addEventListener('click', rebuildAndCalculate);
   $('#simulate').addEventListener('click', () => calculate().catch(showError));
+  $('#reset-view').addEventListener('click', () => {
+    selectedStringId = 'STR-01';
+    setWiringMode('leapfrog');
+    switchView('topology');
+  });
   $('#export').addEventListener('click', () => exportJson().catch(showError));
   $('#export-csv').addEventListener('click', () => exportCsv().catch(showError));
+  $('#show-topology').addEventListener('click', () => switchView('topology'));
+  $('#show-physical').addEventListener('click', () => switchView('physical'));
+  $('#edit-physical').addEventListener('change', (event) => {
+    physicalEditEnabled = event.target.checked;
+    $('#status').textContent = physicalEditEnabled
+      ? 'Physical editing enabled — drag carefully'
+      : 'Physical editing locked — scrolling is safe';
+    $('#status').className = physicalEditEnabled ? 'warning' : 'ok';
+    renderPhysical();
+  });
+  document.querySelectorAll('.wiring-mode').forEach((button) => button.addEventListener('click', () => setWiringMode(button.dataset.mode)));
   ['#current', '#temperature', '#allowance', '#intra', '#inverter-x', '#inverter-y'].forEach((selector) => {
     $(selector).addEventListener('change', () => calculate().catch(showError));
   });
