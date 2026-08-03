@@ -180,3 +180,106 @@ jobs:
           path: browser-e2e-evidence/
           if-no-files-found: error
           retention-days: 90
+
+  public_endpoint:
+    name: Verify immutable public simulator endpoint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Verify exact-commit rawcdn endpoints
+        env:
+          TESTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          base="https://rawcdn.githack.com/${REPOSITORY}/${TESTED_SHA}/"
+          mkdir -p public-endpoint-evidence
+          : > public-endpoint-evidence/endpoints.tsv
+
+          fetch() {
+            path="$1"
+            output="$2"
+            headers="$3"
+            result="$(curl --retry 3 --retry-all-errors --connect-timeout 10 --max-time 45 \
+              -fsSL -D "$headers" -o "$output" \
+              -w '%{http_code}\t%{content_type}\t%{size_download}' \
+              "${base}${path}")"
+            printf '%s\t%s\n' "$path" "$result" >> public-endpoint-evidence/endpoints.tsv
+          }
+
+          fetch "browser/workbench.html" public-endpoint-evidence/workbench.html public-endpoint-evidence/workbench.headers
+          fetch "browser/workbench.mjs" public-endpoint-evidence/workbench.mjs public-endpoint-evidence/workbench-mjs.headers
+          fetch "browser/layout-core.mjs" public-endpoint-evidence/layout-core.mjs public-endpoint-evidence/layout-core.headers
+          fetch "browser/layout-simulation-bridge.mjs" public-endpoint-evidence/layout-simulation-bridge.mjs public-endpoint-evidence/layout-bridge.headers
+          fetch "browser/workbench-analysis.mjs" public-endpoint-evidence/workbench-analysis.mjs public-endpoint-evidence/workbench-analysis.headers
+          fetch "reference/lab_inverter_block_24_strings.json" public-endpoint-evidence/reference.json public-endpoint-evidence/reference.headers
+
+          awk -F '\t' '$2 != "200" { exit 1 }' public-endpoint-evidence/endpoints.tsv
+          grep -q "Integrated solar DC workbench" public-endpoint-evidence/workbench.html
+          grep -q "simulateComparison" public-endpoint-evidence/workbench.mjs
+          grep -q "export function moveModule" public-endpoint-evidence/layout-core.mjs
+          grep -q "referenceFromLayout" public-endpoint-evidence/layout-simulation-bridge.mjs
+          grep -q "buildEngineeringPackage" public-endpoint-evidence/workbench-analysis.mjs
+
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("public-endpoint-evidence")
+          reference = json.loads((root / "reference.json").read_text())
+          assert reference["array"]["string_count"] == 24
+          assert reference["array"]["modules_per_string"] == 30
+
+          endpoints = []
+          for line in (root / "endpoints.tsv").read_text().splitlines():
+              path, status, content_type, size = line.split("\t")
+              body_name = {
+                  "browser/workbench.html": "workbench.html",
+                  "browser/workbench.mjs": "workbench.mjs",
+                  "browser/layout-core.mjs": "layout-core.mjs",
+                  "browser/layout-simulation-bridge.mjs": "layout-simulation-bridge.mjs",
+                  "browser/workbench-analysis.mjs": "workbench-analysis.mjs",
+                  "reference/lab_inverter_block_24_strings.json": "reference.json",
+              }[path]
+              body = (root / body_name).read_bytes()
+              endpoints.append({
+                  "path": path,
+                  "status": int(status),
+                  "content_type": content_type,
+                  "size_bytes": int(float(size)),
+                  "sha256": hashlib.sha256(body).hexdigest(),
+              })
+
+          repository = os.environ["REPOSITORY"]
+          sha = os.environ["TESTED_SHA"]
+          payload = {
+              "schema_version": "globalgrid2050.v11.public-endpoint-verification.v1",
+              "repository": repository,
+              "tested_sha": sha,
+              "run_id": int(os.environ["RUN_ID"]),
+              "public_demo_url": f"https://rawcdn.githack.com/{repository}/{sha}/browser/workbench.html",
+              "all_http_200": all(item["status"] == 200 for item in endpoints),
+              "reference_boundary": {
+                  "strings": 24,
+                  "modules_per_string": 30,
+                  "modules": 720,
+              },
+              "endpoints": endpoints,
+          }
+          (root / "summary.json").write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n"
+          )
+          print(json.dumps(payload, sort_keys=True))
+          PY
+
+      - name: Upload public endpoint evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v11-public-endpoint-${{ github.run_id }}
+          path: public-endpoint-evidence/
+          if-no-files-found: error
+          retention-days: 90

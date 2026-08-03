@@ -5,16 +5,25 @@ Current authority: PR 3, branch `build/v11-inverter-block-simulator`. The labora
 ## Product gate
 
 - [x] Implement a real headless Chromium workbench test covering 720-module render, 24 string results, legal drag, retained topology identity, recalculation, boundary rejection, and JSON/CSV downloads.
-- [ ] Confirm the latest-head Chromium E2E job is green and record its run ID, elapsed time and artefact.
+- [x] Confirm the latest-head Chromium E2E job is green and record its run ID, elapsed time and artefact.
 - [ ] Confirm one public simulator URL with exact endpoint evidence; prefer GitHub Pages and retain the immutable raw.githack fallback.
 
-## Chromium gate status
+## Chromium gate evidence
 
-- Latest reviewed head before this observability repair: `48f9693aee8dc999f62d99886100ed4f91173046`.
-- The only connector-visible run for that head was Control Plane Validation `30830593451`, which completed successfully but did not execute Chromium.
-- The Live Simulator and Tonight Finish Gate already run the same pinned Playwright Chromium E2E, but branch-push run enumeration remains unavailable through the connected lookup.
-- This repair adds the identical bounded browser gate as a second job in the existing PR-visible Control Plane Validation workflow. It does not create another workflow and keeps the browser command capped at 100 seconds inside a five-minute job.
-- Implementation is not complete until the new latest-head PR run is green and its browser job ID, elapsed time, first failing line if any, and evidence artefact are recorded.
+- Tested SHA: `bcc603cc9d1cef75376f63c0059e76e470e203ea`.
+- Workflow run: `30835051238`.
+- Chromium job: `91758073073`, successful.
+- Actual browser execution: `1.853 seconds`, under the `100 seconds` cap.
+- Evidence artefact: `8864492249`, digest `sha256:22d69b698676aedcbf35201ccdfb7ffa0e5231bb4cd43ed795708c3091397a29`.
+- Pinned browser: Playwright Chromium 140.
+- Verified: 720 modules, 24 string results, legal 0.5 m movement of `MOD-0703`, retained `STR-24` and electrical index 12, route and loss recalculation, boundary rejection, JSON/CSV downloads, and no browser page or console errors.
+
+## Public endpoint status
+
+- The preferred GitHub Pages endpoint remains conditional on repository Pages configuration.
+- The existing Live Simulator workflow retains the stable raw.githack fallback.
+- This pass adds an exact-commit rawcdn endpoint proof to the existing PR-visible Control Plane Validation workflow.
+- The public endpoint item remains incomplete until the new latest-head job is green and its run, job, artefact, HTTP statuses and content hashes are recorded.
 
 ## Engineering authority
 
@@ -29,4 +38,4 @@ Current authority: PR 3, branch `build/v11-inverter-block-simulator`. The labora
 
 ## Next pass
 
-Read the newest PR-visible Control Plane Validation run and the `Visible pinned-Chromium workbench E2E` job. Do not advance to parity, topology, routing or other build-plan work until that job is green. Repair only the first proven browser or workflow defect.
+Read the newest PR-visible Control Plane Validation run and the `Verify immutable public simulator endpoint` job. If green, record the exact public URL and evidence, then proceed to complete per-string Python/JavaScript parity. If red, repair only the first proven endpoint or workflow defect.
