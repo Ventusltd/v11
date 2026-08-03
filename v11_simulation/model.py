@@ -8,10 +8,12 @@ keeps provisional equipment values visibly provisional.
 from __future__ import annotations
 
 from copy import deepcopy
+from decimal import Decimal
 from hashlib import sha256
 import json
 import math
 from pathlib import Path
+import re
 from typing import Any, Iterable, Mapping
 
 MU0 = 4.0e-7 * math.pi
@@ -47,8 +49,64 @@ def _positive_int(name: str, value: Any) -> int:
     return result
 
 
+def _javascript_number(value: float) -> str:
+    """Serialise one finite IEEE-754 number as JSON.stringify does.
+
+    Python and JavaScript use the same binary64 arithmetic but historically
+    emitted different shortest JSON spellings (for example 1.0 versus 1 and
+    1e-07 versus 1e-7). Hash receipts must be byte-identical across engines.
+    """
+
+    if not math.isfinite(value):
+        return "null"
+    if value == 0.0:
+        return "0"
+
+    text = repr(float(value))
+    magnitude = abs(value)
+    if 1.0e-6 <= magnitude < 1.0e21:
+        if "e" in text.lower():
+            text = format(Decimal(text), "f")
+        if "." in text:
+            text = text.rstrip("0").rstrip(".")
+        return text
+
+    if "e" not in text.lower():
+        text = format(Decimal(text), "e")
+    mantissa, exponent = re.split("[eE]", text)
+    if "." in mantissa:
+        mantissa = mantissa.rstrip("0").rstrip(".")
+    exponent_value = int(exponent)
+    sign = "+" if exponent_value >= 0 else "-"
+    return f"{mantissa}e{sign}{abs(exponent_value)}"
+
+
 def canonical_json(payload: object) -> str:
-    return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    """Return recursively key-sorted JSON matching JavaScript canonicalJson."""
+
+    if payload is None:
+        return "null"
+    if payload is True:
+        return "true"
+    if payload is False:
+        return "false"
+    if isinstance(payload, str):
+        return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    if isinstance(payload, int):
+        return str(payload)
+    if isinstance(payload, float):
+        return _javascript_number(payload)
+    if isinstance(payload, (list, tuple)):
+        return "[" + ",".join(canonical_json(item) for item in payload) + "]"
+    if isinstance(payload, Mapping):
+        entries = (
+            json.dumps(str(key), ensure_ascii=False, separators=(",", ":"))
+            + ":"
+            + canonical_json(payload[key])
+            for key in sorted(payload)
+        )
+        return "{" + ",".join(entries) + "}"
+    raise TypeError(f"unsupported canonical JSON type: {type(payload).__name__}")
 
 
 def canonical_hash(payload: object) -> str:
@@ -284,7 +342,10 @@ def simulate_block(
         1.0 + _finite("voc temperature coefficient", module["voc_temperature_coefficient_per_c"]) * (minimum_cell_temperature_c - 25.0)
     )
     cold_string_voc_v = cold_voc_module_v * modules_per_string
-    block_operating_power_w = sum(item["delivered_power_w"] + item["loss_w"] for item in string_results)
+    block_operating_power_w = 0.0
+    for item in string_results:
+        block_operating_power_w += item["delivered_power_w"]
+        block_operating_power_w += item["loss_w"]
     output = {
         "schema_version": "globalgrid2050.v11.inverter-block-simulation.v1",
         "block_id": cfg["block_id"],
