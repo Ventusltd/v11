@@ -8,6 +8,7 @@ Current authority: PR 3, branch `build/v11-inverter-block-simulator`. The labora
 - [x] Immutable public endpoint with HTTP/content evidence.
 - [x] Editable array definition; 24 × 30 remains the default rather than a hard limit.
 - [x] Confirm the V8-style full-array topology surface is green on the latest tested head and record its run, job, elapsed time and artefact.
+- [x] Confirm compact mobile MPPT headers, safe horizontal strip scrolling and sticky selected-string summary in pinned Chromium.
 
 ## Current product correction
 
@@ -58,6 +59,23 @@ The V8 laboratory page is a read-only visual/behaviour reference. No laboratory 
 - Control-plane artefact: `8872933406`, digest `sha256:f6b35f27a310944a41d053e43bcb138e3efc758fbbeb35be743ef09442762b1b`.
 - Reconfirmed: 24 strips, 720 cells, 12 MPPTs, 24 physical inputs, authorised sequential/leapfrog traversal, safe scrolling, explicit edit identity retention and 12 × 20 non-default operation.
 
+## Mobile full-array validation receipt
+
+- Tested SHA: `f870883dfdfcabf2edcc800ff7a17e41fb0aa05a`.
+- Workflow: `V11 Control Plane Validation`, run `30861254944`, successful.
+- Control-plane job: `91843503081`, successful.
+- Immutable public-endpoint job: `91843503115`, successful.
+- Visible pinned-Chromium job: `91843503135`, successful.
+- Browser elapsed time: `2.524 seconds`, below the `100 seconds` browser cap.
+- Browser evidence artefact: `8874417285`, digest `sha256:3e25f195e1fcdda4f64935e24134a892bfe04b93f7c1a576aea0e383f88cee4f`.
+- Public endpoint artefact: `8874409833`, digest `sha256:2139dda2feca7b395cfacae92a64ad5e88c6d004cd70b14bb4b987160db972bc`.
+- Control-plane artefact: `8874409187`, digest `sha256:3bcad3bc98835016e8cf506daea39d9af719e7018251f52afb115678a1209472`.
+- Mobile contract proven: compact MPPT headers, safe horizontal strip scrolling and sticky selected-string summary.
+- Measured mobile styles: MPPT header `11px`, top padding `5px`, strip `overflow-x: auto`, strip `touch-action: pan-x pan-y`, selected summary `position: sticky`.
+- Default array reconfirmed: 24 strips, 720 cells, 12 MPPTs and 24 physical inputs.
+- Non-default array reconfirmed: 12 strips × 20 modules = 240 cells across 6 MPPTs.
+- Sequential and leapfrog traversal orders, safe-scroll hash, explicit-edit identity retention and outside-boundary rejection all remained green.
+
 ## Existing evidence
 
 - Chromium authority: run `30835051238`, job `91758073073`, artefact `8864492249`.
@@ -77,4 +95,4 @@ The V8 laboratory page is a read-only visual/behaviour reference. No laboratory 
 
 ## Next pass
 
-Consume the PR-visible `V11 Control Plane Validation` receipt for the mobile-readability head. If green, update the GlobalGrid2050 `/v11/` monitor to the exact immutable green SHA and record its public URL. If red, repair only the first proven browser or endpoint defect. Do not advance to explicit terminal routing until the monitor and mobile full-array surface are green.
+Consume the PR-visible `V11 Control Plane Validation` receipt for this documentation head. If green, update the GlobalGrid2050 `/v11/` monitor to the exact immutable mobile-readability SHA `f870883dfdfcabf2edcc800ff7a17e41fb0aa05a` and verify the public monitor URL. Keep its homepage entry only inside the Solar & BESS Topology nest after V10. Do not advance to explicit terminal routing until the monitor points at this green immutable build.
