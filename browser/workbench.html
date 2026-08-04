@@ -71,6 +71,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:7px;borde
 (() => {
   const NS = 'http://www.w3.org/2000/svg';
   const selectedDetail = document.querySelector('#selected-detail');
+  const detailScroll = document.querySelector('#selected-detail .detail-scroll');
   let scheduled = false;
 
   function node(name, attributes, text = null) {
@@ -83,7 +84,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:7px;borde
   function scheduleUpgrade() {
     if (scheduled) return;
     scheduled = true;
-    queueMicrotask(upgradeSelectedString);
+    requestAnimationFrame(upgradeSelectedString);
   }
 
   function upgradeSelectedString() {
@@ -175,7 +176,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:7px;borde
     if (!evidence.pass) throw new Error(`SLD junction-box contract failed: ${JSON.stringify(evidence)}`);
   }
 
-  new MutationObserver(scheduleUpgrade).observe(selectedDetail, { childList: true, subtree: true });
+  if (detailScroll) new MutationObserver(scheduleUpgrade).observe(detailScroll, { childList: true });
   scheduleUpgrade();
 })();
 </script>
