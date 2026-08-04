@@ -16,6 +16,8 @@ from pathlib import Path
 import re
 from typing import Any, Iterable, Mapping
 
+from .connectors import resistance_accounting
+
 MU0 = 4.0e-7 * math.pi
 EPS0 = 8.8541878128e-12
 REFERENCE_PATH = Path(__file__).resolve().parents[1] / "reference" / "lab_inverter_block_24_strings.json"
@@ -245,6 +247,7 @@ def simulate_block(
         override.get("connector_resistance_ohm_each", conductors["connector_resistance_ohm_each"]),
         minimum=0.0,
     )
+    connector_resistance_policy = resistance_accounting(modules_per_string, connector_resistance)
 
     field = conductors["field_cable"]
     factory = conductors["factory_lead"]
@@ -294,8 +297,7 @@ def simulate_block(
         field_loop_m = positive_field_m + negative_field_m
         field_resistance_ohm = field_r_ohm_per_km * field_loop_m / 1000.0
         factory_resistance_ohm = factory_r_ohm_per_km * factory_total_m / 1000.0
-        connector_count = int(conductors["connector_count_per_string"])
-        connector_total_ohm = connector_count * connector_resistance
+        connector_total_ohm = float(connector_resistance_policy["total_connector_contact_resistance_ohm"])
         circuit_resistance_ohm = field_resistance_ohm + factory_resistance_ohm + connector_total_ohm
         voltage_drop_v = operating_current_a * circuit_resistance_ohm
         loss_w = operating_current_a * voltage_drop_v

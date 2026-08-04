@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from copy import deepcopy
 import json
 from pathlib import Path
 import unittest
 
 from v11_simulation.connectors import connector_accounting, resistance_accounting
+from v11_simulation.model import canonical_json, load_reference_block, simulate_block
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -64,6 +66,21 @@ class ConnectorAccountingTests(unittest.TestCase):
         self.assertEqual(policy["applies_to"], "all_completed_mated_interfaces")
         self.assertEqual(policy["evidence_state"], "provisional_fixture")
         self.assertAlmostEqual(policy["total_connector_contact_resistance_ohm"], 0.01155)
+
+    def test_python_simulation_ignores_deprecated_compatibility_count(self):
+        reference = load_reference_block(ROOT / "reference/lab_inverter_block_24_strings.json")
+        expected = simulate_block(reference, strategy="leapfrog")
+
+        stale = deepcopy(reference)
+        stale["conductors"]["connector_count_per_string"] = 999
+        stale_result = simulate_block(stale, strategy="leapfrog")
+
+        absent = deepcopy(reference)
+        absent["conductors"].pop("connector_count_per_string")
+        absent_result = simulate_block(absent, strategy="leapfrog")
+
+        self.assertEqual(canonical_json(stale_result), canonical_json(expected))
+        self.assertEqual(canonical_json(absent_result), canonical_json(expected))
 
 
 if __name__ == "__main__":
