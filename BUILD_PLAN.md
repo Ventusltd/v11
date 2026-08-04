@@ -14,17 +14,37 @@ Current authority: PR 3 on `build/v11-inverter-block-simulator`. The laboratory 
 
 ## Consumed exact-head receipt
 
-Head `4378548768f83ff0149c6cc0fa812b6db5320ebb` passed `V11 Control Plane Validation` run `30928320253`.
+Head `9d39db6485def72c5189b8976977ee5563b25310` passed `V11 Control Plane Validation` run `30948072103`.
 
-- Control-plane job `92056291936`: success; artefact `8900044449`, digest `sha256:add63dc998f242471353ec37288a35d5674f716d35c0c4c3245d3c2afe9bc3e8`.
-- Visible pinned-Chromium job `92056291941`: success; artefact `8900067901`, digest `sha256:00ec1021833eba2d77d7bc4221d05d1c6ec8905772ecb0494dafab910f2a2477`.
-- Immutable public-endpoint job `92056292059`: success; artefact `8900042903`, digest `sha256:eece86b712fcb99fbe07339e78d096634f8dacf451d4e73bdd133afc0a7b2314`.
-- Chromium reconfirmed 24 strings × 30 modules, 12 MPPT groups, 24 physical inputs, authorised sequential/leapfrog traversal, the connector-marker visual contract, mobile-safe scrolling and the 12 × 20 non-default case.
+- Control-plane job `92122927993`: success; artefact `8907902976`, digest `sha256:aadf27231946a8eeb7ceceb58c882e2f96d7a9f4b29484f31f997428b4d2fffa`.
+- Visible pinned-Chromium job `92122927866`: success; artefact `8907909776`, digest `sha256:1ff75b101b6d497845b0b704a819631cbda4ba3dd078e1ce536f70d890933a9d`.
+- Immutable public-endpoint job `92122927980`: success; artefact `8907903828`, digest `sha256:39a23ddaf57b8ad5deb474608b4bf351f9f27a8a10e4e802201871167b88b620`.
+- Chromium reconfirmed the 24 × 30 and 12 × 20 workbench cases after the pinned-browser cache change.
+
+## Connector-accounting authority
+
+For `N` modules in one completed string:
+
+- module connector ends: `2N`;
+- two string cables: `4` connector ends;
+- inverter positive and negative sockets: `2` connector ends;
+- complete-system connector ends: `2N + 6`;
+- module-to-module mates: `N - 1`;
+- module-to-string-cable mates: `2`;
+- string-cable-to-inverter mates: `2`;
+- total mated interfaces: `N + 3`;
+- positive/red ends: `N + 3`;
+- negative/blue ends: `N + 3`.
+
+The provisional resistance policy currently applies one declared contact resistance to all `N + 3` completed mated interfaces. Manufacturer-specific resistance evidence remains incomplete. The legacy `connector_count_per_string` input is retained only as a deprecated compatibility projection and must equal `total_mated_interface_count`; it is no longer allowed to carry an unexplained value of 31.
 
 ## Numbered engineering targets
 
 - [x] 1. Connector-marker visual contract: central browser contract, black cable bodies, red/blue connector markers, orange inverter, dashed black provisional routes, unique connector IDs, computed-style validation and structured exact-head evidence.
 - [x] 2. Module/junction-box symbol V1: selected-string modules expose explicit `JBOX_NEG` and `JBOX_POS` nodes, black factory leads and red/blue connector markers with stable identities and structured evidence. Default STR-01 acceptance is 30 modules, 60 terminal nodes and 60 connector markers.
+- [x] 2A. Versioned connector-accounting authority: Python/browser parity, explicit subsystem counts, complete-system formulae, provisional interface-class resistance policy and dedicated CI evidence for 30-, 28- and 20-module strings.
+- [ ] 2B. Remove the deprecated simulation compatibility count and make Python/JavaScript simulations consume the named connector-resistance policy directly.
+- [ ] 2C. Project four string-cable connector ends plus two inverter connector ends into the selected-string SLD, proving 66 complete-system ends and 33 red/33 blue markers for 30 modules.
 - [ ] 3. Sungrow PV1+/PV1− through PV24+/PV24− terminals and 12 MPPT ownership groups.
 - [ ] 4. Sequential terminal-to-terminal connection graph.
 - [ ] 5. Sequential selected-string SLD and connection ledger.
@@ -50,10 +70,12 @@ Head `4378548768f83ff0149c6cc0fa812b6db5320ebb` passed `V11 Control Plane Valida
 
 ## Current commit gate
 
-Target 2 is integrated through the authoritative workbench dependency path. The browser module emits `globalgrid2050.v11.module-junction-box-symbol-evidence.v1` with exact tested SHA, selected string, module/terminal/connector/factory-lead counts and identities, SVG measurements, duplicate/missing IDs, computed-style mismatches and pass/fail. Connector gender is explicitly not inferred from polarity. A stable contract failure becomes a page error and therefore fails the existing pinned-Chromium acceptance.
+The connector-accounting contract is authoritative in `reference/connector_accounting_contract.json` and is implemented independently in Python and browser modules. The default fixture's compatibility count is corrected from 31 to 33, matching `N + 3` completed mated interfaces for `N = 30`. Dedicated CI proves:
 
-The former analysis implementation is retained byte-for-byte as `browser/workbench-analysis-core.mjs`; `browser/workbench-analysis.mjs` is now the small browser dependency facade that installs both SLD contracts and re-exports the analysis API.
+- `N = 30`: 66 ends, 33 interfaces, 33 red and 33 blue ends;
+- `N = 28`: 62 ends, 31 interfaces, 31 red and 31 blue ends;
+- `N = 20`: 46 ends, 23 interfaces, 23 red and 23 blue ends.
 
 ## Next pass
 
-Resolve the new exact PR head and consume its PR-visible `V11 Control Plane Validation` receipt. If green, begin Target 3 only. If red, repair only the first proven CI defect. If pending, make no commit.
+Resolve the new exact PR head and consume its PR-visible validation receipt. If green, complete Target 2B by removing direct simulation dependence on `connector_count_per_string` and consuming the named interface policy in both Python and JavaScript. If red, repair only the first proven CI defect. If pending, make no commit.

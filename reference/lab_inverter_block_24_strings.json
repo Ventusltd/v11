@@ -17,7 +17,7 @@
     "vmp_v": 38.13,
     "imp_a": 17.31,
     "voc_v": 45.75,
-    "isc_a": 18.40,
+    "isc_a": 18.4,
     "voc_temperature_coefficient_per_c": -0.0024,
     "positive_lead_m": 0.35,
     "negative_lead_m": 0.28,
@@ -52,15 +52,51 @@
       "evidence_state": "generic_tinned_copper_fixture"
     },
     "connector_resistance_ohm_each": 0.00035,
-    "connector_count_per_string": 31
+    "connector_count_per_string": 33,
+    "connector_count_per_string_status": "deprecated_compatibility_projection",
+    "connector_accounting_contract": "reference/connector_accounting_contract.json",
+    "connector_resistance_policy": {
+      "schema_version": "globalgrid2050.v11.connector-resistance-policy.v1",
+      "evidence_state": "provisional_fixture",
+      "applies_to": "all_completed_mated_interfaces",
+      "included_interface_classes": [
+        "module_to_module",
+        "module_to_string_cable",
+        "string_cable_to_inverter"
+      ],
+      "module_to_module_mate_count": 29,
+      "module_to_string_cable_mate_count": 2,
+      "string_cable_to_inverter_mate_count": 2,
+      "total_mated_interface_count": 33,
+      "note": "The compatibility count is retained only until Python and JavaScript simulation inputs consume the named policy directly."
+    }
   },
   "routing": {
     "route_lengths_m": [
-      78.0, 78.0, 78.0, 78.0,
-      200.0, 200.0, 200.0, 200.0, 200.0,
-      300.0, 300.0, 300.0, 300.0, 300.0,
-      600.0, 600.0, 600.0, 600.0, 600.0,
-      936.0, 936.0, 936.0, 936.0, 936.0
+      78.0,
+      78.0,
+      78.0,
+      78.0,
+      200.0,
+      200.0,
+      200.0,
+      200.0,
+      200.0,
+      300.0,
+      300.0,
+      300.0,
+      300.0,
+      300.0,
+      600.0,
+      600.0,
+      600.0,
+      600.0,
+      600.0,
+      936.0,
+      936.0,
+      936.0,
+      936.0,
+      936.0
     ],
     "sequential_row_return_separation_m": 1.0,
     "home_pair_separation_m": 0.0064,

@@ -190,6 +190,57 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+  connector_accounting:
+    name: Connector accounting authority
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out exact review head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Prove Python and browser connector accounting
+        run: |
+          set -euo pipefail
+          mkdir -p connector-accounting-evidence
+          python -S -m unittest -v tests/test_connector_accounting.py 2>&1 | tee connector-accounting-evidence/python.txt
+          node --test tests/connector_accounting.test.mjs 2>&1 | tee connector-accounting-evidence/browser.txt
+          python -S - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from v11_simulation.connectors import connector_accounting, resistance_accounting
+
+          examples = [connector_accounting(value) for value in (30, 28, 20)]
+          payload = {
+              "schema_version": "globalgrid2050.v11.connector-accounting-evidence.v1",
+              "tested_commit_sha": os.environ["GITHUB_SHA"],
+              "examples": examples,
+              "default_resistance_policy": resistance_accounting(30, 0.00035),
+              "pass": True,
+          }
+          Path("connector-accounting-evidence/summary.json").write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(payload, sort_keys=True))
+          PY
+
+      - name: Upload connector accounting evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v11-connector-accounting-${{ github.run_id }}
+          path: connector-accounting-evidence/
+          if-no-files-found: error
+          retention-days: 90
+
   public_endpoint:
     name: Verify immutable public simulator endpoint
     runs-on: ubuntu-24.04
