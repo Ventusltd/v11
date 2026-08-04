@@ -1,3 +1,5 @@
+import './sld-visual-contract.mjs';
+
 export class WorkbenchAnalysisError extends Error {}
 
 const finite = (name, value) => {

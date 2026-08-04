@@ -141,7 +141,7 @@ async function resolveTestedSha() {
       if (/^[0-9a-f]{40}$/i.test(ref)) return ref.toLowerCase();
     }
   } catch {
-    // Public immutable endpoints do not expose .git; URL parsing above remains authoritative there.
+    // Immutable public URLs are resolved above; local file use may have no Git metadata.
   }
   return null;
 }
@@ -158,6 +158,11 @@ function computedMismatch(elements, property, expected, label) {
 let testedShaPromise;
 let scheduled = false;
 let lastFailureSignature = '';
+let lastEvidenceJson = '';
+
+function stableWorkbenchReady() {
+  return document.querySelector('#status')?.classList.contains('ok') === true;
+}
 
 async function decorateAndMeasure() {
   scheduled = false;
@@ -169,7 +174,7 @@ async function decorateAndMeasure() {
   if (detailSvg) decorateStringSvg(detailSvg);
   decoratePhysicalRoutes();
 
-  if (!overviewSvgs.length) return;
+  if (!overviewSvgs.length || !stableWorkbenchReady()) return;
   const overviewMarkers = [...document.querySelectorAll('#topology-board .connector-marker')];
   const detailMarkers = [...document.querySelectorAll('#detail-canvas .connector-marker')];
   const cables = [...document.querySelectorAll('.string-strip .pv-cable')];
@@ -178,6 +183,7 @@ async function decorateAndMeasure() {
   const positiveMarkers = [...document.querySelectorAll('.connector-marker.connector-positive')];
   const negativeMarkers = [...document.querySelectorAll('.connector-marker.connector-negative')];
   const ids = [...overviewMarkers, ...detailMarkers].map((element) => element.id);
+  const missingIds = ids.filter((id) => !id);
   const duplicateIds = ids.filter((id, index) => id && ids.indexOf(id) !== index);
   const mismatches = [
     ...computedMismatch(cables, 'stroke', BLACK, 'physical PV cable stroke'),
@@ -192,8 +198,9 @@ async function decorateAndMeasure() {
   });
   const expectedOverviewMarkers = overviewSvgs.length * 2;
   const expectedDetailMarkers = detailSvg ? 2 : 0;
-  const markerCountPass = overviewMarkers.length === expectedOverviewMarkers && detailMarkers.length === expectedDetailMarkers;
-  const pass = markerCountPass && !duplicateIds.length && !mismatches.length;
+  const markerCountPass = overviewMarkers.length === expectedOverviewMarkers
+    && detailMarkers.length === expectedDetailMarkers;
+  const pass = markerCountPass && !missingIds.length && !duplicateIds.length && !mismatches.length;
   const evidence = {
     schema_version: SLD_VISUAL_CONTRACT.schema_version,
     tested_commit_sha: await (testedShaPromise ??= resolveTestedSha()),
@@ -211,8 +218,10 @@ async function decorateAndMeasure() {
       negative_markers: negativeMarkers.length,
     },
     connector_ids: ids,
+    missing_connector_ids: missingIds,
     duplicate_connector_ids: [...new Set(duplicateIds)],
     computed_style_mismatches: mismatches,
+    marker_count_pass: markerCountPass,
     pass,
   };
   window.__v11SldVisualContractEvidence = evidence;
@@ -223,11 +232,16 @@ async function decorateAndMeasure() {
     evidenceNode.type = 'application/json';
     document.body.append(evidenceNode);
   }
-  evidenceNode.textContent = JSON.stringify(evidence, null, 2);
+  const evidenceJson = JSON.stringify(evidence, null, 2);
+  if (evidenceJson !== lastEvidenceJson) {
+    lastEvidenceJson = evidenceJson;
+    evidenceNode.textContent = evidenceJson;
+    window.dispatchEvent(new CustomEvent('v11:sld-visual-contract-evidence', { detail: evidence }));
+  }
   document.documentElement.dataset.sldVisualContractPass = String(pass);
 
   if (!pass) {
-    const signature = JSON.stringify({ markerCountPass, duplicateIds, mismatches });
+    const signature = JSON.stringify({ markerCountPass, missingIds, duplicateIds, mismatches });
     if (signature !== lastFailureSignature) {
       lastFailureSignature = signature;
       queueMicrotask(() => { throw new Error(`SLD visual contract failed: ${signature}`); });
@@ -247,7 +261,10 @@ export function installSldVisualContract() {
   ensureStyle();
   ensureLegend();
   const observer = new MutationObserver(scheduleMeasure);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  const topologyView = document.querySelector('#topology-view');
+  const physicalCanvas = document.querySelector('#physical-canvas');
+  if (topologyView) observer.observe(topologyView, { childList: true, subtree: true });
+  if (physicalCanvas) observer.observe(physicalCanvas, { childList: true, subtree: true });
   window.addEventListener('resize', scheduleMeasure);
   scheduleMeasure();
   return observer;
