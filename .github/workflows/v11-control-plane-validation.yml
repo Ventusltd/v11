@@ -158,11 +158,20 @@ jobs:
       - name: Validate E2E syntax
         run: node --check tests/workbench_browser_e2e.mjs
 
+      - name: Restore pinned Chromium cache
+        id: chromium-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+          key: playwright-chromium-${{ runner.os }}-1.55.0
+
       - name: Install pinned Playwright Chromium
         run: |
           set -euo pipefail
           npm install --no-save --no-package-lock playwright-core@1.55.0
-          node node_modules/playwright-core/cli.js install chromium
+          if [ "${{ steps.chromium-cache.outputs.cache-hit }}" != "true" ]; then
+            node node_modules/playwright-core/cli.js install chromium
+          fi
           CHROME_PATH="$(node --input-type=module -e 'import { chromium } from "playwright-core"; process.stdout.write(chromium.executablePath())')"
           test -x "$CHROME_PATH"
 
