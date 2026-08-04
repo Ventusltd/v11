@@ -1,3 +1,5 @@
+import { resistanceAccounting } from './connector-accounting.mjs';
+
 const MU0 = 4e-7 * Math.PI;
 const EPS0 = 8.8541878128e-12;
 
@@ -122,6 +124,7 @@ export async function simulateBlock(reference, strategy, overrides = {}) {
   const epsR = finite("effective_relative_permittivity", overrides.effective_relative_permittivity ?? routing.effective_relative_permittivity, 1);
   const rowReturnSeparationM = finite("sequential_row_return_separation_m", overrides.sequential_row_return_separation_m ?? routing.sequential_row_return_separation_m, 0);
   const connectorResistance = finite("connector_resistance_ohm_each", overrides.connector_resistance_ohm_each ?? conductors.connector_resistance_ohm_each, 0);
+  const connectorResistancePolicy = resistanceAccounting(modulesPerString, connectorResistance);
   const field = conductors.field_cable;
   const factory = conductors.factory_lead;
   const fieldR = temperatureResistance(field.resistance_ohm_per_km_20c, conductorTemperatureC, field.temperature_coefficient_per_c);
@@ -156,7 +159,7 @@ export async function simulateBlock(reference, strategy, overrides = {}) {
     const fieldLoopM = positiveFieldM + negativeFieldM;
     const fieldResistanceOhm = (fieldR * fieldLoopM) / 1000;
     const factoryResistanceOhm = (factoryR * factoryTotalM) / 1000;
-    const connectorTotalOhm = Number(conductors.connector_count_per_string) * connectorResistance;
+    const connectorTotalOhm = connectorResistancePolicy.total_connector_contact_resistance_ohm;
     const circuitResistanceOhm = fieldResistanceOhm + factoryResistanceOhm + connectorTotalOhm;
     const voltageDropV = currentA * circuitResistanceOhm;
     const lossW = currentA * voltageDropV;
