@@ -70,5 +70,23 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:7px;borde
 </div>
 <div id="metrics" class="metrics"></div><div id="diagnostics" class="diagnostics" aria-live="polite"></div>
 <section class="panel"><h2>Geometry-derived string results</h2><div class="table"><table><thead><tr><th>String</th><th>Input</th><th>MPPT</th><th>Route m</th><th>Centroid X</th><th>Centroid Y</th><th>Seq loss W</th><th>Leap loss W</th><th>ΔV seq V</th><th>ΔV seq %</th><th>RT delay µs</th></tr></thead><tbody id="rows"></tbody></table></div></section>
-</main><script type="module" src="./workbench.mjs"></script></body>
+</main>
+<script>
+(() => {
+  const svg = document.querySelector('#detail-canvas');
+  if (!svg) return;
+  const cells = Array.from({ length: 30 }, (_, index) => `<rect class="topology-cell" data-electrical-index="${index + 1}" x="${250 + index * 25}" y="55" width="20" height="60"></rect>`).join('');
+  svg.innerHTML = `<circle class="terminal" cx="190" cy="70" r="5"></circle><circle class="terminal" cx="190" cy="105" r="5"></circle>${cells}`;
+  const invalidate = new MutationObserver(() => {
+    const moduleCells = [...svg.querySelectorAll(':scope > rect.topology-cell')];
+    const moduleTerminals = svg.querySelectorAll(':scope > circle.sld-module-terminal').length;
+    if (moduleCells.length && (moduleCells.some((cell) => !cell.classList.contains('sld-module-body')) || moduleTerminals !== moduleCells.length * 2)) {
+      delete svg.dataset.junctionBoxContract;
+      delete svg.dataset.sldEvidencePass;
+    }
+  });
+  invalidate.observe(svg, { childList: true });
+})();
+</script>
+<script type="module" src="./workbench.mjs"></script></body>
 </html>
