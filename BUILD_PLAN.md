@@ -14,17 +14,17 @@ Current authority: PR 3 on `build/v11-inverter-block-simulator`. The laboratory 
 
 ## Consumed exact-head receipt
 
-The previous head `45fa0113c7d06d3ca44ba083183764cfbd31f8c8` passed `V11 Control Plane Validation` run `30922580856`.
+Head `4378548768f83ff0149c6cc0fa812b6db5320ebb` passed `V11 Control Plane Validation` run `30928320253`.
 
-- Control-plane job `92036674231`: success; artefact `8897706251`, digest `sha256:11fdbf1f311f4456758ad91309224e12147fcd03422f79b07fceee9dd9bb2fa9`.
-- Visible pinned-Chromium job `92036674360`: success; artefact `8897732196`, digest `sha256:4d37c3c67fb6d7718ed6b5bd80e103f09b776a30a800f41dc6429230553d6f97`.
-- Immutable public-endpoint job `92036674258`: success; artefact `8897714477`, digest `sha256:757a877664cd997b7ea4688425976681f2f3ed31e57c8a57f9ec7e1c99fd6040`.
-- Chromium reconfirmed 24 strings × 30 modules, 12 MPPT groups, 24 physical inputs, authorised sequential/leapfrog traversal, mobile-safe scrolling and the 12 × 20 non-default case.
+- Control-plane job `92056291936`: success; artefact `8900044449`, digest `sha256:add63dc998f242471353ec37288a35d5674f716d35c0c4c3245d3c2afe9bc3e8`.
+- Visible pinned-Chromium job `92056291941`: success; artefact `8900067901`, digest `sha256:00ec1021833eba2d77d7bc4221d05d1c6ec8905772ecb0494dafab910f2a2477`.
+- Immutable public-endpoint job `92056292059`: success; artefact `8900042903`, digest `sha256:eece86b712fcb99fbe07339e78d096634f8dacf451d4e73bdd133afc0a7b2314`.
+- Chromium reconfirmed 24 strings × 30 modules, 12 MPPT groups, 24 physical inputs, authorised sequential/leapfrog traversal, the connector-marker visual contract, mobile-safe scrolling and the 12 × 20 non-default case.
 
 ## Numbered engineering targets
 
 - [x] 1. Connector-marker visual contract: central browser contract, black cable bodies, red/blue connector markers, orange inverter, dashed black provisional routes, unique connector IDs, computed-style validation and structured exact-head evidence.
-- [ ] 2. Module/junction-box symbol V1: explicit `JBOX_NEG` and `JBOX_POS` nodes; 30 modules, 60 terminals and 60 markers for selected STR-01.
+- [x] 2. Module/junction-box symbol V1: selected-string modules expose explicit `JBOX_NEG` and `JBOX_POS` nodes, black factory leads and red/blue connector markers with stable identities and structured evidence. Default STR-01 acceptance is 30 modules, 60 terminal nodes and 60 connector markers.
 - [ ] 3. Sungrow PV1+/PV1− through PV24+/PV24− terminals and 12 MPPT ownership groups.
 - [ ] 4. Sequential terminal-to-terminal connection graph.
 - [ ] 5. Sequential selected-string SLD and connection ledger.
@@ -50,8 +50,10 @@ The previous head `45fa0113c7d06d3ca44ba083183764cfbd31f8c8` passed `V11 Control
 
 ## Current commit gate
 
-Target 1 is wired into the authoritative browser dependency path. Its browser module emits `globalgrid2050.v11.sld-visual-contract.v1` evidence containing the exact tested SHA, connector identities and counts, cable/marker/inverter/route computed-style mismatches and pass/fail. The existing pinned-Chromium acceptance treats a stable contract failure as a page error.
+Target 2 is integrated through the authoritative workbench dependency path. The browser module emits `globalgrid2050.v11.module-junction-box-symbol-evidence.v1` with exact tested SHA, selected string, module/terminal/connector/factory-lead counts and identities, SVG measurements, duplicate/missing IDs, computed-style mismatches and pass/fail. Connector gender is explicitly not inferred from polarity. A stable contract failure becomes a page error and therefore fails the existing pinned-Chromium acceptance.
+
+The former analysis implementation is retained byte-for-byte as `browser/workbench-analysis-core.mjs`; `browser/workbench-analysis.mjs` is now the small browser dependency facade that installs both SLD contracts and re-exports the analysis API.
 
 ## Next pass
 
-Resolve the new exact PR head and consume its PR-visible `V11 Control Plane Validation` receipt. If green, begin Target 2 only. If red, repair only the first proven CI defect. If pending, make no commit.
+Resolve the new exact PR head and consume its PR-visible `V11 Control Plane Validation` receipt. If green, begin Target 3 only. If red, repair only the first proven CI defect. If pending, make no commit.
