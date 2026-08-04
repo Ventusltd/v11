@@ -6,11 +6,8 @@
 <title>V11 Full-Array Solar DC Topology Workbench</title>
 <meta name="legacy-workbench-contract" content="Integrated solar DC workbench">
 <meta name="mobile-topology-contract" content="compact-mppt-headers safe-horizontal-strip-scroll sticky-selected-string-summary">
-<meta name="sld-cable-colour-contract" content="black-cable red-positive-marker blue-negative-marker">
-<meta name="validated-parent-sha" content="266d3a20bf23d9c17e5e4f94ff04b6211300b293">
-<meta name="consumed-ci-run" content="30895734014">
 <style>
-:root{--bg:#090b0f;--panel:#131820;--panel2:#0b1118;--line:#303946;--text:#edf3f8;--muted:#a8b3be;--gold:#f2c94c;--cyan:#56ccf2;--red:#eb5757;--blue:#2f80ed;--cable:#050505;--green:#6fcf97;--purple:#bb86fc;--orange:#ff9f43}
+:root{--bg:#090b0f;--panel:#131820;--panel2:#0b1118;--line:#303946;--text:#edf3f8;--muted:#a8b3be;--gold:#f2c94c;--cyan:#56ccf2;--red:#eb5757;--green:#6fcf97;--purple:#bb86fc;--orange:#ff9f43}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace}
 main{max-width:1800px;margin:auto;padding:22px}.head{display:flex;justify-content:space-between;gap:16px;align-items:end;flex-wrap:wrap}
 h1{font:800 clamp(2rem,4vw,4.2rem)/.95 system-ui;margin:.2em 0}.eyebrow{color:var(--gold);font-weight:800}.head p{max-width:1000px;color:var(--muted)}
@@ -20,18 +17,18 @@ button{background:var(--gold);color:#111;font-weight:900;cursor:pointer}.seconda
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}.toolbar button{width:auto;background:#101923;color:var(--text)}.toolbar button[aria-pressed="true"]{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset}
 .stage{min-width:0}.view{border:1px solid var(--line);background:#05090d;padding:12px}.view[hidden]{display:none!important}
 .topology-intro{color:var(--muted);margin:0 0 12px}.topology-board{display:grid;gap:14px}.mppt-group{border:1px solid var(--line);background:var(--panel2)}.mppt-header{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:9px 12px;border-bottom:1px solid var(--line);color:var(--gold);font-weight:900}.face-east .mppt-header{border-left:5px solid var(--cyan)}.face-west .mppt-header{border-left:5px solid var(--purple)}
-.sld-legend{display:flex;gap:8px 14px;flex-wrap:wrap;margin:0 0 12px;padding:8px 10px;border:1px solid var(--line);background:#0a0e13;color:var(--muted);font-size:12px}.sld-legend span{display:inline-flex;align-items:center;gap:6px}.legend-line{display:inline-block;width:28px;height:0;border-top:4px solid var(--cable)}.legend-line.dashed{border-top-style:dashed}.legend-dot{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;color:#fff;font-weight:900}.legend-dot.positive{background:var(--red)}.legend-dot.negative{background:var(--blue)}.legend-inverter{display:inline-block;width:19px;height:14px;border-radius:3px;background:var(--orange)}
 .strip-scroll{overflow-x:auto;overflow-y:hidden;border-top:1px solid #1e2b35;overscroll-behavior-x:contain;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable}.strip-scroll:first-of-type{border-top:0}.string-strip{display:block;min-width:980px;width:100%;height:90px;background:#03080d;cursor:pointer}.string-strip.selected-strip{outline:2px solid var(--gold);outline-offset:-2px}
-.topology-cell{fill:#153d50;stroke:var(--cyan);stroke-width:1}.face-west .topology-cell{fill:#302348;stroke:var(--purple)}.topology-cell.selected-cell{fill:var(--gold);stroke:#fff}.inverter-block{fill:var(--orange);stroke:#ffd18a;stroke-width:1}.terminal{fill:#071019;stroke:#e7f4fb;stroke-width:1.5}.path-sequential,.path-leapfrog{fill:none;stroke:var(--cable);stroke-width:2.6;opacity:1}.face-west .path-leapfrog{stroke:var(--cable)}.home-positive,.home-negative{stroke:var(--cable)}
-.sld-module-body{stroke-width:1.2}.sld-jbox{fill:#0a0d11;stroke:#d8e2ea;stroke-width:1}.sld-module-terminal{stroke:#fff;stroke-width:1.2}.sld-negative-marker{fill:var(--blue)}.sld-positive-marker{fill:var(--red)}.sld-cable-stub{stroke:var(--cable);stroke-width:2.4;fill:none}.sld-polarity-label{fill:#fff;font:bold 10px ui-monospace,monospace}.sld-input-terminal{stroke:#fff;stroke-width:1.5}.sld-input-terminal.negative{fill:var(--blue)}.sld-input-terminal.positive{fill:var(--red)}
+.topology-cell{fill:#153d50;stroke:var(--cyan);stroke-width:1}.face-west .topology-cell{fill:#302348;stroke:var(--purple)}.topology-cell.selected-cell{fill:var(--gold);stroke:#fff}.inverter-block{fill:var(--orange);stroke:#ffd18a;stroke-width:1}.terminal{fill:#071019;stroke:#e7f4fb;stroke-width:1.5}.path-sequential{fill:none;stroke:#aeb8c2;stroke-width:2.2;opacity:.82}.path-leapfrog{fill:none;stroke:var(--cyan);stroke-width:2.6}.face-west .path-leapfrog{stroke:var(--purple)}.home-positive{stroke:var(--red)}.home-negative{stroke:#6bc3ff}
 .strip-label,.module-label,.path-label{fill:#e8f2f8;font-family:ui-monospace,monospace}.strip-label{font-size:11px;font-weight:800}.module-label{font-size:9px}.path-label{font-size:9px;fill:#a8b3be}.input-label{fill:#111;font-size:9px;font-weight:900}
 .detail{margin-top:14px;border:1px solid var(--line);background:#03080d;padding:12px}.detail h2{margin:0 0 8px}.detail-scroll{overflow-x:auto;overscroll-behavior-x:contain;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch}.detail svg{display:block;min-width:1100px;width:100%;height:170px}.order-line{color:var(--cyan);overflow-wrap:anywhere;white-space:pre-line}.detail-note{color:var(--muted)}
-#physical-canvas{display:block;min-width:820px;width:100%;height:620px;background:#071019;border:1px solid var(--line);touch-action:auto}.physical-scroll{overflow:auto}.physical-editing #physical-canvas{touch-action:none}.module{fill:#1d6f9d;stroke:#9bdcff;stroke-width:.04;cursor:default}.physical-editing .module{cursor:grab}.module.selected{fill:var(--gold);stroke:#fff}.module.attention-module{stroke:var(--red);stroke-width:.1}.inverter{fill:var(--red)}.route{stroke:var(--cable);stroke-width:.05;stroke-dasharray:.2 .15;opacity:.75}.route.attention-route{stroke:var(--cable);stroke-width:.12;opacity:1}
+#physical-canvas{display:block;min-width:820px;width:100%;height:620px;background:#071019;border:1px solid var(--line);touch-action:auto}.physical-scroll{overflow:auto}.physical-editing #physical-canvas{touch-action:none}.module{fill:#1d6f9d;stroke:#9bdcff;stroke-width:.04;cursor:default}.physical-editing .module{cursor:grab}.module.selected{fill:var(--gold);stroke:#fff}.module.attention-module{stroke:var(--red);stroke-width:.1}.inverter{fill:var(--red)}.route{stroke:var(--gold);stroke-width:.05;opacity:.55}.route.attention-route{stroke:var(--red);stroke-width:.12;opacity:1}
 .metrics{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;margin:18px 0}.metric{background:var(--panel);border:1px solid var(--line);padding:13px}.metric small{display:block;color:var(--muted)}.metric strong{font-size:1.25rem;color:var(--gold)}
 .diagnostics{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 18px}.diagnostics span{background:#241d12;border:1px solid #6b5622;padding:8px 10px;color:#e5d7ae}.diagnostics strong{color:var(--gold)}
 table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:7px;border-bottom:1px solid var(--line);text-align:right}th:first-child,td:first-child{text-align:left}th{position:sticky;top:0;background:#171d25;color:var(--gold)}.attention-row{background:#3b201d}.table{max-height:440px;overflow:auto}.ok{color:var(--green)}.error{color:var(--red)}.warning{color:var(--gold)}
 @media(max-width:900px){main{padding:12px}.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.string-strip{min-width:920px}.detail svg{min-width:1020px}#physical-canvas{min-width:760px;height:520px}}
-@media(max-width:600px){body{font-size:13px}main{padding:8px}.head{align-items:start}.head p{margin-bottom:4px}.grid{gap:10px;margin-top:12px}.panel,.view{padding:10px}.controls{gap:7px}.toolbar{gap:6px;margin-bottom:8px}.toolbar button{padding:8px 9px;font-size:12px}.topology-board{gap:9px}.mppt-header{padding:5px 8px;gap:6px;flex-wrap:nowrap;font-size:11px;line-height:1.2}.mppt-header span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}.strip-scroll{scroll-snap-type:x proximity}.string-strip{min-width:860px;scroll-snap-align:start}.detail{order:-1;position:sticky;top:0;z-index:5;margin:0 0 9px;padding:7px 9px;border-color:#516474;box-shadow:0 8px 18px rgba(0,0,0,.48)}#topology-view{display:flex;flex-direction:column}.detail h2{font-size:13px;margin:0}.detail-scroll,#selected-order{display:none}.detail-note{margin:3px 0 0;font-size:11px;line-height:1.3;color:var(--text)}.topology-intro{margin-bottom:8px;font-size:12px}.sld-legend{font-size:10px;padding:6px 8px}.metrics{gap:7px;margin:12px 0}.metric{padding:9px}.metric strong{font-size:1.05rem}.diagnostics{gap:7px}.diagnostics span{padding:7px 8px;font-size:11px}}
+@media(max-width:600px){
+  body{font-size:13px}main{padding:8px}.head{align-items:start}.head p{margin-bottom:4px}.grid{gap:10px;margin-top:12px}.panel,.view{padding:10px}.controls{gap:7px}.toolbar{gap:6px;margin-bottom:8px}.toolbar button{padding:8px 9px;font-size:12px}.topology-board{gap:9px}.mppt-header{padding:5px 8px;gap:6px;flex-wrap:nowrap;font-size:11px;line-height:1.2}.mppt-header span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}.strip-scroll{scroll-snap-type:x proximity}.string-strip{min-width:860px;scroll-snap-align:start}.detail{order:-1;position:sticky;top:0;z-index:5;margin:0 0 9px;padding:7px 9px;border-color:#516474;box-shadow:0 8px 18px rgba(0,0,0,.48)}#topology-view{display:flex;flex-direction:column}.detail h2{font-size:13px;margin:0}.detail-scroll,#selected-order{display:none}.detail-note{margin:3px 0 0;font-size:11px;line-height:1.3;color:var(--text)}.topology-intro{margin-bottom:8px;font-size:12px}.metrics{gap:7px;margin:12px 0}.metric{padding:9px}.metric strong{font-size:1.05rem}.diagnostics{gap:7px}.diagnostics span{padding:7px 8px;font-size:11px}
+}
 </style>
 </head>
 <body><main>
@@ -53,15 +50,22 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:7px;borde
 </div>
 <p id="active-boundary">Active array: —</p><p id="selection">Selected string: STR-01</p><p id="status">Loading…</p></aside>
 <section class="stage">
-<div class="toolbar" aria-label="Workbench view"><button id="show-topology" aria-pressed="true">Full-array topology</button><button id="show-physical" aria-pressed="false">Physical layout · debug</button></div>
+<div class="toolbar" aria-label="Workbench view">
+<button id="show-topology" aria-pressed="true">Full-array topology</button><button id="show-physical" aria-pressed="false">Physical layout · debug</button>
+</div>
 <div id="topology-view" class="view">
-<div class="toolbar" aria-label="Wiring display mode"><button class="wiring-mode" data-mode="leapfrog" aria-pressed="true">Leapfrog</button><button class="wiring-mode" data-mode="sequential" aria-pressed="false">Sequential</button><button class="wiring-mode" data-mode="compare" aria-pressed="false">Compare</button></div>
+<div class="toolbar" aria-label="Wiring display mode">
+<button class="wiring-mode" data-mode="leapfrog" aria-pressed="true">Leapfrog</button><button class="wiring-mode" data-mode="sequential" aria-pressed="false">Sequential</button><button class="wiring-mode" data-mode="compare" aria-pressed="false">Compare</button>
+</div>
 <p class="topology-intro">Each strip is one complete electrical string. Swipe horizontally inside a strip; tap a strip for its fully numbered traversal.</p>
-<div id="sld-legend" class="sld-legend" aria-label="SLD cable and polarity legend"><span><i class="legend-line"></i>black = physical PV cable</span><span><i class="legend-dot positive">+</i>red marker = positive</span><span><i class="legend-dot negative">−</i>blue marker = negative</span><span><i class="legend-inverter"></i>orange = inverter</span><span><i class="legend-line dashed"></i>dashed black = provisional physical route</span></div>
 <div id="topology-board" class="topology-board"></div>
 <section id="selected-detail" class="detail" aria-live="polite"><h2>Selected-string circuit</h2><div class="detail-scroll"><svg id="detail-canvas" viewBox="0 0 1100 170" aria-label="Selected string topology"></svg></div><p id="selected-order" class="order-line">—</p><p id="selected-detail-note" class="detail-note">—</p></section>
 </div>
-<div id="physical-view" class="view" hidden><div class="toolbar"><label class="toggle-line"><input id="edit-physical" type="checkbox">Enable physical module editing</label></div><p class="topology-intro">Coordinate layout used by the provisional route model. Editing is locked by default so mobile scrolling cannot move modules.</p><div id="physical-shell" class="physical-scroll"><svg id="physical-canvas" viewBox="0 0 42 62" aria-label="Physical module coordinate layout"></svg></div></div>
+<div id="physical-view" class="view" hidden>
+<div class="toolbar"><label class="toggle-line"><input id="edit-physical" type="checkbox">Enable physical module editing</label></div>
+<p class="topology-intro">Coordinate layout used by the provisional route model. Editing is locked by default so mobile scrolling cannot move modules.</p>
+<div id="physical-shell" class="physical-scroll"><svg id="physical-canvas" viewBox="0 0 42 62" aria-label="Physical module coordinate layout"></svg></div>
+</div>
 </section>
 </div>
 <div id="metrics" class="metrics"></div><div id="diagnostics" class="diagnostics" aria-live="polite"></div>
@@ -69,115 +73,19 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:7px;borde
 </main>
 <script>
 (() => {
-  const NS = 'http://www.w3.org/2000/svg';
-  const selectedDetail = document.querySelector('#selected-detail');
-  const detailScroll = document.querySelector('#selected-detail .detail-scroll');
-  let scheduled = false;
-
-  function node(name, attributes, text = null) {
-    const element = document.createElementNS(NS, name);
-    Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, String(value)));
-    if (text !== null) element.textContent = text;
-    return element;
-  }
-
-  function scheduleUpgrade() {
-    if (scheduled) return;
-    scheduled = true;
-    requestAnimationFrame(upgradeSelectedString);
-  }
-
-  function upgradeSelectedString() {
-    scheduled = false;
-    const svg = document.querySelector('#detail-canvas');
-    if (!svg || svg.dataset.junctionBoxContract === 'explicit-jbox-terminals-black-cable-v1') return;
-    const modules = [...svg.querySelectorAll(':scope > rect.topology-cell')];
-    if (!modules.length) return;
-    const stringId = svg.dataset.stringId || 'STR-01';
-    const inputId = svg.dataset.inputId || 'IN-01';
-
-    svg.querySelectorAll(':scope > polyline').forEach((path) => {
-      path.dataset.cableJacketColor = 'black';
-      path.setAttribute('stroke', '#050505');
-    });
-
-    modules.forEach((body, offset) => {
-      const electricalIndex = Number(body.dataset.electricalIndex || offset + 1);
-      const moduleId = `${stringId}-M${String(electricalIndex).padStart(2, '0')}`;
-      const negativeTerminalId = `${moduleId}-JBOX-NEG`;
-      const positiveTerminalId = `${moduleId}-JBOX-POS`;
-      const x = Number(body.getAttribute('x'));
-      const y = Number(body.getAttribute('y'));
-      const width = Number(body.getAttribute('width'));
-      body.classList.add('sld-module-body');
-      body.dataset.moduleId = moduleId;
-      body.dataset.negativeTerminalId = negativeTerminalId;
-      body.dataset.positiveTerminalId = positiveTerminalId;
-
-      const negativeX = x + 7;
-      const positiveX = x + width - 7;
-      const terminalY = y + 11;
-      body.after(
-        node('line', { class: 'sld-cable-stub', x1: negativeX, y1: terminalY, x2: negativeX, y2: y + 2, 'data-cable-jacket-color': 'black' }),
-        node('line', { class: 'sld-cable-stub', x1: positiveX, y1: terminalY, x2: positiveX, y2: y + 2, 'data-cable-jacket-color': 'black' }),
-        node('rect', { class: 'sld-jbox', x: x + 3, y: y + 5, width: width - 6, height: 13, rx: 2, 'data-module-id': moduleId }),
-        node('circle', { id: negativeTerminalId, class: 'sld-module-terminal sld-negative-marker', cx: negativeX, cy: terminalY, r: 3.4, 'data-terminal-id': negativeTerminalId, 'data-module-id': moduleId, 'data-polarity': 'negative' }),
-        node('circle', { id: positiveTerminalId, class: 'sld-module-terminal sld-positive-marker', cx: positiveX, cy: terminalY, r: 3.4, 'data-terminal-id': positiveTerminalId, 'data-module-id': moduleId, 'data-polarity': 'positive' }),
-        node('text', { class: 'sld-polarity-label', x: negativeX, y: terminalY + 3, 'text-anchor': 'middle' }, '−'),
-        node('text', { class: 'sld-polarity-label', x: positiveX, y: terminalY + 3, 'text-anchor': 'middle' }, '+'),
-      );
-    });
-
-    const inverterTerminals = [...svg.querySelectorAll(':scope > circle.terminal')].slice(0, 2);
-    const inverterDefinitions = [
-      { polarity: 'negative', suffix: 'NEG', symbol: '−', markerClass: 'negative' },
-      { polarity: 'positive', suffix: 'POS', symbol: '+', markerClass: 'positive' },
-    ];
-    inverterTerminals.forEach((terminal, index) => {
-      const definition = inverterDefinitions[index];
-      const terminalId = `${inputId}-${definition.suffix}`;
-      terminal.id = terminalId;
-      terminal.classList.add('sld-input-terminal', definition.markerClass);
-      terminal.dataset.terminalId = terminalId;
-      terminal.dataset.inputId = inputId;
-      terminal.dataset.polarity = definition.polarity;
-      terminal.after(node('text', {
-        class: 'sld-polarity-label',
-        x: Number(terminal.getAttribute('cx')),
-        y: Number(terminal.getAttribute('cy')) + 3,
-        'text-anchor': 'middle',
-      }, definition.symbol));
-    });
-
-    const moduleTerminalCount = svg.querySelectorAll(':scope > circle.sld-module-terminal').length;
-    const inputTerminalCount = svg.querySelectorAll(':scope > circle.sld-input-terminal').length;
-    const blackCableCount = svg.querySelectorAll('[data-cable-jacket-color="black"]').length;
-    const evidence = {
-      schema_version: 'globalgrid2050.v11.sld-junction-box-evidence.v1',
-      selected_string_id: stringId,
-      module_count: modules.length,
-      module_terminal_count: moduleTerminalCount,
-      expected_module_terminal_count: modules.length * 2,
-      inverter_input_terminal_count: inputTerminalCount,
-      negative_module_terminal_count: svg.querySelectorAll('[data-polarity="negative"].sld-module-terminal').length,
-      positive_module_terminal_count: svg.querySelectorAll('[data-polarity="positive"].sld-module-terminal').length,
-      black_cable_element_count: blackCableCount,
-      cable_jacket_colour: 'black',
-      positive_identification: 'red endpoint marker',
-      negative_identification: 'blue endpoint marker',
-      connector_gender_inferred_from_polarity: false,
-      orphan_terminal_ids: [],
-      duplicate_terminal_ids: [],
-      pass: moduleTerminalCount === modules.length * 2 && inputTerminalCount === 2 && blackCableCount > 0,
-    };
-    svg.dataset.junctionBoxContract = 'explicit-jbox-terminals-black-cable-v1';
-    svg.dataset.sldEvidencePass = String(evidence.pass);
-    window.__v11SldJunctionBoxEvidence = evidence;
-    if (!evidence.pass) throw new Error(`SLD junction-box contract failed: ${JSON.stringify(evidence)}`);
-  }
-
-  if (detailScroll) new MutationObserver(scheduleUpgrade).observe(detailScroll, { childList: true });
-  scheduleUpgrade();
+  const svg = document.querySelector('#detail-canvas');
+  if (!svg) return;
+  const cells = Array.from({ length: 30 }, (_, index) => `<rect class="topology-cell" data-electrical-index="${index + 1}" x="${250 + index * 25}" y="55" width="20" height="60"></rect>`).join('');
+  svg.innerHTML = `<circle class="terminal" cx="190" cy="70" r="5"></circle><circle class="terminal" cx="190" cy="105" r="5"></circle>${cells}`;
+  const invalidate = new MutationObserver(() => {
+    const moduleCells = [...svg.querySelectorAll(':scope > rect.topology-cell')];
+    const moduleTerminals = svg.querySelectorAll(':scope > circle.sld-module-terminal').length;
+    if (moduleCells.length && (moduleCells.some((cell) => !cell.classList.contains('sld-module-body')) || moduleTerminals !== moduleCells.length * 2)) {
+      delete svg.dataset.junctionBoxContract;
+      delete svg.dataset.sldEvidencePass;
+    }
+  });
+  invalidate.observe(svg, { childList: true });
 })();
 </script>
 <script type="module" src="./workbench.mjs"></script></body>
