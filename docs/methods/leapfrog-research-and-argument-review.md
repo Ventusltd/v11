@@ -2,7 +2,7 @@
 
 ## Status
 
-Engineering review of the supplied leapfrog drawings and spreadsheets, the Trina module geometry used by V11, and published PV wiring guidance. This document separates four different claims that must not be conflated:
+Engineering review of the supplied leapfrog drawings and spreadsheets, the Trina module geometry used by V11, licensed IEC standards, a confidential project Employer's Requirements document, and published PV wiring guidance. This document separates four different claims that must not be conflated:
 
 1. reduced purchased field PV wire;
 2. reduced total installed conductor;
@@ -10,6 +10,12 @@ Engineering review of the supplied leapfrog drawings and spreadsheets, the Trina
 4. reduced conductive-loop area and lightning/EMI exposure.
 
 They are not equivalent.
+
+## Evidence handling
+
+The IEC publications used for this review are licensed single-user copies. Their technical conclusions and clause references may inform the engineering method, but their copyrighted text and figures are not reproduced in this repository.
+
+The project Employer's Requirements reviewed are confidential. They are used only as evidence that leapfrog wiring has been expressly specified on a real utility-scale UK project. No confidential project text, drawings, commercial terms or identifying extracts are reproduced here.
 
 ## Supplied material reviewed
 
@@ -19,39 +25,55 @@ They are not equivalent.
 - `Leapfrog String Connections(1).pdf`
 - `Leapfrog String Connections Detail(1).pdf`
 - Trina TSM-DEG21C.20 module data used by the project
+- IEC 62548-1:2023, licensed copy
+- IEC TS 62738:2018, licensed copy
+- confidential utility-scale solar Employer's Requirements
 
 The overall connection drawing correctly communicates the main architectural purpose: both free string ends can be brought to the inverter/combiner side. The detail drawing shows alternating long inter-module arcs and two polarity paths, but it is not dimensioned and therefore cannot establish manufacturable lead lengths by itself.
 
-## What external guidance supports
+## What the licensed standards and project evidence support
 
-### 1. Both poles at one end can reduce purchased field PV wire
+### 1. Minimum loop area is an explicit IEC design objective
 
-Yaskawa-Solectria describes leapfrog wiring as a way to locate both poles of a PV source circuit at roughly the same point. Where module wire whips are already long enough, it reports a reduction of roughly 30-60 ft of field PV wire per source circuit compared with daisy-chain wiring. Its argument is explicitly an installed-BOS material and labour argument, especially when combined with Y-connectors.
+IEC 62548-1:2023 requires array wiring to be arranged with positive and negative conductors of the same string together and to avoid the creation of loops. Its wiring-system provisions include examples of string wiring with minimum loop area. This is direct standards support for treating the physical outgoing-and-return geometry as an engineering quantity rather than merely a drawing convention.
 
-Source: https://www.solectria.com/blog/using-y-connectors-in-string-inverter-systems-part-ii/
+This supports the statement:
+
+> A leapfrog arrangement is valuable when it demonstrably keeps the two poles close together and reduces enclosed conductive-loop area.
+
+The standard does not say that the topology label alone guarantees a smaller loop. V11 must calculate the actual routed geometry.
+
+### 2. Long DC routes and electrical distance matter to surge protection
+
+IEC 62548-1:2023 requires a lightning-transient risk assessment based on maximum route length between the PCE and module connection points and provides a critical-length method for determining when DC-side SPDs are required. It also recommends protective measures for long DC cables, including shielding, burial, metallic containment or SPDs.
+
+IEC TS 62738:2018 states that the effectiveness of lightning protection depends on electrical distance between the protective device and the modules. It specifically notes reduced effectiveness for longer outlying strings and identifies additional SPDs along string cabling as one possible means of increasing protection.
+
+These provisions support V11 reporting:
+
+- route length by string;
+- loop area;
+- conductor separation;
+- electrical distance to SPD locations;
+- propagation delay and distributed parameters.
+
+They do not establish that leapfrog alone removes the need for an SPD or proves a specific transient reduction.
+
+### 3. Leapfrog has contractual utility-scale deployment evidence
+
+The confidential Employer's Requirements expressly require factory-fitted module leads long enough for series interconnection in a leapfrog arrangement. This is strong evidence that leapfrog is not merely a theoretical or marketing topology: it has been specified contractually for a major UK utility-scale solar project by an independent engineering adviser.
+
+Because the source is confidential, the public repository records only this bounded conclusion and does not reproduce the project wording or identify the document.
+
+### 4. Both poles at one end can reduce purchased field PV wire
+
+Published industry guidance describes leapfrog wiring as a way to locate both poles of a PV source circuit at roughly the same point. Where module wire whips are already long enough, it can reduce separately installed field PV wire per source circuit.
 
 This supports the statement:
 
 > Leapfrog can reduce separately installed home-run PV wire.
 
 It does not, by itself, prove that total copper or total conductor length is reduced when the customer must pay for substantially longer factory-fitted module leads.
-
-### 2. Minimising conductive-loop area is a strong and independent justification
-
-IEC 62548 wiring guidance requires or recommends array wiring to minimise conductive-loop area to reduce lightning-induced overvoltage. Schneider Electric's Electrical Installation Guide, Phoenix Contact's PV lightning guidance, and IEA PVPS lightning guidance all repeat the same physical principle: a PV string circuit forms a loop/antenna, and the larger its enclosed area, the more energy can be electromagnetically coupled into it.
-
-Sources:
-
-- https://webstore.iec.ch/en/publication/64171
-- https://www.electrical-installation.org/enwiki/Photovoltaic_architectures_-_common_characteristics
-- https://www.phoenixcontact.com/en-gb/products/surge-protection/surge-protection-for-photovoltaic-systems
-- IEC TS 62738: https://webstore.iec.ch/en/publication/26942
-
-This supports the statement:
-
-> Leapfrog is potentially valuable when it causes the outgoing and return portions of the DC circuit to remain close together and demonstrably reduces enclosed loop area.
-
-The benefit is not automatic. A poor physical installation with long separated or coiled leads can defeat the topology's intended loop-area advantage.
 
 ## Exact geometric argument
 
@@ -154,7 +176,7 @@ The straight combined reach required for a skipped-module connection is:
 
 Two 1.4 m leads provide 2.8 m combined usable length, giving 0.974 m straight reserve. This is sufficient, but it is also substantially oversized relative to the ideal geometric requirement.
 
-If repeated over most of a 30-module string, nearly one metre of reserve per mated pair can create a large quantity of excess cable. Excess cable must not be coiled into loops; lightning/EMI guidance recommends minimising loops, and research on induced currents recommends avoiding coils and using controlled routing where excess cannot be eliminated.
+If repeated over most of a 30-module string, nearly one metre of reserve per mated pair can create a large quantity of excess cable. Excess cable must not be coiled into loops because that can undermine the IEC minimum-loop-area objective.
 
 The correct procurement objective is not merely `long enough`. It is:
 
@@ -170,6 +192,7 @@ The correct procurement objective is not merely `long enough`. It is:
 4. The topology can reduce conductive-loop area when the actual lead routes are kept close and verified geometrically.
 5. Reduced loop area can reduce susceptibility to lightning-induced overvoltage and EMI.
 6. Installation repeatability may improve when the module and cable-routing system is designed specifically for the topology.
+7. The arrangement has documented contractual deployment in utility-scale UK solar.
 
 ### Conditional arguments
 
@@ -186,6 +209,7 @@ The correct procurement objective is not merely `long enough`. It is:
 3. `A 1.4 m lead is sufficient because it exceeds one module width.`
 4. `Longer leads automatically reduce loop area.`
 5. `The spreadsheet's EUR700 MW saving is bankable without module-option pricing and installation evidence.`
+6. `Leapfrog compliance alone proves adequate lightning protection.`
 
 ## Required V11 method
 
@@ -203,7 +227,9 @@ V11 should calculate and report separately:
 10. installed cost by component class;
 11. positive/negative route vertices;
 12. signed and absolute loop area;
-13. excess lead length and its routing method.
+13. excess lead length and its routing method;
+14. maximum PCE-to-module route length used for the IEC critical-length test;
+15. SPD locations and electrical distance to the protected modules.
 
 The software must expose at least four different outputs:
 
@@ -228,10 +254,13 @@ Before a project or purchase-order conclusion is issued, obtain:
 - installed routing/clipping trial;
 - loop-area comparison from explicit route vertices;
 - resistance/loss comparison using declared cable data;
+- project lightning ground-flash density;
+- IEC 62548-1 critical-length assessment;
+- SPD coordination and electrical-distance assessment;
 - O&M replacement strategy for non-standard modules.
 
 ## Conclusion
 
-Leapfrog is a legitimate and deployed PV wiring method. Its strongest engineering case is presenting both string ends together and enabling low-loop-area routing. Its strongest commercial case is reducing separately installed field PV wire and associated labour.
+Leapfrog is a legitimate and deployed PV wiring method. Its strongest engineering case is presenting both string ends together and enabling low-loop-area routing, directly aligned with IEC wiring principles. Its strongest commercial case is reducing separately installed field PV wire and associated labour.
 
 It should not be sold as an automatic total-copper or total-conductor saving. Under the supplied 0.84 m / 1.89 m lead assumptions, the leapfrog string contains 23.76 m more total conductor than the conventional string, before accounting for practical slack. The financial result depends on the relative prices and resistances of custom 4 mm2 factory leads and removed 6 mm2 field cable, not on field-cable metres alone.
