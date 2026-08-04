@@ -76,6 +76,22 @@ The V8 laboratory page is a read-only visual/behaviour reference. No laboratory 
 - Non-default array reconfirmed: 12 strips × 20 modules = 240 cells across 6 MPPTs.
 - Sequential and leapfrog traversal orders, safe-scroll hash, explicit-edit identity retention and outside-boundary rejection all remained green.
 
+## Mobile documentation-head validation receipt
+
+- Tested SHA: `dd19fcf8225fea3620e8dbfd46e814aeaca84c9b`.
+- Workflow: `V11 Control Plane Validation`, run `30864411791`, successful.
+- Control-plane job: `91853031839`, successful.
+- Immutable public-endpoint job: `91853031872`, successful.
+- Visible pinned-Chromium job: `91853031877`, successful.
+- Browser elapsed time: `2.722 seconds`, below the `100 seconds` browser cap.
+- Browser evidence artefact: `8875557685`, digest `sha256:e2dc8c4e295e61d6909c4726e33fb7b4ce799e5970710f8a33628ed1bece020d`.
+- Public endpoint artefact: `8875544711`, digest `sha256:75b60f4b57e1baf70a9cb77cc732bc28586e7113f8bfbb9d4e6ad3dc088d5691`.
+- Control-plane artefact: `8875544538`, digest `sha256:2cb6b8b0cc0ef8c26ac2169930d2946ab017b5fb5605c104ec6e175c195b91b8`.
+- Reconfirmed: 24 strips, 720 topology cells, 12 MPPT groups, 24 physical inputs, authorised sequential and leapfrog traversal, safe scrolling, locked physical editing, explicit edit identity retention, outside-boundary rejection and 12 × 20 operation.
+- Mobile styles reconfirmed: MPPT header `11px`, top padding `5px`, strip `overflow-x: auto`, strip `touch-action: pan-x pan-y`, selected summary `position: sticky`.
+- Safe-scroll layout hash remained `sha256:809f7133409b9498cbc3489c7e397b72fc73d08fec33d911d44e515e0dc2597a`.
+- Explicit edit retained `MOD-0709`, `STR-24` and electrical index `19`; accepted layout hash `sha256:6f2f62b145f5716af7f0fd130924131a3eb508ad7ccc3f566e542cabda402939`.
+
 ## Existing evidence
 
 - Chromium authority: run `30835051238`, job `91758073073`, artefact `8864492249`.
@@ -95,4 +111,4 @@ The V8 laboratory page is a read-only visual/behaviour reference. No laboratory 
 
 ## Next pass
 
-Consume the PR-visible `V11 Control Plane Validation` receipt for this documentation head. If green, update the GlobalGrid2050 `/v11/` monitor to the exact immutable mobile-readability SHA `f870883dfdfcabf2edcc800ff7a17e41fb0aa05a` and verify the public monitor URL. Keep its homepage entry only inside the Solar & BESS Topology nest after V10. Do not advance to explicit terminal routing until the monitor points at this green immutable build.
+Consume the PR-visible `V11 Control Plane Validation` receipt for this receipt head. If green, update the GlobalGrid2050 `/v11/` monitor to the exact immutable mobile-readability SHA `f870883dfdfcabf2edcc800ff7a17e41fb0aa05a` and verify the public monitor URL. Keep its homepage entry only inside the Solar & BESS Topology nest after V10. Do not advance to explicit terminal routing until the monitor points at this green immutable build.
