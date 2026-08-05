@@ -1,0 +1,53 @@
+name: V11 Engineering Scenario Grid
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [build/v11-inverter-block-simulator]
+    paths:
+      - "v11_simulation/**"
+      - "reference/lab_inverter_block_24_strings.json"
+      - "scripts/overnight_campaign.py"
+      - ".github/workflows/v11-engineering-scenario-grid.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v11-engineering-grid-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  scenario:
+    name: "Scenario ${{ matrix.name }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {name: route, seed: 3101}
+          - {name: thermal, seed: 3102}
+          - {name: current, seed: 3103}
+          - {name: spacing, seed: 3104}
+          - {name: permittivity, seed: 3105}
+          - {name: connectors, seed: 3106}
+          - {name: cold-voc, seed: 3107}
+          - {name: long-string, seed: 3108}
+          - {name: independent-a, seed: 3109}
+          - {name: independent-b, seed: 3110}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: "3.11.15"}
+      - run: |
+          mkdir -p scenario-evidence
+          python -S scripts/overnight_campaign.py --duration-seconds 210 --seed ${{ matrix.seed }} --phase scenario-${{ matrix.name }} --output scenario-evidence/${{ matrix.name }}.json --checkpoint-seconds 30 --parity-seconds 60
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-scenario-${{ matrix.name }}-${{ github.run_id }}
+          path: scenario-evidence
+          if-no-files-found: error
+          retention-days: 90

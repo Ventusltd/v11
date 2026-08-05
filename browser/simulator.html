@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>V11 — 24-String Inverter Block Simulator</title>
+<style>
+:root{--bg:#090b0e;--panel:#12161c;--line:#29313b;--text:#eef2f6;--muted:#a0abb7;--gold:#f2c94c;--cyan:#56ccf2;--green:#6fcf97;--red:#eb5757}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}main{max-width:1440px;margin:auto;padding:32px 22px 80px}header{display:grid;gap:12px;margin-bottom:28px}.eyebrow{color:var(--gold);font-weight:800;letter-spacing:.14em;text-transform:uppercase}h1{font:800 clamp(2.1rem,5vw,5rem)/.95 system-ui;margin:0;max-width:1000px}h2{font:750 1.4rem system-ui;margin:0 0 14px}p{max-width:980px;color:var(--muted)}.summary,.line-metrics{display:flex;gap:18px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);padding:14px 18px}.summary strong{color:var(--gold)}.layout{display:grid;grid-template-columns:minmax(280px,360px) 1fr;gap:20px}.panel{background:var(--panel);border:1px solid var(--line);padding:18px}.controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}.controls label{display:grid;gap:5px;color:var(--muted)}input{width:100%;background:#080a0d;border:1px solid var(--line);color:var(--text);padding:9px}button{grid-column:1/-1;border:0;background:var(--gold);color:#111;padding:12px;font-weight:900;cursor:pointer}.metrics{display:grid;grid-template-columns:repeat(2,minmax(240px,1fr));gap:12px}.metric{border:1px solid var(--line);padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:4px}.metric span,.metric em{grid-column:1/-1}.metric strong:nth-of-type(1)::before{content:"SEQ ";color:var(--cyan);font-size:.7rem}.metric strong:nth-of-type(2)::before{content:"LEAP ";color:var(--gold);font-size:.7rem}.metric small{color:var(--muted)}.metric em{font-style:normal;color:var(--muted)}.metric em.leapfrog{color:var(--green)}.metric em.sequential{color:var(--cyan)}svg{width:100%;height:115px;background:#080a0d;border:1px solid var(--line)}svg rect{fill:#1d2630;stroke:#536273}svg text{fill:var(--muted);font-size:8px;text-anchor:middle}.route{fill:none;stroke-width:2}.route.sequential{stroke:var(--cyan)}.route.leapfrog{stroke:var(--gold)}.tables{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px;overflow:hidden}.table-wrap{overflow:auto;max-height:520px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:7px;border-bottom:1px solid var(--line);text-align:right}th:first-child,td:first-child{text-align:left}th{position:sticky;top:0;background:#171c22;color:var(--gold)}#status{color:var(--gold)}#hashes{word-break:break-all;font-size:11px;color:var(--muted);margin-top:18px}@media(max-width:950px){.layout,.tables{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}.controls{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body><main>
+<header><span class="eyebrow">GlobalGrid2050 · V11 engineering simulation</span><h1>Complete 24-string inverter block</h1><p>V6-style circuit loss, V8-style sequential/leapfrog topology, and transmission-line timing in one browser. The reference block is adapted from the laboratory at its pinned commit; unresolved equipment values remain visibly provisional.</p><div id="reference-summary" class="summary"></div></header>
+<div class="layout">
+<section class="panel"><h2>Simulation inputs</h2><div class="controls">
+<label>Operating current A<input id="operating-current" type="number" step="0.01" value="17.31"></label>
+<label>Conductor temperature °C<input id="conductor-temperature" type="number" step="1" value="70"></label>
+<label>Minimum cell temperature °C<input id="minimum-temperature" type="number" step="1" value="-10"></label>
+<label>Pair spacing mm<input id="pair-spacing-mm" type="number" step="0.1" value="6.4"></label>
+<label>Effective relative permittivity<input id="relative-permittivity" type="number" step="0.05" value="2.0"></label>
+<label>Sequential return separation m<input id="row-return-separation" type="number" step="0.1" value="1.0"></label>
+<label>Route multiplier<input id="route-multiplier" type="number" step="0.05" value="1.0"></label>
+<label>Module pitch m<input id="module-pitch" type="number" step="0.001" value="1.308"></label>
+<button id="simulate">Run complete block simulation</button></div><p id="status">Loading…</p><div id="line-metrics" class="line-metrics"></div></section>
+<section><div id="metrics" class="metrics"></div><div class="panel" style="margin-top:16px"><h2>Electrical traversal</h2><svg id="sequential-svg" viewBox="0 0 920 110"></svg><svg id="leapfrog-svg" viewBox="0 0 920 110" style="margin-top:10px"></svg></div></section>
+</div>
+<section class="tables"><div class="panel"><h2>Sequential — all 24 strings</h2><div class="table-wrap"><table id="sequential-table"><thead><tr><th>String</th><th>MPPT</th><th>Route m</th><th>R Ω</th><th>ΔV V</th><th>Loss W</th><th>RT µs</th><th>I·Z₀ V</th></tr></thead><tbody></tbody></table></div></div><div class="panel"><h2>Leapfrog — all 24 strings</h2><div class="table-wrap"><table id="leapfrog-table"><thead><tr><th>String</th><th>MPPT</th><th>Route m</th><th>R Ω</th><th>ΔV V</th><th>Loss W</th><th>RT µs</th><th>I·Z₀ V</th></tr></thead><tbody></tbody></table></div></div></section>
+<div id="hashes"></div>
+</main><script type="module" src="./simulator-app.mjs"></script></body></html>

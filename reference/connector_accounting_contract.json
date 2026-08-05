@@ -1,0 +1,57 @@
+{
+  "schema_version": "globalgrid2050.v11.connector-accounting-contract.v1",
+  "scope": "one completed PV string including module connectors, two string cables and two inverter connector ends",
+  "polarity_marker_contract": {
+    "positive": "red",
+    "negative": "blue",
+    "cable_jackets": "black",
+    "connector_gender_inferred_from_polarity": false
+  },
+  "formulae": {
+    "module_connector_end_count": "2N",
+    "string_cable_connector_end_count": "4",
+    "inverter_connector_end_count": "2",
+    "complete_system_connector_end_count": "2N+6",
+    "module_to_module_mate_count": "N-1",
+    "module_to_string_cable_mate_count": "2",
+    "string_cable_to_inverter_mate_count": "2",
+    "total_mated_interface_count": "N+3",
+    "positive_connector_end_count": "N+3",
+    "negative_connector_end_count": "N+3"
+  },
+  "resistance_policy": {
+    "schema_version": "globalgrid2050.v11.connector-resistance-policy.v1",
+    "evidence_state": "provisional_fixture",
+    "applies_to": "all_completed_mated_interfaces",
+    "included_interface_classes": [
+      "module_to_module",
+      "module_to_string_cable",
+      "string_cable_to_inverter"
+    ],
+    "contact_resistance_ohm_per_mated_interface": 0.00035,
+    "note": "Uniform provisional contact resistance pending manufacturer-specific interface evidence."
+  },
+  "examples": [
+    {
+      "modules_per_string": 30,
+      "complete_system_connector_end_count": 66,
+      "total_mated_interface_count": 33,
+      "positive_connector_end_count": 33,
+      "negative_connector_end_count": 33
+    },
+    {
+      "modules_per_string": 28,
+      "complete_system_connector_end_count": 62,
+      "total_mated_interface_count": 31,
+      "positive_connector_end_count": 31,
+      "negative_connector_end_count": 31
+    },
+    {
+      "modules_per_string": 20,
+      "complete_system_connector_end_count": 46,
+      "total_mated_interface_count": 23,
+      "positive_connector_end_count": 23,
+      "negative_connector_end_count": 23
+    }
+  ]
+}
