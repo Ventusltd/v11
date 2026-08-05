@@ -189,7 +189,7 @@ try {
   assert.equal(mobileStyles.strip_overflow_x, 'auto');
   assert.match(mobileStyles.strip_touch_action, /pan-x/);
   assert.equal(mobileStyles.selected_summary_position, 'sticky');
-  assert.equal(mobileStyles.selected_diagram_display, 'none');
+  assert.equal(mobileStyles.selected_diagram_display, 'block');
   assert.match(mobileStyles.selected_summary_text, /STR-01/);
   await page.setViewportSize({ width: 1600, height: 1200 });
 
