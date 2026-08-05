@@ -1,0 +1,270 @@
+name: V11 Live Simulator
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [build/v11-inverter-block-simulator]
+    paths:
+      - "browser/**"
+      - "reference/**"
+      - "v11_simulation/**"
+      - "scripts/compare_python_js.py"
+      - "tests/**"
+      - "BUILD_PLAN.md"
+      - "LIVE_DEMO.md"
+      - ".github/workflows/v11-live-demo.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: v11-live-simulator-pages
+  cancel-in-progress: true
+
+jobs:
+  browser_e2e:
+    name: Prove workbench in pinned Chromium
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.cache/ms-playwright
+    steps:
+      - name: Check out exact browser head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - name: Validate E2E syntax
+        run: node --check tests/workbench_browser_e2e.mjs
+      - name: Install pinned Playwright Chromium
+        run: |
+          set -euo pipefail
+          npm install --no-save --no-package-lock playwright-core@1.55.0
+          node node_modules/playwright-core/cli.js install --with-deps chromium
+          CHROME_PATH="$(node --input-type=module -e 'import { chromium } from "playwright-core"; process.stdout.write(chromium.executablePath())')"
+          test -x "$CHROME_PATH"
+          printf 'CHROME_PATH=%s\n' "$CHROME_PATH" >> "$GITHUB_ENV"
+      - name: Run headless Chromium workbench acceptance
+        run: |
+          set -euo pipefail
+          mkdir -p live-e2e-evidence
+          timeout 100s node tests/workbench_browser_e2e.mjs 2>&1 | tee live-e2e-evidence/result.json
+      - name: Upload Chromium acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-live-browser-e2e-${{ github.run_id }}
+          path: live-e2e-evidence
+          if-no-files-found: error
+          retention-days: 90
+
+  build:
+    name: Validate and package live simulator
+    needs: browser_e2e
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out exact deployment head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.15"
+      - name: Run product acceptance tests
+        run: |
+          set -euo pipefail
+          python -S -m unittest -v tests/test_simulation_engine.py tests/test_layout_engine.py tests/test_module_layout_campaign.py
+          node --test tests/simulation_core.test.mjs tests/layout_core.test.mjs tests/layout_simulation_bridge.test.mjs tests/workbench_analysis.test.mjs
+          python -S scripts/compare_python_js.py --timeout-seconds 20
+          node --check browser/workbench.mjs
+          node --check browser/layout-simulation-bridge.mjs
+          node --check browser/workbench-analysis.mjs
+          node --check tests/workbench_browser_e2e.mjs
+      - name: Build static simulator artifact
+        run: |
+          set -euo pipefail
+          rm -rf site
+          mkdir -p site
+          cp -R browser reference site/
+          cat > site/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>V11 Solar DC Simulator</title><meta http-equiv="refresh" content="0;url=browser/workbench.html"></head><body><p><a href="browser/workbench.html">Open the V11 integrated solar DC workbench</a></p><script>location.replace('browser/workbench.html')</script></body></html>
+          HTML
+          touch site/.nojekyll
+          test -s site/browser/workbench.html
+          test -s site/browser/workbench.mjs
+          test -s site/browser/layout-core.mjs
+          test -s site/browser/layout-simulation-bridge.mjs
+          test -s site/browser/workbench-analysis.mjs
+          test -s site/reference/lab_inverter_block_24_strings.json
+          grep -q "Integrated solar DC workbench" site/browser/workbench.html
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+          retention-days: 7
+
+  fallback:
+    name: Verify public fallback simulator
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Verify exact-commit raw.githack endpoints
+        env:
+          TESTED_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          base="https://rawcdn.githack.com/${REPOSITORY}/${TESTED_SHA}/"
+          mkdir -p fallback-evidence
+          fetch() {
+            path="$1"
+            output="$2"
+            ready=0
+            for attempt in {1..30}; do
+              if curl -fsSL "${base}${path}" -o "$output"; then
+                ready=1
+                break
+              fi
+              sleep 2
+            done
+            test "$ready" -eq 1
+          }
+          fetch "browser/workbench.html" fallback-evidence/workbench.html
+          fetch "browser/workbench.mjs" fallback-evidence/workbench.mjs
+          fetch "browser/layout-core.mjs" fallback-evidence/layout-core.mjs
+          fetch "browser/layout-simulation-bridge.mjs" fallback-evidence/layout-simulation-bridge.mjs
+          fetch "browser/workbench-analysis.mjs" fallback-evidence/workbench-analysis.mjs
+          fetch "reference/lab_inverter_block_24_strings.json" fallback-evidence/reference.json
+          grep -q "Integrated solar DC workbench" fallback-evidence/workbench.html
+          grep -q "simulateComparison" fallback-evidence/workbench.mjs
+          grep -q "export function moveModule" fallback-evidence/layout-core.mjs
+          grep -q "referenceFromLayout" fallback-evidence/layout-simulation-bridge.mjs
+          grep -q "buildEngineeringPackage" fallback-evidence/workbench-analysis.mjs
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          reference = json.loads(Path('fallback-evidence/reference.json').read_text())
+          assert reference['array']['string_count'] == 24
+          assert reference['array']['modules_per_string'] == 30
+          repository = os.environ['REPOSITORY']
+          sha = os.environ['TESTED_SHA']
+          summary = {
+              'schema_version': 'globalgrid2050.v11.live-fallback-verification.v1',
+              'tested_sha': sha,
+              'run_id': int(os.environ['RUN_ID']),
+              'immutable_demo_url': f'https://rawcdn.githack.com/{repository}/{sha}/browser/workbench.html',
+              'stable_demo_url': f'https://raw.githack.com/{repository}/v11-live-demo/browser/workbench.html',
+              'reference_boundary': {'strings': 24, 'modules_per_string': 30, 'modules': 720},
+          }
+          Path('fallback-evidence/summary.json').write_text(json.dumps(summary, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(summary, sort_keys=True))
+          PY
+      - name: Upload fallback verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-live-fallback-${{ github.run_id }}
+          path: fallback-evidence
+          if-no-files-found: error
+          retention-days: 90
+
+  deploy:
+    name: Publish preferred GitHub Pages simulator
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    continue-on-error: true
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure GitHub Pages
+        id: pages_config
+        continue-on-error: true
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Deploy to GitHub Pages
+        if: steps.pages_config.outcome == 'success'
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  verify_pages:
+    name: Verify preferred Pages endpoints
+    needs: deploy
+    if: needs.deploy.result == 'success' && needs.deploy.outputs.page_url != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Verify published HTML, modules and reference
+        env:
+          PAGE_URL: ${{ needs.deploy.outputs.page_url }}
+          TESTED_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          : "${PAGE_URL:?deploy-pages did not emit page_url}"
+          base="${PAGE_URL%/}/"
+          mkdir -p pages-evidence
+          ready=0
+          for attempt in {1..30}; do
+            if curl -fsSL "${base}browser/workbench.html" -o pages-evidence/workbench.html; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          test "$ready" -eq 1
+          curl -fsSL "$base" -o pages-evidence/index.html
+          curl -fsSL "${base}browser/workbench.mjs" -o pages-evidence/workbench.mjs
+          curl -fsSL "${base}browser/layout-core.mjs" -o pages-evidence/layout-core.mjs
+          curl -fsSL "${base}browser/layout-simulation-bridge.mjs" -o pages-evidence/layout-simulation-bridge.mjs
+          curl -fsSL "${base}browser/workbench-analysis.mjs" -o pages-evidence/workbench-analysis.mjs
+          curl -fsSL "${base}reference/lab_inverter_block_24_strings.json" -o pages-evidence/reference.json
+          grep -q "V11 Solar DC Simulator" pages-evidence/index.html
+          grep -q "Integrated solar DC workbench" pages-evidence/workbench.html
+          grep -q "simulateComparison" pages-evidence/workbench.mjs
+          grep -q "export function moveModule" pages-evidence/layout-core.mjs
+          grep -q "referenceFromLayout" pages-evidence/layout-simulation-bridge.mjs
+          grep -q "buildEngineeringPackage" pages-evidence/workbench-analysis.mjs
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          reference = json.loads(Path('pages-evidence/reference.json').read_text())
+          assert reference['array']['string_count'] == 24
+          assert reference['array']['modules_per_string'] == 30
+          summary = {
+              'schema_version': 'globalgrid2050.v11.pages-verification.v1',
+              'page_url': os.environ['PAGE_URL'],
+              'tested_sha': os.environ['TESTED_SHA'],
+              'run_id': int(os.environ['RUN_ID']),
+              'reference_boundary': {'strings': 24, 'modules_per_string': 30, 'modules': 720},
+          }
+          Path('pages-evidence/summary.json').write_text(json.dumps(summary, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(summary, sort_keys=True))
+          PY
+      - name: Upload Pages verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-live-pages-${{ github.run_id }}
+          path: pages-evidence
+          if-no-files-found: error
+          retention-days: 90

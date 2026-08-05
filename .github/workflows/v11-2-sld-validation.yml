@@ -1,0 +1,326 @@
+name: V11.2 Full-Array SLD Validation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - build/v11.2-full-array-sld
+    paths:
+      - "v11.2/**"
+      - ".github/workflows/v11-2-sld-validation.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "v11.2/**"
+      - ".github/workflows/v11-2-sld-validation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v11-2-sld-${{ github.event.pull_request.head.ref || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  full_array_sld:
+    name: V8-style 24-string SLD Chromium gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.cache/ms-playwright
+      TESTED_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Check out exact branch head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TESTED_COMMIT_SHA }}
+
+      - name: Validate drawing source syntax and surface
+        run: |
+          set -euo pipefail
+          node --check v11.2/app.js
+          test -s v11.2/index.html
+          test -s v11.2/styles.css
+          grep -q 'id="sld"' v11.2/index.html
+          grep -q 'data-mode="sequential"' v11.2/index.html
+          grep -q 'data-mode="leapfrog"' v11.2/index.html
+          grep -q 'id="fit"' v11.2/index.html
+
+      - name: Restore pinned Chromium cache
+        id: chromium-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+          key: playwright-chromium-${{ runner.os }}-1.55.0
+
+      - name: Install pinned Playwright Chromium
+        run: |
+          set -euo pipefail
+          npm install --no-save --no-package-lock playwright-core@1.55.0
+          if [ "${{ steps.chromium-cache.outputs.cache-hit }}" != "true" ]; then
+            node node_modules/playwright-core/cli.js install chromium
+          fi
+          CHROME_PATH="$(node --input-type=module -e 'import { chromium } from "playwright-core"; process.stdout.write(chromium.executablePath())')"
+          test -x "$CHROME_PATH"
+
+      - name: Prove all connector and mate endpoints in Chromium
+        run: |
+          set -euo pipefail
+          mkdir -p v11.2-evidence
+          python3 -m http.server 8765 >v11.2-evidence/http.log 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true' EXIT
+          for attempt in {1..20}; do
+            curl -fsS http://127.0.0.1:8765/v11.2/index.html >/dev/null && break
+            sleep 1
+          done
+          cat > v11.2-evidence/chromium-gate.mjs <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import { createRequire } from 'node:module';
+
+          const require = createRequire(import.meta.url);
+          const { chromium } = require(path.join(process.cwd(), 'node_modules/playwright-core'));
+          const browser = await chromium.launch({ headless: true });
+          const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
+          const browserErrors = [];
+          page.on('console', (message) => {
+            if (message.type() === 'error') browserErrors.push(`console: ${message.text()}`);
+          });
+          page.on('pageerror', (error) => browserErrors.push(`pageerror: ${error.message}`));
+
+          await page.goto('http://127.0.0.1:8765/v11.2/index.html', { waitUntil: 'networkidle' });
+          await page.waitForFunction(() =>
+            window.__V11_2_SLD_EVIDENCE__?.pass === true
+            && window.__V11_2_GEOMETRY_EVIDENCE__?.pass === true,
+          null, { timeout: 30000 });
+
+          async function selectMode(mode) {
+            await page.locator(`[data-mode="${mode}"]`).click();
+            await page.waitForFunction((expected) =>
+              document.querySelector('#sld')?.dataset.mode === expected
+              && window.__V11_2_SLD_EVIDENCE__?.mode === expected
+              && window.__V11_2_SLD_EVIDENCE__?.pass === true
+              && window.__V11_2_GEOMETRY_EVIDENCE__?.pass === true,
+            mode, { timeout: 10000 });
+          }
+
+          async function inspectMode(expectedMode) {
+            return page.evaluate((mode) => {
+              const svg = document.querySelector('#sld');
+              const groups = [...svg.querySelectorAll('g[data-string-id]')];
+              const modules = [...svg.querySelectorAll('.module-body')];
+              const connectors = [...svg.querySelectorAll('.connector')];
+              const mates = [...svg.querySelectorAll('.mate-path')];
+              const connectorIds = connectors.map((node) => node.id);
+              const interfaceIds = mates.map((node) => node.id);
+              const duplicates = (values) => [...new Set(values.filter((value, index) => values.indexOf(value) !== index))];
+              const endpointErrors = [];
+              const ownershipErrors = [];
+              const incidence = new Map(connectorIds.map((id) => [id, 0]));
+              const tolerance = 0.01;
+              const point = (connector) => ({
+                x: connector.cx.baseVal.value,
+                y: connector.cy.baseVal.value,
+              });
+              const near = (left, right) => Math.abs(left - right) <= tolerance;
+              const pad2 = (value) => String(value).padStart(2, '0');
+              const expectedOrder = mode === 'sequential'
+                ? Array.from({ length: 30 }, (_, index) => index + 1)
+                : [1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,30,28,26,24,22,20,18,16,14,12,10,8,6,4,2];
+              const perString = [];
+
+              for (const mate of mates) {
+                const sourceId = mate.dataset.sourceConnectorId;
+                const destinationId = mate.dataset.destinationConnectorId;
+                const source = document.getElementById(sourceId);
+                const destination = document.getElementById(destinationId);
+                if (!source || !destination) {
+                  endpointErrors.push({ interface_id: mate.id, source_id: sourceId, destination_id: destinationId, reason: 'unresolved connector ID' });
+                  continue;
+                }
+                incidence.set(sourceId, (incidence.get(sourceId) ?? 0) + 1);
+                incidence.set(destinationId, (incidence.get(destinationId) ?? 0) + 1);
+                const start = mate.getPointAtLength(0);
+                const end = mate.getPointAtLength(mate.getTotalLength());
+                const sourcePoint = point(source);
+                const destinationPoint = point(destination);
+                if (!near(start.x, sourcePoint.x) || !near(start.y, sourcePoint.y)
+                    || !near(end.x, destinationPoint.x) || !near(end.y, destinationPoint.y)) {
+                  endpointErrors.push({
+                    interface_id: mate.id,
+                    source_id: sourceId,
+                    destination_id: destinationId,
+                    path_start: { x: start.x, y: start.y },
+                    path_end: { x: end.x, y: end.y },
+                    source_point: sourcePoint,
+                    destination_point: destinationPoint,
+                    reason: 'path geometry does not terminate on connector centres',
+                  });
+                }
+                const group = mate.closest('g[data-string-id]');
+                if (!group || source.closest('g[data-string-id]') !== group || destination.closest('g[data-string-id]') !== group) {
+                  ownershipErrors.push({ interface_id: mate.id, source_id: sourceId, destination_id: destinationId });
+                }
+              }
+
+              for (const group of groups) {
+                const stringId = group.dataset.stringId;
+                const stringNumber = Number(stringId.slice(4));
+                const groupConnectors = [...group.querySelectorAll('.connector')];
+                const groupMates = [...group.querySelectorAll('.mate-path')];
+                const classCounts = groupMates.reduce((result, mate) => {
+                  result[mate.dataset.interfaceClass] = (result[mate.dataset.interfaceClass] ?? 0) + 1;
+                  return result;
+                }, {});
+                const moduleMates = groupMates
+                  .filter((mate) => mate.dataset.interfaceClass === 'module_to_module')
+                  .sort((left, right) => left.id.localeCompare(right.id));
+                const expectedModulePairs = expectedOrder.slice(0, -1).map((fromModule, index) => ({
+                  source: `${stringId}-M${pad2(fromModule)}-POS-CONNECTOR`,
+                  destination: `${stringId}-M${pad2(expectedOrder[index + 1])}-NEG-CONNECTOR`,
+                }));
+                const actualModulePairs = moduleMates.map((mate) => ({
+                  source: mate.dataset.sourceConnectorId,
+                  destination: mate.dataset.destinationConnectorId,
+                }));
+                const expectedInterfaceIds = Array.from({ length: 33 }, (_, index) =>
+                  `${stringId}-MATE-${String(index + 1).padStart(3, '0')}`);
+                const actualInterfaceIds = groupMates.map((mate) => mate.id).sort();
+                const freePositiveModule = mode === 'sequential' ? 30 : 2;
+                const expectedBoundaryPairs = [
+                  [`${stringId}-MATE-001`, `${stringId}-IN-${pad2(stringNumber)}-NEG-INVERTER-SOCKET`, `${stringId}-NEG-STRING-CABLE-INVERTER-END`],
+                  [`${stringId}-MATE-002`, `${stringId}-NEG-STRING-CABLE-MODULE-END`, `${stringId}-M01-NEG-CONNECTOR`],
+                  [`${stringId}-MATE-032`, `${stringId}-M${pad2(freePositiveModule)}-POS-CONNECTOR`, `${stringId}-POS-STRING-CABLE-MODULE-END`],
+                  [`${stringId}-MATE-033`, `${stringId}-POS-STRING-CABLE-INVERTER-END`, `${stringId}-IN-${pad2(stringNumber)}-POS-INVERTER-SOCKET`],
+                ];
+                const boundaryPass = expectedBoundaryPairs.every(([id, source, destination]) => {
+                  const mate = document.getElementById(id);
+                  return mate?.dataset.sourceConnectorId === source && mate?.dataset.destinationConnectorId === destination;
+                });
+                perString.push({
+                  string_id: stringId,
+                  connector_ends: groupConnectors.length,
+                  mated_interfaces: groupMates.length,
+                  module_to_module: classCounts.module_to_module ?? 0,
+                  module_to_string_cable: classCounts.module_to_string_cable ?? 0,
+                  string_cable_to_inverter: classCounts.string_cable_to_inverter ?? 0,
+                  interface_ids_exact: JSON.stringify(actualInterfaceIds) === JSON.stringify(expectedInterfaceIds),
+                  module_pairs_exact: JSON.stringify(actualModulePairs) === JSON.stringify(expectedModulePairs),
+                  boundary_pairs_exact: boundaryPass,
+                });
+              }
+
+              const incidenceErrors = [...incidence.entries()]
+                .filter(([, count]) => count !== 1)
+                .map(([connector_id, count]) => ({ connector_id, count }));
+              const modulePositions = Object.fromEntries(modules.map((module) => [module.id, {
+                x: Number(module.getAttribute('x')),
+                y: Number(module.getAttribute('y')),
+                width: Number(module.getAttribute('width')),
+                height: Number(module.getAttribute('height')),
+              }]));
+              const matePairs = Object.fromEntries(mates.map((mate) => [mate.id, [
+                mate.dataset.sourceConnectorId,
+                mate.dataset.destinationConnectorId,
+              ]]));
+              const perStringPass = perString.every((item) =>
+                item.connector_ends === 66
+                && item.mated_interfaces === 33
+                && item.module_to_module === 29
+                && item.module_to_string_cable === 2
+                && item.string_cable_to_inverter === 2
+                && item.interface_ids_exact
+                && item.module_pairs_exact
+                && item.boundary_pairs_exact);
+              const pass = svg.dataset.mode === mode
+                && groups.length === 24
+                && modules.length === 720
+                && connectors.length === 1584
+                && mates.length === 792
+                && duplicates(connectorIds).length === 0
+                && duplicates(interfaceIds).length === 0
+                && endpointErrors.length === 0
+                && ownershipErrors.length === 0
+                && incidenceErrors.length === 0
+                && perStringPass;
+              return {
+                mode,
+                strings: groups.length,
+                modules: modules.length,
+                connector_ends: connectors.length,
+                mating_interfaces: mates.length,
+                connector_id_duplicates: duplicates(connectorIds),
+                interface_id_duplicates: duplicates(interfaceIds),
+                endpoint_errors: endpointErrors,
+                ownership_errors: ownershipErrors,
+                connector_incidence_errors: incidenceErrors,
+                per_string: perString,
+                connector_ids: connectorIds.sort(),
+                interface_ids: interfaceIds.sort(),
+                module_positions: modulePositions,
+                mate_pairs: matePairs,
+                pass,
+              };
+            }, expectedMode);
+          }
+
+          await selectMode('sequential');
+          const sequential = await inspectMode('sequential');
+          await selectMode('leapfrog');
+          const leapfrog = await inspectMode('leapfrog');
+
+          const physicalPositionsPreserved = JSON.stringify(sequential.module_positions) === JSON.stringify(leapfrog.module_positions);
+          const connectorIdentitiesPreserved = JSON.stringify(sequential.connector_ids) === JSON.stringify(leapfrog.connector_ids);
+          const interfaceIdentitiesPreserved = JSON.stringify(sequential.interface_ids) === JSON.stringify(leapfrog.interface_ids);
+          const changedMatePairs = Object.keys(sequential.mate_pairs).filter((id) =>
+            JSON.stringify(sequential.mate_pairs[id]) !== JSON.stringify(leapfrog.mate_pairs[id]));
+          const expectedChangedMatePairs = 24 * 30;
+          const result = {
+            schema_version: 'globalgrid2050.v11.2.chromium-sld-endpoint-evidence.v1',
+            tested_commit_sha: process.env.TESTED_COMMIT_SHA,
+            chromium_version: await browser.version(),
+            sequential,
+            leapfrog,
+            cross_mode: {
+              physical_module_positions_preserved: physicalPositionsPreserved,
+              connector_identities_preserved: connectorIdentitiesPreserved,
+              interface_identities_preserved: interfaceIdentitiesPreserved,
+              changed_mate_pair_count: changedMatePairs.length,
+              expected_changed_mate_pair_count: expectedChangedMatePairs,
+            },
+            browser_errors: browserErrors,
+          };
+          result.pass = sequential.pass
+            && leapfrog.pass
+            && physicalPositionsPreserved
+            && connectorIdentitiesPreserved
+            && interfaceIdentitiesPreserved
+            && changedMatePairs.length === expectedChangedMatePairs
+            && browserErrors.length === 0;
+
+          fs.writeFileSync('v11.2-evidence/summary.json', `${JSON.stringify(result, null, 2)}\n`);
+          await page.screenshot({ path: 'v11.2-evidence/full-array-leapfrog.png', fullPage: true });
+          console.log(JSON.stringify({
+            schema_version: result.schema_version,
+            tested_commit_sha: result.tested_commit_sha,
+            sequential: { connector_ends: sequential.connector_ends, mating_interfaces: sequential.mating_interfaces, pass: sequential.pass },
+            leapfrog: { connector_ends: leapfrog.connector_ends, mating_interfaces: leapfrog.mating_interfaces, pass: leapfrog.pass },
+            cross_mode: result.cross_mode,
+            browser_errors: browserErrors,
+            pass: result.pass,
+          }));
+          await browser.close();
+          if (!result.pass) process.exit(1);
+          NODE
+          timeout 100s node v11.2-evidence/chromium-gate.mjs | tee v11.2-evidence/result.json
+
+      - name: Upload exact-head drawing evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-2-full-array-sld-${{ github.run_id }}
+          path: v11.2-evidence/
+          if-no-files-found: error
+          retention-days: 90

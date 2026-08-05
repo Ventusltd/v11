@@ -1,0 +1,155 @@
+name: V11 Browser Qualification
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [build/v11-inverter-block-simulator]
+    paths:
+      - "browser/**"
+      - "reference/lab_inverter_block_24_strings.json"
+      - "tests/simulation_core.test.mjs"
+      - "scripts/compare_python_js.py"
+      - ".github/workflows/v11-browser-qualification.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v11-browser-qualification-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  session_01_static_assets:
+    name: "01/10 Static assets"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - run: |
+          test -s browser/simulator.html
+          test -s browser/simulator-app.mjs
+          test -s browser/simulation-core.mjs
+          test -s reference/lab_inverter_block_24_strings.json
+
+  session_02_http_smoke:
+    name: "02/10 HTTP smoke"
+    needs: session_01_static_assets
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - run: |
+          python3 -m http.server 8765 >/tmp/v11-http.log 2>&1 &
+          server=$!
+          trap 'kill $server' EXIT
+          for i in {1..20}; do curl -fsS http://127.0.0.1:8765/browser/simulator.html -o /tmp/simulator.html && break; sleep 1; done
+          grep -q "Complete 24-string inverter block" /tmp/simulator.html
+          curl -fsS http://127.0.0.1:8765/browser/simulator-app.mjs -o /tmp/app.mjs
+          curl -fsS http://127.0.0.1:8765/reference/lab_inverter_block_24_strings.json -o /tmp/reference.json
+
+  session_03_js_tests:
+    name: "03/10 JavaScript tests"
+    needs: session_02_http_smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - run: node --test tests/simulation_core.test.mjs
+
+  session_04_python_js_parity:
+    name: "04/10 Python browser parity"
+    needs: session_03_js_tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: "3.11.15"}
+      - run: python -S scripts/compare_python_js.py --timeout-seconds 20
+
+  session_05_dom_contract:
+    name: "05/10 DOM contract"
+    needs: session_04_python_js_parity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - run: |
+          for id in operating-current conductor-temperature minimum-temperature pair-spacing-mm relative-permittivity row-return-separation route-multiplier module-pitch simulate status sequential-table leapfrog-table; do
+            grep -q "id=\"$id\"" browser/simulator.html
+          done
+
+  session_06_reference_contract:
+    name: "06/10 Reference contract"
+    needs: session_05_dom_contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - run: |
+          node - <<'NODE'
+          const fs=require('fs'); const r=JSON.parse(fs.readFileSync('reference/lab_inverter_block_24_strings.json'));
+          if(r.array.string_count!==24||r.array.modules_per_string!==30||r.inverter.physical_dc_input_count!==24||r.inverter.mppt_count!==12) process.exit(1);
+          NODE
+
+  session_07_module_imports:
+    name: "07/10 Module imports"
+    needs: session_06_reference_contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - run: node -e "import('./browser/simulation-core.mjs').then(m=>{if(!m.simulateComparison)process.exit(1)})"
+
+  session_08_repeatability:
+    name: "08/10 Browser repeatability"
+    needs: session_07_module_imports
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - run: node --test tests/simulation_core.test.mjs
+
+  session_09_accessibility_smoke:
+    name: "09/10 Accessibility smoke"
+    needs: session_08_repeatability
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - run: |
+          grep -qi '<title>' browser/simulator.html
+          grep -qi 'viewport' browser/simulator.html
+          grep -qi '<button' browser/simulator.html
+          test $(grep -o '<label' browser/simulator.html | wc -l) -ge 8
+
+  session_10_gate:
+    name: "10/10 Browser qualification gate"
+    needs: session_09_accessibility_smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: "3.11.15"}
+      - run: |
+          mkdir -p browser-evidence
+          node --test tests/simulation_core.test.mjs | tee browser-evidence/js-tests.txt
+          python -S scripts/compare_python_js.py --timeout-seconds 20 | tee browser-evidence/parity.json
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-browser-qualification-${{ github.run_id }}
+          path: browser-evidence
+          if-no-files-found: error
+          retention-days: 90

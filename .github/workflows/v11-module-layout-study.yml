@@ -1,0 +1,178 @@
+name: V11 Module Layout and Movement Study
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [build/v11-inverter-block-simulator]
+    paths:
+      - "v11_simulation/layout.py"
+      - "browser/layout-**"
+      - "tests/test_layout_engine.py"
+      - "tests/layout_core.test.mjs"
+      - "docs/studies/module-layout-placement.md"
+      - ".github/workflows/v11-module-layout-study.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v11-module-layout-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  session_01_python:
+    name: "01/10 Python geometry"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: "3.11.15"}
+      - run: python -S -m unittest -v tests/test_layout_engine.py
+
+  session_02_browser:
+    name: "02/10 Browser geometry"
+    needs: session_01_python
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - run: node --test tests/layout_core.test.mjs
+
+  session_03_http:
+    name: "03/10 Layout studio HTTP smoke"
+    needs: session_02_browser
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - run: |
+          python3 -m http.server 8766 >/tmp/layout-http.log 2>&1 & server=$!; trap 'kill $server' EXIT
+          for i in {1..20}; do curl -fsS http://127.0.0.1:8766/browser/layout-studio.html -o /tmp/layout.html && break; sleep 1; done
+          grep -q "Module Layout Studio" /tmp/layout.html
+          curl -fsS http://127.0.0.1:8766/browser/layout-core.mjs >/tmp/layout-core.mjs
+
+  session_04_boundary:
+    name: "04/10 Boundary and obstacle sweep"
+    needs: session_03_http
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: "3.11.15"}
+      - run: |
+          python -S - <<'PY'
+          from v11_simulation.layout import fill_rectangle,validate_layout
+          for w in range(10,61,5):
+            for h in range(8,41,4):
+              x=fill_rectangle(boundary={'x_min':0,'y_min':0,'x_max':w,'y_max':h},module_width_m=1.134,module_height_m=2.384,gap_x_m=.03,gap_y_m=.05,obstacles=[{'id':'O','x_min':w*.4,'x_max':w*.6,'y_min':h*.4,'y_max':h*.6}],limit=720)
+              assert not validate_layout(x)
+          PY
+
+  session_05_movement:
+    name: "05/10 Movement and snapping"
+    needs: session_04_boundary
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: "3.11.15"}
+      - run: |
+          python -S - <<'PY'
+          from v11_simulation.layout import fill_rectangle,move_module,validate_layout
+          x=fill_rectangle(boundary={'x_min':0,'y_min':0,'x_max':50,'y_max':30},module_width_m=1,module_height_m=2,gap_x_m=.2,gap_y_m=.2,limit=100)
+          for i in range(20):
+            m=x['modules'][i]; x=move_module(x,m['id'],m['x_m']+.05,m['y_m'],snap_m=.05); assert not validate_layout(x)
+          PY
+
+  session_06_rotation:
+    name: "06/10 Rotation validation"
+    needs: session_05_movement
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: "3.11.15"}
+      - run: python -S -m unittest -v tests/test_layout_engine.py
+
+  session_07_stringing:
+    name: "07/10 24-string assignment"
+    needs: session_06_rotation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: "3.11.15"}
+      - run: |
+          python -S - <<'PY'
+          from v11_simulation.layout import fill_rectangle,assign_strings
+          x=fill_rectangle(boundary={'x_min':0,'y_min':0,'x_max':90,'y_max':60},module_width_m=1.134,module_height_m=2.384,gap_x_m=.03,gap_y_m=.05,limit=720)
+          x=assign_strings(x,30, snake=True)
+          assert len(x['modules'])==720 and len({m['string_id'] for m in x['modules']})==24
+          PY
+
+  session_08_determinism:
+    name: "08/10 Cross-process determinism"
+    needs: session_07_stringing
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: "3.11.15"}
+      - run: |
+          for seed in 1 17 101; do PYTHONHASHSEED=$seed python -S -m unittest -v tests/test_layout_engine.py; done
+
+  session_09_stagger:
+    name: "09/10 Orientation and stagger grid"
+    needs: session_08_determinism
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: "3.11.15"}
+      - run: |
+          python -S - <<'PY'
+          from v11_simulation.layout import fill_rectangle,validate_layout
+          for orientation in ('portrait','landscape'):
+            for stagger in (0,.25,.5,1.0):
+              x=fill_rectangle(boundary={'x_min':0,'y_min':0,'x_max':40,'y_max':25},module_width_m=1.134,module_height_m=2.384,gap_x_m=.03,gap_y_m=.05,orientation=orientation,stagger_m=stagger,limit=300)
+              assert not validate_layout(x)
+          PY
+
+  session_10_gate:
+    name: "10/10 Layout study gate"
+    needs: session_09_stagger
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {ref: "${{ github.sha }}"}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: "3.11.15"}
+      - run: |
+          mkdir -p layout-evidence
+          python -S -m unittest -v tests/test_layout_engine.py 2>&1 | tee layout-evidence/python.txt
+          node --test tests/layout_core.test.mjs 2>&1 | tee layout-evidence/browser.txt
+          cp docs/studies/module-layout-placement.md layout-evidence/
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v11-module-layout-study-${{ github.run_id }}
+          path: layout-evidence
+          if-no-files-found: error
+          retention-days: 90

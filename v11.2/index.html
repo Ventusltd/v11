@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+  <title>V11.2 — 24-String Solar DC SLD</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header id="bar">
+    <strong>GLOBALGRID2050 · V11.2 · 24-STRING SOLAR DC SLD</strong>
+    <span id="basis">Trina TSM-DEG21C.20 · 2384 × 1303 mm · centre J-box · drawing-only</span>
+    <nav>
+      <button data-mode="sequential">SEQUENTIAL</button>
+      <button data-mode="leapfrog" class="active">LEAPFROG</button>
+      <button id="fit">FIT WIDTH</button>
+      <button id="actual-size">100% VIEW</button>
+    </nav>
+  </header>
+  <main id="viewport" aria-label="Full 24-string electrical single-line drawing">
+    <svg id="sld" role="img" aria-label="Twenty-four string inverter block with thirty modules per string"></svg>
+  </main>
+  <script type="module" src="./app.js"></script>
+  <script>
+  (() => {
+    'use strict';
+
+    const PHYSICAL = Object.freeze({
+      model: 'Trina TSM-DEG21C.20',
+      width_mm: 1303,
+      height_mm: 2384,
+      depth_mm: 33,
+      centreline_x_mm: 651.5,
+      jbox_axis_y_mm: 1192,
+      negative_cable_mm: 280,
+      positive_cable_mm: 350,
+    });
+
+    const CONTRACT = Object.freeze({
+      schema_version: 'globalgrid2050.v11.2.module-coordinate-contract.v1',
+      datum: 'module_back_view_lower_left',
+      x_axis: 'left_to_right_on_manufacturer_back_view',
+      y_axis: 'bottom_to_top_on_manufacturer_back_view',
+      svg_y_axis: 'top_to_bottom',
+      transform: Object.freeze({
+        x_svg: 'module_svg_left + x_mm * (module_svg_width / 1303)',
+        y_svg: 'module_svg_top + (2384 - y_mm) * (module_svg_height / 2384)',
+        inverse_x_mm: '(x_svg - module_svg_left) / scale_x',
+        inverse_y_mm: '2384 - (y_svg - module_svg_top) / scale_y',
+      }),
+      physical: PHYSICAL,
+      connector_reference: Object.freeze({
+        negative: Object.freeze({
+          x_mm: PHYSICAL.centreline_x_mm - PHYSICAL.negative_cable_mm,
+          y_mm: PHYSICAL.jbox_axis_y_mm,
+        }),
+        positive: Object.freeze({
+          x_mm: PHYSICAL.centreline_x_mm + PHYSICAL.positive_cable_mm,
+          y_mm: PHYSICAL.jbox_axis_y_mm,
+        }),
+        basis: 'centreline datum plus declared portrait cable length',
+        evidence_state: 'derived_sld_reference_only',
+        limitation: 'exact junction-box root spacing and delivered polarity root side are not stated by the cited datasheet',
+      }),
+      manufacturer_evidence: 'Trina TSM-DEG21C.20 datasheet TSM_EN_2024_A',
+    });
+
+    const setAttributes = (node, attributes) => {
+      for (const [name, value] of Object.entries(attributes)) {
+        node.setAttribute(name, String(value));
+      }
+    };
+    const rounded = (value) => Number(value.toFixed(6));
+
+    function transformFor(moduleBody) {
+      const left = Number(moduleBody.getAttribute('x'));
+      const top = Number(moduleBody.getAttribute('y'));
+      const width = Number(moduleBody.getAttribute('width'));
+      const height = Number(moduleBody.getAttribute('height'));
+      const scaleX = width / PHYSICAL.width_mm;
+      const scaleY = height / PHYSICAL.height_mm;
+      return {
+        left,
+        top,
+        width,
+        height,
+        scaleX,
+        scaleY,
+        toMm(xSvg, ySvg) {
+          return {
+            x_mm: (xSvg - left) / scaleX,
+            y_mm: PHYSICAL.height_mm - (ySvg - top) / scaleY,
+          };
+        },
+      };
+    }
+
+    function moduleBodyForId(svg, moduleId) {
+      return svg.querySelector(`#${moduleId}-MODULE`);
+    }
+
+    function applyModuleContract(moduleBody) {
+      const transform = transformFor(moduleBody);
+      setAttributes(moduleBody, {
+        'data-coordinate-datum': CONTRACT.datum,
+        'data-coordinate-x-axis': CONTRACT.x_axis,
+        'data-coordinate-y-axis': CONTRACT.y_axis,
+        'data-physical-left-mm': 0,
+        'data-physical-bottom-mm': 0,
+        'data-physical-right-mm': PHYSICAL.width_mm,
+        'data-physical-top-mm': PHYSICAL.height_mm,
+        'data-scale-x-svg-per-mm': rounded(transform.scaleX),
+        'data-scale-y-svg-per-mm': rounded(transform.scaleY),
+        'data-dimensional-transform-schema': CONTRACT.schema_version,
+      });
+    }
+
+    function applyJboxContract(svg, terminal) {
+      const match = terminal.id.match(/^(.*)-JBOX_(NEG|POS)$/);
+      if (!match) throw new Error(`Unrecognised junction-box terminal ID ${terminal.id}`);
+      const moduleId = match[1];
+      const moduleBody = moduleBodyForId(svg, moduleId);
+      if (!moduleBody) throw new Error(`Missing module body for ${terminal.id}`);
+      const transform = transformFor(moduleBody);
+      const projection = transform.toMm(
+        Number(terminal.getAttribute('cx')),
+        Number(terminal.getAttribute('cy')),
+      );
+      setAttributes(terminal, {
+        'data-coordinate-datum': CONTRACT.datum,
+        'data-physical-x-mm': 'unverified',
+        'data-physical-y-mm': PHYSICAL.jbox_axis_y_mm,
+        'data-svg-projection-x-mm': rounded(projection.x_mm),
+        'data-svg-projection-y-mm': rounded(projection.y_mm),
+        'data-root-spacing-evidence-state': 'unverified',
+        'data-polarity-root-side-evidence-state': 'unverified',
+        'data-dimensional-transform-schema': CONTRACT.schema_version,
+      });
+    }
+
+    function applyJboxBodyContract(svg, jbox) {
+      const moduleId = jbox.id.replace(/-JUNCTION-BOX$/, '');
+      const moduleBody = moduleBodyForId(svg, moduleId);
+      if (!moduleBody) throw new Error(`Missing module body for ${jbox.id}`);
+      const negative = svg.querySelector(`#${moduleId}-JBOX_NEG`);
+      const positive = svg.querySelector(`#${moduleId}-JBOX_POS`);
+      const transform = transformFor(moduleBody);
+      const projectedSeparationMm = negative && positive
+        ? Math.abs(Number(positive.getAttribute('cx')) - Number(negative.getAttribute('cx'))) / transform.scaleX
+        : NaN;
+      setAttributes(jbox, {
+        'data-coordinate-datum': CONTRACT.datum,
+        'data-physical-centreline-x-mm': PHYSICAL.centreline_x_mm,
+        'data-physical-axis-y-mm': PHYSICAL.jbox_axis_y_mm,
+        'data-physical-root-separation-mm': 'unverified',
+        'data-svg-projection-root-separation-mm': Number.isFinite(projectedSeparationMm)
+          ? rounded(projectedSeparationMm)
+          : 'unavailable',
+        'data-root-separation-evidence-state': 'schematic_projection_only',
+        'data-dimensional-transform-schema': CONTRACT.schema_version,
+      });
+    }
+
+    function applyModuleConnectorContract(svg, connector) {
+      const moduleId = connector.dataset.componentId;
+      const moduleBody = moduleBodyForId(svg, moduleId);
+      if (!moduleBody) throw new Error(`Missing module body for ${connector.id}`);
+      const transform = transformFor(moduleBody);
+      const projection = transform.toMm(
+        Number(connector.getAttribute('cx')),
+        Number(connector.getAttribute('cy')),
+      );
+      const polarity = connector.dataset.polarity;
+      const reference = CONTRACT.connector_reference[polarity];
+      if (!reference) throw new Error(`Unsupported connector polarity ${polarity}`);
+      setAttributes(connector, {
+        'data-coordinate-datum': CONTRACT.datum,
+        'data-module-x-mm': reference.x_mm,
+        'data-module-y-mm': reference.y_mm,
+        'data-svg-projection-x-mm': rounded(projection.x_mm),
+        'data-svg-projection-y-mm': rounded(projection.y_mm),
+        'data-coordinate-evidence-state': CONTRACT.connector_reference.evidence_state,
+        'data-coordinate-basis': CONTRACT.connector_reference.basis,
+        'data-exact-jbox-root-x-mm': 'unverified',
+        'data-polarity-root-side-evidence-state': 'unverified',
+        'data-dimensional-transform-schema': CONTRACT.schema_version,
+      });
+    }
+
+    function applyFactoryLeadContract(svg, lead) {
+      const match = lead.id.match(/^(.*)-(NEG|POS)-FACTORY-LEAD$/);
+      if (!match) throw new Error(`Unrecognised factory lead ID ${lead.id}`);
+      const moduleId = match[1];
+      const polarity = match[2] === 'NEG' ? 'negative' : 'positive';
+      const reference = CONTRACT.connector_reference[polarity];
+      const moduleBody = moduleBodyForId(svg, moduleId);
+      if (!moduleBody) throw new Error(`Missing module body for ${lead.id}`);
+      setAttributes(lead, {
+        'data-coordinate-datum': CONTRACT.datum,
+        'data-root-x-mm': 'unverified',
+        'data-root-y-mm': PHYSICAL.jbox_axis_y_mm,
+        'data-connector-reference-x-mm': reference.x_mm,
+        'data-connector-reference-y-mm': reference.y_mm,
+        'data-coordinate-evidence-state': CONTRACT.connector_reference.evidence_state,
+        'data-dimensional-transform-schema': CONTRACT.schema_version,
+      });
+    }
+
+    function installMetadata(svg) {
+      let metadata = svg.querySelector('#v11-2-coordinate-contract');
+      if (!metadata) {
+        metadata = document.createElementNS('http://www.w3.org/2000/svg', 'metadata');
+        metadata.id = 'v11-2-coordinate-contract';
+        svg.prepend(metadata);
+      }
+      metadata.textContent = JSON.stringify(CONTRACT);
+    }
+
+    function applyContract() {
+      const svg = document.querySelector('#sld');
+      if (!svg) return;
+      const moduleBodies = [...svg.querySelectorAll('.module-body')];
+      if (!moduleBodies.length) return;
+
+      moduleBodies.forEach(applyModuleContract);
+      const jboxTerminals = [...svg.querySelectorAll('.jbox-terminal')];
+      jboxTerminals.forEach((terminal) => applyJboxContract(svg, terminal));
+      const jboxes = [...svg.querySelectorAll('.jbox')];
+      jboxes.forEach((jbox) => applyJboxBodyContract(svg, jbox));
+      const moduleConnectors = [
+        ...svg.querySelectorAll('.connector[data-component-type="pv_module"]'),
+      ];
+      moduleConnectors.forEach((connector) => applyModuleConnectorContract(svg, connector));
+      const factoryLeads = [...svg.querySelectorAll('.factory-lead')];
+      factoryLeads.forEach((lead) => applyFactoryLeadContract(svg, lead));
+      installMetadata(svg);
+
+      const coordinatesComplete = moduleConnectors.every((connector) =>
+        connector.hasAttribute('data-module-x-mm')
+        && connector.hasAttribute('data-module-y-mm')
+        && connector.hasAttribute('data-svg-projection-x-mm')
+        && connector.hasAttribute('data-svg-projection-y-mm'));
+      const jboxEvidenceHonest = jboxTerminals.every((terminal) =>
+        terminal.dataset.physicalXMm === 'unverified'
+        && Number(terminal.dataset.physicalYMm) === PHYSICAL.jbox_axis_y_mm);
+      const viewControls = [
+        document.querySelector('[data-mode="sequential"]'),
+        document.querySelector('[data-mode="leapfrog"]'),
+        document.querySelector('#fit'),
+        document.querySelector('#actual-size'),
+      ];
+      const viewControlsComplete = viewControls.every(Boolean);
+      const pass = moduleBodies.length === 720
+        && jboxes.length === 720
+        && jboxTerminals.length === 1440
+        && moduleConnectors.length === 1440
+        && factoryLeads.length === 1440
+        && coordinatesComplete
+        && jboxEvidenceHonest
+        && viewControlsComplete;
+
+      const evidence = {
+        schema_version: 'globalgrid2050.v11.2.module-coordinate-evidence.v2',
+        contract: CONTRACT,
+        module_bodies: moduleBodies.length,
+        junction_boxes: jboxes.length,
+        junction_box_terminals: jboxTerminals.length,
+        module_connector_ends: moduleConnectors.length,
+        factory_leads: factoryLeads.length,
+        connector_reference_coordinates_mm: {
+          negative: CONTRACT.connector_reference.negative,
+          positive: CONTRACT.connector_reference.positive,
+        },
+        exact_jbox_root_x_mm: 'unverified',
+        exact_root_separation_mm: 'unverified',
+        polarity_root_side: 'unverified',
+        screen_order_inference_used: false,
+        asynchronous_dom_augmentation_used: false,
+        coordinates_complete: coordinatesComplete,
+        evidence_state_preserved: jboxEvidenceHonest,
+        view_controls: {
+          sequential: Boolean(viewControls[0]),
+          leapfrog: Boolean(viewControls[1]),
+          fit_width: Boolean(viewControls[2]),
+          actual_size_100_percent: Boolean(viewControls[3]),
+        },
+        pass,
+      };
+      window.__V11_2_GEOMETRY_EVIDENCE__ = evidence;
+      svg.dataset.geometryCoordinatePass = String(pass);
+      svg.dataset.coordinateDatum = CONTRACT.datum;
+      svg.dataset.coordinateContract = CONTRACT.schema_version;
+      if (!pass) {
+        throw new Error(`V11.2 dimensional coordinate contract failed: ${JSON.stringify(evidence)}`);
+      }
+    }
+
+    window.addEventListener('v11-2-rendered', applyContract);
+
+    const viewport = document.querySelector('#viewport');
+    const actualSize = document.querySelector('#actual-size');
+    if (viewport && actualSize) {
+      actualSize.addEventListener('click', () => {
+        const svg = document.querySelector('#sld');
+        const width = Number(svg?.getAttribute('width'));
+        const height = Number(svg?.getAttribute('height'));
+        if (!svg || !Number.isFinite(width) || !Number.isFinite(height)) {
+          throw new Error('V11.2 100% view requires finite SVG dimensions');
+        }
+        svg.style.width = `${width}px`;
+        svg.style.height = `${height}px`;
+        viewport.scrollTo({ left: 0, top: 0, behavior: 'auto' });
+        actualSize.dataset.viewScale = '1';
+      });
+    }
+
+    if (document.querySelector('#sld .module-body')) applyContract();
+  })();
+  </script>
+</body>
+</html>
