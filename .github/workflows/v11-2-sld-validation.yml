@@ -8,12 +8,18 @@ on:
     paths:
       - "v11.2/**"
       - ".github/workflows/v11-2-sld-validation.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "v11.2/**"
+      - ".github/workflows/v11-2-sld-validation.yml"
 
 permissions:
   contents: read
 
 concurrency:
-  group: v11-2-sld-${{ github.ref }}
+  group: v11-2-sld-${{ github.event.pull_request.head.ref || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -23,11 +29,12 @@ jobs:
     timeout-minutes: 5
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.cache/ms-playwright
+      TESTED_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - name: Check out exact branch head
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.TESTED_COMMIT_SHA }}
 
       - name: Validate drawing source syntax and surface
         run: |
@@ -269,10 +276,10 @@ jobs:
           const interfaceIdentitiesPreserved = JSON.stringify(sequential.interface_ids) === JSON.stringify(leapfrog.interface_ids);
           const changedMatePairs = Object.keys(sequential.mate_pairs).filter((id) =>
             JSON.stringify(sequential.mate_pairs[id]) !== JSON.stringify(leapfrog.mate_pairs[id]));
-          const expectedChangedModuleMates = 24 * 29;
+          const expectedChangedMatePairs = 24 * 29;
           const result = {
             schema_version: 'globalgrid2050.v11.2.chromium-sld-endpoint-evidence.v1',
-            tested_commit_sha: process.env.GITHUB_SHA,
+            tested_commit_sha: process.env.TESTED_COMMIT_SHA,
             chromium_version: await browser.version(),
             sequential,
             leapfrog,
@@ -281,7 +288,7 @@ jobs:
               connector_identities_preserved: connectorIdentitiesPreserved,
               interface_identities_preserved: interfaceIdentitiesPreserved,
               changed_mate_pair_count: changedMatePairs.length,
-              expected_changed_module_mate_count: expectedChangedModuleMates,
+              expected_changed_mate_pair_count: expectedChangedMatePairs,
             },
             browser_errors: browserErrors,
           };
@@ -290,7 +297,7 @@ jobs:
             && physicalPositionsPreserved
             && connectorIdentitiesPreserved
             && interfaceIdentitiesPreserved
-            && changedMatePairs.length === expectedChangedModuleMates
+            && changedMatePairs.length === expectedChangedMatePairs
             && browserErrors.length === 0;
 
           fs.writeFileSync('v11.2-evidence/summary.json', `${JSON.stringify(result, null, 2)}\n`);
