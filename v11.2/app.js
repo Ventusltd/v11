@@ -23,18 +23,25 @@ const modulePhysical = Object.freeze({
   evidence: 'Trina TSM-DEG21C.20 datasheet TSM_EN_2024_A',
 });
 
+const connectorReference = Object.freeze({
+  negative_x_mm: modulePhysical.width_mm / 2 - modulePhysical.cable_negative_mm,
+  positive_x_mm: modulePhysical.width_mm / 2 + modulePhysical.cable_positive_mm,
+});
+
 const drawing = Object.freeze({
-  canvasWidth: 2460,
-  left: 262,
-  top: 54,
-  rowHeight: 252,
-  mpptGap: 42,
-  moduleWidth: 54,
-  moduleHeight: 54 * modulePhysical.height_mm / modulePhysical.width_mm,
-  moduleGap: 16,
+  canvasWidth: 3740,
+  left: 310,
+  top: 60,
+  rowHeight: 318,
+  mpptGap: 52,
+  moduleWidth: 88,
+  moduleHeight: 88 * modulePhysical.height_mm / modulePhysical.width_mm,
+  moduleGap: 20,
   inverterX: 34,
-  inverterWidth: 94,
-  inverterHeight: 118,
+  inverterWidth: 132,
+  inverterHeight: 170,
+  inverterCableOffset: 24,
+  moduleCableOffset: 20,
 });
 
 let mode = 'leapfrog';
@@ -82,8 +89,8 @@ function rowCentreY(rowIndex) {
 function pathFromPoints(start, end, side, laneIndex = 0) {
   const distance = Math.abs(end.x - start.x);
   const direction = side === 'above' ? -1 : 1;
-  const lane = Math.min(86, 34 + distance * 0.13 + (laneIndex % 2) * 4);
-  const controlY = start.y + direction * lane;
+  const lane = Math.min(76, 42 + distance * 0.16 + (laneIndex % 2) * 4);
+  const controlY = (start.y + end.y) / 2 + direction * lane;
   return `M ${start.x} ${start.y} C ${start.x} ${controlY}, ${end.x} ${controlY}, ${end.x} ${end.y}`;
 }
 
@@ -91,13 +98,13 @@ function orthogonalCablePath(start, end, laneY) {
   return `M ${start.x} ${start.y} L ${start.x} ${laneY} L ${end.x} ${laneY} L ${end.x} ${end.y}`;
 }
 
-function addConnector(group, connectorPoints, id, x, y, polarity, attributes = {}) {
+function addConnector(layer, connectorPoints, id, x, y, polarity, attributes = {}) {
   if (connectorPoints.has(id)) throw new Error(`Duplicate connector point ${id}`);
   const connector = element('circle', {
     id,
     cx: x,
     cy: y,
-    r: 5.2,
+    r: 4.7,
     class: `connector ${polarity}`,
     tabindex: 0,
     role: 'button',
@@ -106,7 +113,7 @@ function addConnector(group, connectorPoints, id, x, y, polarity, attributes = {
     'data-contact-gender': modulePhysical.connector_gender,
     ...attributes,
   });
-  group.append(connector);
+  layer.append(connector);
   connectorPoints.set(id, { x, y, polarity });
   return connector;
 }
@@ -117,7 +124,14 @@ function connectorPoint(connectorPoints, id) {
   return point;
 }
 
-function addMatePath(group, connectorPoints, {
+function appendCable(layer, d, className, attributes = {}) {
+  layer.append(element('path', { d, class: 'cable-halo', 'aria-hidden': 'true' }));
+  const path = element('path', { d, class: className, ...attributes });
+  layer.append(path);
+  return path;
+}
+
+function addMatePath(layer, connectorPoints, {
   id,
   sourceId,
   destinationId,
@@ -125,26 +139,26 @@ function addMatePath(group, connectorPoints, {
   side = 'above',
   laneIndex = 0,
   path = null,
+  v8Lane = interfaceClass,
+  isTurnaround = false,
 }) {
   const source = connectorPoint(connectorPoints, sourceId);
   const destination = connectorPoint(connectorPoints, destinationId);
   const d = path ?? pathFromPoints(source, destination, side, laneIndex);
-  const mate = element('path', {
+  return appendCable(layer, d, 'mate-path', {
     id,
-    d,
-    class: 'mate-path',
     tabindex: 0,
     role: 'button',
     'data-mating-interface-id': id,
     'data-source-connector-id': sourceId,
     'data-destination-connector-id': destinationId,
     'data-interface-class': interfaceClass,
+    'data-v8-lane': v8Lane,
+    'data-v8-turnaround': isTurnaround,
   });
-  group.append(mate);
-  return mate;
 }
 
-function addCableBody(group, connectorPoints, {
+function addCableBody(layer, connectorPoints, {
   id,
   sourceId,
   destinationId,
@@ -153,102 +167,95 @@ function addCableBody(group, connectorPoints, {
 }) {
   const source = connectorPoint(connectorPoints, sourceId);
   const destination = connectorPoint(connectorPoints, destinationId);
-  group.append(element('path', {
+  appendCable(layer, orthogonalCablePath(source, destination, laneY), 'string-cable', {
     id,
-    d: orthogonalCablePath(source, destination, laneY),
-    class: 'string-cable',
     'data-cable-id': id,
     'data-source-connector-id': sourceId,
     'data-destination-connector-id': destinationId,
     'data-polarity': polarity,
     'data-cable-sheath-colour': 'black',
-  }));
+  });
 }
 
-function drawModule(group, connectorPoints, stringNumber, moduleNumber, rowY) {
+function drawModule(bodyLayer, connectorLayer, annotationLayer, connectorPoints, stringNumber, moduleNumber, rowY) {
   const x = moduleX(moduleNumber);
   const top = rowY - drawing.moduleHeight / 2;
   const centreX = x + drawing.moduleWidth / 2;
-  const pxPerMm = drawing.moduleWidth / modulePhysical.width_mm;
+  const scaleX = drawing.moduleWidth / modulePhysical.width_mm;
+  const scaleY = drawing.moduleHeight / modulePhysical.height_mm;
   const axisFromTopMm = modulePhysical.height_mm - modulePhysical.jbox_axis_from_bottom_mm;
-  const axisY = top + axisFromTopMm * pxPerMm;
-  const rootSeparationPx = 10;
+  const axisY = top + axisFromTopMm * scaleY;
+  const rootSeparationPx = 14;
   const negativeRoot = { x: centreX - rootSeparationPx / 2, y: axisY };
   const positiveRoot = { x: centreX + rootSeparationPx / 2, y: axisY };
-  const negativeConnector = {
-    x: negativeRoot.x - modulePhysical.cable_negative_mm * pxPerMm,
-    y: axisY,
-  };
-  const positiveConnector = {
-    x: positiveRoot.x + modulePhysical.cable_positive_mm * pxPerMm,
-    y: axisY,
-  };
+  const negativeConnector = { x: x + connectorReference.negative_x_mm * scaleX, y: axisY };
+  const positiveConnector = { x: x + connectorReference.positive_x_mm * scaleX, y: axisY };
   const id = moduleId(stringNumber, moduleNumber);
 
-  group.append(element('rect', {
+  bodyLayer.append(element('rect', {
     id: `${id}-MODULE`,
     x,
     y: top,
     width: drawing.moduleWidth,
     height: drawing.moduleHeight,
-    rx: 2,
+    rx: 3,
     class: 'module-body',
     'data-module-id': id,
     'data-actual-width-mm': modulePhysical.width_mm,
     'data-actual-height-mm': modulePhysical.height_mm,
     'data-actual-depth-mm': modulePhysical.depth_mm,
-    'data-svg-px-per-mm': pxPerMm,
+    'data-svg-px-per-mm': scaleX,
   }));
-  group.append(element('line', {
+  bodyLayer.append(element('line', {
     x1: centreX,
-    y1: top + 4,
+    y1: top + 6,
     x2: centreX,
-    y2: top + drawing.moduleHeight - 4,
-    class: 'module-backline',
+    y2: top + drawing.moduleHeight - 6,
+    class: 'module-backline vertical',
   }));
-  group.append(element('line', {
-    x1: x + 4,
+  bodyLayer.append(element('line', {
+    x1: x + 6,
     y1: axisY,
-    x2: x + drawing.moduleWidth - 4,
+    x2: x + drawing.moduleWidth - 6,
     y2: axisY,
-    class: 'module-backline',
+    class: 'module-backline axis',
     'data-jbox-axis-from-bottom-mm': modulePhysical.jbox_axis_from_bottom_mm,
   }));
-  group.append(element('rect', {
+  bodyLayer.append(element('rect', {
     id: `${id}-JUNCTION-BOX`,
-    x: centreX - 11,
-    y: axisY - 5,
-    width: 22,
-    height: 10,
-    rx: 1.5,
+    x: centreX - 18,
+    y: axisY - 8,
+    width: 36,
+    height: 16,
+    rx: 2.5,
     class: 'jbox',
     'data-axis-basis': modulePhysical.jbox_axis_basis,
     'data-polarity-root-side': modulePhysical.polarity_root_side,
   }));
-  group.append(element('circle', {
+  bodyLayer.append(element('circle', {
     id: `${id}-JBOX_NEG`,
     cx: negativeRoot.x,
     cy: negativeRoot.y,
-    r: 1.7,
+    r: 2,
     class: 'jbox-terminal',
     'data-terminal-id': `${id}-JBOX_NEG`,
   }));
-  group.append(element('circle', {
+  bodyLayer.append(element('circle', {
     id: `${id}-JBOX_POS`,
     cx: positiveRoot.x,
     cy: positiveRoot.y,
-    r: 1.7,
+    r: 2,
     class: 'jbox-terminal',
     'data-terminal-id': `${id}-JBOX_POS`,
   }));
-  group.append(element('path', {
+  bodyLayer.append(element('path', {
     id: `${id}-NEG-FACTORY-LEAD`,
     d: `M ${negativeRoot.x} ${negativeRoot.y} L ${negativeConnector.x} ${negativeConnector.y}`,
     class: 'factory-lead',
     'data-actual-length-mm': modulePhysical.cable_negative_mm,
     'data-cable-sheath-colour': 'black',
   }));
-  group.append(element('path', {
+  bodyLayer.append(element('path', {
     id: `${id}-POS-FACTORY-LEAD`,
     d: `M ${positiveRoot.x} ${positiveRoot.y} L ${positiveConnector.x} ${positiveConnector.y}`,
     class: 'factory-lead',
@@ -256,8 +263,27 @@ function drawModule(group, connectorPoints, stringNumber, moduleNumber, rowY) {
     'data-cable-sheath-colour': 'black',
   }));
 
+  connectorLayer.append(element('rect', {
+    x: negativeConnector.x - 10,
+    y: axisY - 12,
+    width: 20,
+    height: 24,
+    rx: 3,
+    class: 'connector-housing negative-housing',
+    'data-module-connector-housing': `${id}-NEG`,
+  }));
+  connectorLayer.append(element('rect', {
+    x: positiveConnector.x - 10,
+    y: axisY - 12,
+    width: 20,
+    height: 24,
+    rx: 3,
+    class: 'connector-housing positive-housing',
+    'data-module-connector-housing': `${id}-POS`,
+  }));
+
   addConnector(
-    group,
+    connectorLayer,
     connectorPoints,
     moduleConnectorId(stringNumber, moduleNumber, 'negative'),
     negativeConnector.x,
@@ -273,7 +299,7 @@ function drawModule(group, connectorPoints, stringNumber, moduleNumber, rowY) {
     },
   );
   addConnector(
-    group,
+    connectorLayer,
     connectorPoints,
     moduleConnectorId(stringNumber, moduleNumber, 'positive'),
     positiveConnector.x,
@@ -289,9 +315,21 @@ function drawModule(group, connectorPoints, stringNumber, moduleNumber, rowY) {
     },
   );
 
-  group.append(element('text', {
+  annotationLayer.append(element('text', {
+    x: negativeConnector.x,
+    y: axisY + 22,
+    'text-anchor': 'middle',
+    class: 'polarity-glyph negative-glyph',
+  }, '−'));
+  annotationLayer.append(element('text', {
+    x: positiveConnector.x,
+    y: axisY + 22,
+    'text-anchor': 'middle',
+    class: 'polarity-glyph positive-glyph',
+  }, '+'));
+  annotationLayer.append(element('text', {
     x: centreX,
-    y: top + drawing.moduleHeight - 7,
+    y: top + drawing.moduleHeight + 18,
     'text-anchor': 'middle',
     class: 'module-label',
   }, `M${moduleNumber}`));
@@ -309,56 +347,61 @@ function drawString(stringNumber, rowIndex) {
     'data-physical-dc-input-id': `IN-${pad2(stringNumber)}`,
     'data-topology-strategy': mode,
   });
+  const baseLayer = element('g', { class: 'base-layer' });
+  const bodyLayer = element('g', { class: 'component-body-layer' });
+  const cableLayer = element('g', { class: 'cable-layer' });
+  const connectorLayer = element('g', { class: 'connector-layer' });
+  const annotationLayer = element('g', { class: 'annotation-layer' });
   const connectorPoints = new Map();
   const bandTop = rowY - drawing.rowHeight / 2 + 8;
   const bandHeight = drawing.rowHeight - 16;
 
-  group.append(element('rect', {
+  baseLayer.append(element('rect', {
     x: 10,
     y: bandTop,
     width: drawing.canvasWidth - 20,
     height: bandHeight,
     class: 'mppt-band',
   }));
-  group.append(element('text', {
+  annotationLayer.append(element('text', {
     x: 22,
-    y: bandTop + 17,
+    y: bandTop + 22,
     class: 'string-title',
   }, `${id} · MPPT-${pad2(mpptNumber)} · ${input}+ / ${input}− · ${mode.toUpperCase()}`));
 
   const inverterY = rowY - drawing.inverterHeight / 2;
-  group.append(element('rect', {
+  bodyLayer.append(element('rect', {
     id: `${id}-INVERTER-INPUT-BLOCK`,
     x: drawing.inverterX,
     y: inverterY,
     width: drawing.inverterWidth,
     height: drawing.inverterHeight,
-    rx: 5,
+    rx: 7,
     class: 'inverter',
   }));
-  group.append(element('text', {
+  annotationLayer.append(element('text', {
     x: drawing.inverterX + drawing.inverterWidth / 2,
-    y: inverterY + 27,
+    y: inverterY + 34,
     'text-anchor': 'middle',
-    class: 'inverter-label',
+    class: 'inverter-label inverter-title',
   }, 'INVERTER'));
-  group.append(element('text', {
+  annotationLayer.append(element('text', {
     x: drawing.inverterX + drawing.inverterWidth / 2,
-    y: inverterY + 45,
+    y: inverterY + 58,
     'text-anchor': 'middle',
     class: 'inverter-label',
   }, `IN-${pad2(stringNumber)}`));
-  group.append(element('text', {
+  annotationLayer.append(element('text', {
     x: drawing.inverterX + drawing.inverterWidth / 2,
-    y: inverterY + 63,
+    y: inverterY + 80,
     'text-anchor': 'middle',
     class: 'inverter-label',
   }, `MPPT-${pad2(mpptNumber)}`));
 
-  const inverterNegative = { x: drawing.inverterX + drawing.inverterWidth, y: rowY - 21 };
-  const inverterPositive = { x: drawing.inverterX + drawing.inverterWidth, y: rowY + 21 };
+  const inverterNegative = { x: drawing.inverterX + drawing.inverterWidth, y: rowY - 32 };
+  const inverterPositive = { x: drawing.inverterX + drawing.inverterWidth, y: rowY + 32 };
   addConnector(
-    group,
+    connectorLayer,
     connectorPoints,
     inverterSocketId(stringNumber, 'negative'),
     inverterNegative.x,
@@ -372,7 +415,7 @@ function drawString(stringNumber, rowIndex) {
     },
   );
   addConnector(
-    group,
+    connectorLayer,
     connectorPoints,
     inverterSocketId(stringNumber, 'positive'),
     inverterPositive.x,
@@ -385,19 +428,27 @@ function drawString(stringNumber, rowIndex) {
       'data-mppt-id': `MPPT-${pad2(mpptNumber)}`,
     },
   );
-  group.append(element('text', {
-    x: drawing.inverterX + 20,
-    y: inverterNegative.y + 3,
+  annotationLayer.append(element('text', {
+    x: drawing.inverterX + drawing.inverterWidth - 30,
+    y: inverterNegative.y + 5,
     class: 'terminal-label',
-  }, `${input}−`));
-  group.append(element('text', {
-    x: drawing.inverterX + 20,
-    y: inverterPositive.y + 3,
+  }, '−'));
+  annotationLayer.append(element('text', {
+    x: drawing.inverterX + drawing.inverterWidth - 30,
+    y: inverterPositive.y + 5,
     class: 'terminal-label',
-  }, `${input}+`));
+  }, '+'));
 
   for (let moduleNumber = 1; moduleNumber <= MODULES; moduleNumber += 1) {
-    drawModule(group, connectorPoints, stringNumber, moduleNumber, rowY);
+    drawModule(
+      bodyLayer,
+      connectorLayer,
+      annotationLayer,
+      connectorPoints,
+      stringNumber,
+      moduleNumber,
+      rowY,
+    );
   }
 
   const order = electricalOrder(MODULES, mode);
@@ -414,10 +465,10 @@ function drawString(stringNumber, rowIndex) {
   const positiveCableModuleId = cableConnectorId(stringNumber, 'positive', 'module');
 
   addConnector(
-    group,
+    connectorLayer,
     connectorPoints,
     negativeCableInverterId,
-    inverterNegative.x + 20,
+    inverterNegative.x + drawing.inverterCableOffset,
     inverterNegative.y,
     'negative',
     {
@@ -428,10 +479,10 @@ function drawString(stringNumber, rowIndex) {
     },
   );
   addConnector(
-    group,
+    connectorLayer,
     connectorPoints,
     negativeCableModuleId,
-    freeNegative.x - 15,
+    freeNegative.x - drawing.moduleCableOffset,
     freeNegative.y,
     'negative',
     {
@@ -442,10 +493,10 @@ function drawString(stringNumber, rowIndex) {
     },
   );
   addConnector(
-    group,
+    connectorLayer,
     connectorPoints,
     positiveCableInverterId,
-    inverterPositive.x + 20,
+    inverterPositive.x + drawing.inverterCableOffset,
     inverterPositive.y,
     'positive',
     {
@@ -456,10 +507,10 @@ function drawString(stringNumber, rowIndex) {
     },
   );
   addConnector(
-    group,
+    connectorLayer,
     connectorPoints,
     positiveCableModuleId,
-    freePositive.x + (mode === 'sequential' ? 15 : -15),
+    freePositive.x + (mode === 'sequential' ? drawing.moduleCableOffset : -drawing.moduleCableOffset),
     freePositive.y,
     'positive',
     {
@@ -470,26 +521,26 @@ function drawString(stringNumber, rowIndex) {
     },
   );
 
-  addMatePath(group, connectorPoints, {
+  addMatePath(cableLayer, connectorPoints, {
     id: interfaceId(stringNumber, 1),
     sourceId: inverterSocketId(stringNumber, 'negative'),
     destinationId: negativeCableInverterId,
     interfaceClass: 'string_cable_to_inverter',
-    path: `M ${inverterNegative.x} ${inverterNegative.y} L ${inverterNegative.x + 20} ${inverterNegative.y}`,
+    path: `M ${inverterNegative.x} ${inverterNegative.y} L ${inverterNegative.x + drawing.inverterCableOffset} ${inverterNegative.y}`,
   });
-  addCableBody(group, connectorPoints, {
+  addCableBody(cableLayer, connectorPoints, {
     id: `${id}-NEG-STRING-CABLE-BODY`,
     sourceId: negativeCableInverterId,
     destinationId: negativeCableModuleId,
-    laneY: rowY - drawing.moduleHeight / 2 - 40,
+    laneY: rowY - drawing.moduleHeight / 2 - 28,
     polarity: 'negative',
   });
-  addMatePath(group, connectorPoints, {
+  addMatePath(cableLayer, connectorPoints, {
     id: interfaceId(stringNumber, 2),
     sourceId: negativeCableModuleId,
     destinationId: freeNegativeId,
     interfaceClass: 'module_to_string_cable',
-    path: `M ${freeNegative.x - 15} ${freeNegative.y} L ${freeNegative.x} ${freeNegative.y}`,
+    path: `M ${freeNegative.x - drawing.moduleCableOffset} ${freeNegative.y} L ${freeNegative.x} ${freeNegative.y}`,
   });
 
   order.slice(0, -1).forEach((fromModule, position) => {
@@ -497,64 +548,76 @@ function drawString(stringNumber, rowIndex) {
     const sourceId = moduleConnectorId(stringNumber, fromModule, 'positive');
     const destinationId = moduleConnectorId(stringNumber, toModule, 'negative');
     const isOutward = mode === 'leapfrog' && fromModule % 2 === 1 && toModule % 2 === 1;
-    const side = mode === 'sequential' || isOutward ? 'above' : 'below';
-    addMatePath(group, connectorPoints, {
+    const isTurnaround = mode === 'leapfrog'
+      && Math.abs(fromModule - toModule) === 1
+      && Math.max(fromModule, toModule) === MODULES;
+    const v8Lane = mode === 'sequential'
+      ? 'sequential'
+      : isTurnaround
+        ? 'turnaround'
+        : isOutward
+          ? 'outward'
+          : 'return';
+    const side = v8Lane === 'sequential' || v8Lane === 'outward' ? 'above' : 'below';
+    addMatePath(cableLayer, connectorPoints, {
       id: interfaceId(stringNumber, position + 3),
       sourceId,
       destinationId,
       interfaceClass: 'module_to_module',
       side,
       laneIndex: position,
+      v8Lane,
+      isTurnaround,
     });
   });
 
-  addMatePath(group, connectorPoints, {
+  addMatePath(cableLayer, connectorPoints, {
     id: interfaceId(stringNumber, 32),
     sourceId: freePositiveId,
     destinationId: positiveCableModuleId,
     interfaceClass: 'module_to_string_cable',
     path: `M ${freePositive.x} ${freePositive.y} L ${connectorPoint(connectorPoints, positiveCableModuleId).x} ${connectorPoint(connectorPoints, positiveCableModuleId).y}`,
   });
-  addCableBody(group, connectorPoints, {
+  addCableBody(cableLayer, connectorPoints, {
     id: `${id}-POS-STRING-CABLE-BODY`,
     sourceId: positiveCableModuleId,
     destinationId: positiveCableInverterId,
-    laneY: rowY + drawing.moduleHeight / 2 + 42,
+    laneY: rowY + drawing.moduleHeight / 2 + 30,
     polarity: 'positive',
   });
-  addMatePath(group, connectorPoints, {
+  addMatePath(cableLayer, connectorPoints, {
     id: interfaceId(stringNumber, 33),
     sourceId: positiveCableInverterId,
     destinationId: inverterSocketId(stringNumber, 'positive'),
     interfaceClass: 'string_cable_to_inverter',
-    path: `M ${inverterPositive.x + 20} ${inverterPositive.y} L ${inverterPositive.x} ${inverterPositive.y}`,
+    path: `M ${inverterPositive.x + drawing.inverterCableOffset} ${inverterPositive.y} L ${inverterPositive.x} ${inverterPositive.y}`,
   });
 
-  const freePositiveLabel = mode === 'sequential' ? `FREE + M${MODULES}+` : 'FREE + M2+';
-  group.append(element('text', {
-    x: freeNegative.x - 6,
-    y: rowY - drawing.moduleHeight / 2 - 8,
+  annotationLayer.append(element('text', {
+    x: freeNegative.x - 8,
+    y: rowY - drawing.moduleHeight / 2 - 12,
     class: 'input-label',
   }, 'FREE − M1−'));
-  group.append(element('text', {
-    x: freePositive.x - 12,
-    y: rowY + drawing.moduleHeight / 2 + 16,
+  annotationLayer.append(element('text', {
+    x: freePositive.x - 16,
+    y: rowY + drawing.moduleHeight / 2 + 24,
     class: 'input-label',
-  }, freePositiveLabel));
+  }, mode === 'sequential' ? `FREE + M${MODULES}+` : 'FREE + M2+'));
   if (mode === 'sequential') {
-    group.append(element('text', {
-      x: moduleX(20),
-      y: rowY + drawing.moduleHeight / 2 + 34,
-      class: 'input-label',
-    }, 'FAR-END POSITIVE RETURN CABLE'));
+    annotationLayer.append(element('text', {
+      x: moduleX(19),
+      y: rowY + drawing.moduleHeight / 2 + 52,
+      class: 'route-label',
+    }, 'ADDITIONAL FAR-END POSITIVE RETURN'));
   } else {
-    group.append(element('text', {
+    annotationLayer.append(element('text', {
       x: moduleX(MODULES - 2),
-      y: rowY + drawing.moduleHeight / 2 + 34,
-      class: 'input-label',
+      y: rowY - drawing.moduleHeight / 2 - 16,
+      class: 'route-label turnaround-label',
     }, 'TURNAROUND M29+ → M30−'));
   }
 
+  group.append(baseLayer, bodyLayer, cableLayer, connectorLayer, annotationLayer);
   group.dataset.connectorEnds = connectorPoints.size;
   group.dataset.matedInterfaces = group.querySelectorAll('.mate-path').length;
   group.dataset.electricalOrder = order.join(',');
@@ -566,6 +629,9 @@ function validateDrawing() {
   const modules = [...svg.querySelectorAll('.module-body')];
   const connectors = [...svg.querySelectorAll('.connector')];
   const mates = [...svg.querySelectorAll('.mate-path')];
+  const housings = [...svg.querySelectorAll('.connector-housing')];
+  const cableHalos = [...svg.querySelectorAll('.cable-halo')];
+  const stringCables = [...svg.querySelectorAll('.string-cable')];
   const allIds = [...svg.querySelectorAll('[id]')].map((node) => node.id);
   const duplicateIds = allIds.filter((id, index) => allIds.indexOf(id) !== index);
   const unresolvedEndpoints = mates.flatMap((mate) => {
@@ -573,32 +639,52 @@ function validateDrawing() {
     const destinationId = mate.dataset.destinationConnectorId;
     return [sourceId, destinationId].filter((id) => !id || !document.getElementById(id));
   });
-  const perStringPass = groups.every((group) =>
-    Number(group.dataset.connectorEnds) === 66
-    && Number(group.dataset.matedInterfaces) === 33
-    && group.querySelectorAll('.module-body').length === 30
-    && group.querySelectorAll('.connector').length === 66
-    && group.querySelectorAll('.mate-path').length === 33);
+  const perStringPass = groups.every((group) => {
+    const laneCounts = [...group.querySelectorAll('.mate-path[data-interface-class="module_to_module"]')]
+      .reduce((result, mate) => {
+        result[mate.dataset.v8Lane] = (result[mate.dataset.v8Lane] ?? 0) + 1;
+        return result;
+      }, {});
+    const v8LanePass = mode === 'sequential'
+      ? laneCounts.sequential === 29
+      : laneCounts.outward === 14 && laneCounts.return === 14 && laneCounts.turnaround === 1;
+    return Number(group.dataset.connectorEnds) === 66
+      && Number(group.dataset.matedInterfaces) === 33
+      && group.querySelectorAll('.module-body').length === 30
+      && group.querySelectorAll('.connector').length === 66
+      && group.querySelectorAll('.mate-path').length === 33
+      && group.querySelectorAll('.connector-housing').length === 60
+      && v8LanePass;
+  });
+  const v8VisualPass = housings.length === 1440
+    && stringCables.length === 48
+    && cableHalos.length === 840;
   const pass = groups.length === STRINGS
     && modules.length === STRINGS * MODULES
     && connectors.length === 1584
     && mates.length === 792
     && duplicateIds.length === 0
     && unresolvedEndpoints.length === 0
-    && perStringPass;
+    && perStringPass
+    && v8VisualPass;
 
   const result = {
-    schema_version: 'globalgrid2050.v11.2.full-array-sld-evidence.v1',
+    schema_version: 'globalgrid2050.v11.2.full-array-sld-evidence.v2',
     mode,
     strings: groups.length,
     modules: modules.length,
     complete_system_connector_ends: connectors.length,
     mated_interfaces: mates.length,
+    module_connector_housings: housings.length,
+    cable_halos: cableHalos.length,
+    string_cable_bodies: stringCables.length,
     duplicate_ids: [...new Set(duplicateIds)],
     unresolved_endpoint_ids: [...new Set(unresolvedEndpoints)],
     per_string_66_33_pass: perStringPass,
+    v8_visual_language_pass: v8VisualPass,
     module_geometry_mm: modulePhysical,
     path_endpoint_authority: 'connector_id_map',
+    lane_authority: 'electrical_order_and_explicit_connector_ids',
     screen_order_inference_used: false,
     pass,
   };
@@ -612,7 +698,7 @@ function render() {
   const height = drawing.top
     + STRINGS * drawing.rowHeight
     + MPPTS * drawing.mpptGap
-    + 30;
+    + 40;
   svg.setAttribute('viewBox', `0 0 ${drawing.canvasWidth} ${height}`);
   svg.setAttribute('width', drawing.canvasWidth);
   svg.setAttribute('height', height);
@@ -621,7 +707,7 @@ function render() {
 
   for (let mppt = 1; mppt <= MPPTS; mppt += 1) {
     const firstRow = (mppt - 1) * INPUTS_PER_MPPT;
-    const titleY = rowCentreY(firstRow) - drawing.rowHeight / 2 - 7;
+    const titleY = rowCentreY(firstRow) - drawing.rowHeight / 2 - 8;
     svg.append(element('text', {
       x: 12,
       y: titleY,
@@ -639,14 +725,17 @@ function render() {
   svg.dataset.moduleWidthMm = modulePhysical.width_mm;
   svg.dataset.moduleHeightMm = modulePhysical.height_mm;
   svg.dataset.jboxAxisFromBottomMm = modulePhysical.jbox_axis_from_bottom_mm;
+  svg.dataset.visualAuthority = 'v8-leapfrog-explicit-physical-connections';
   validateDrawing();
+  window.dispatchEvent(new CustomEvent('v11-2-rendered', { detail: { mode } }));
 }
 
 function fitWidth() {
   const unscaledHeight = Number(svg.getAttribute('height'));
-  const scale = Math.max(0.2, viewport.clientWidth / drawing.canvasWidth);
+  const scale = Math.max(0.18, viewport.clientWidth / drawing.canvasWidth);
   svg.style.width = `${drawing.canvasWidth * scale}px`;
   svg.style.height = `${unscaledHeight * scale}px`;
+  viewport.scrollTo({ left: 0, top: 0, behavior: 'auto' });
 }
 
 document.querySelectorAll('[data-mode]').forEach((button) => {

@@ -260,7 +260,7 @@
         && viewControlsComplete;
 
       const evidence = {
-        schema_version: 'globalgrid2050.v11.2.module-coordinate-evidence.v1',
+        schema_version: 'globalgrid2050.v11.2.module-coordinate-evidence.v2',
         contract: CONTRACT,
         module_bodies: moduleBodies.length,
         junction_boxes: jboxes.length,
@@ -275,6 +275,7 @@
         exact_root_separation_mm: 'unverified',
         polarity_root_side: 'unverified',
         screen_order_inference_used: false,
+        asynchronous_dom_augmentation_used: false,
         coordinates_complete: coordinatesComplete,
         evidence_state_preserved: jboxEvidenceHonest,
         view_controls: {
@@ -294,25 +295,16 @@
       }
     }
 
-    let scheduled = false;
-    const schedule = () => {
-      if (scheduled) return;
-      scheduled = true;
-      requestAnimationFrame(() => {
-        scheduled = false;
-        applyContract();
-      });
-    };
+    window.addEventListener('v11-2-rendered', applyContract);
 
-    window.addEventListener('DOMContentLoaded', () => {
-      const svg = document.querySelector('#sld');
-      const viewport = document.querySelector('#viewport');
-      const actualSize = document.querySelector('#actual-size');
-      if (!svg || !viewport || !actualSize) return;
+    const viewport = document.querySelector('#viewport');
+    const actualSize = document.querySelector('#actual-size');
+    if (viewport && actualSize) {
       actualSize.addEventListener('click', () => {
-        const width = Number(svg.getAttribute('width'));
-        const height = Number(svg.getAttribute('height'));
-        if (!Number.isFinite(width) || !Number.isFinite(height)) {
+        const svg = document.querySelector('#sld');
+        const width = Number(svg?.getAttribute('width'));
+        const height = Number(svg?.getAttribute('height'));
+        if (!svg || !Number.isFinite(width) || !Number.isFinite(height)) {
           throw new Error('V11.2 100% view requires finite SVG dimensions');
         }
         svg.style.width = `${width}px`;
@@ -320,9 +312,9 @@
         viewport.scrollTo({ left: 0, top: 0, behavior: 'auto' });
         actualSize.dataset.viewScale = '1';
       });
-      new MutationObserver(schedule).observe(svg, { childList: true, subtree: true });
-      schedule();
-    });
+    }
+
+    if (document.querySelector('#sld .module-body')) applyContract();
   })();
   </script>
 </body>
