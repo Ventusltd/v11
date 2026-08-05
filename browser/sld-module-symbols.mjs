@@ -1,5 +1,6 @@
 const STYLE_ID = 'v11-module-junction-box-style';
 const EVIDENCE_ID = 'v11-module-junction-box-evidence';
+const LEGACY_CONTRACT = 'globalgrid2050.v11.junction-box-symbol.v1';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const BLACK = 'rgb(0, 0, 0)';
 const RED = 'rgb(235, 87, 87)';
@@ -32,14 +33,37 @@ function moduleIdentity(stringId, electricalIndex) {
   return `${stringId}-M${String(electricalIndex).padStart(2, '0')}`;
 }
 
+function activeDetailSvg() {
+  return document.querySelector('#detail-canvas.string-strip');
+}
+
+function claimLegacyContract(detailSvg = activeDetailSvg()) {
+  if (detailSvg) detailSvg.dataset.junctionBoxContract = LEGACY_CONTRACT;
+  return detailSvg;
+}
+
+function removeStaleSymbols(detailSvg, expectedModuleIds) {
+  detailSvg.querySelectorAll('.module-symbol').forEach((symbol) => {
+    if (!expectedModuleIds.has(symbol.dataset.moduleId)) symbol.remove();
+  });
+}
+
 function decorate(detailSvg) {
   if (!detailSvg) return;
+  claimLegacyContract(detailSvg);
   const stringId = detailSvg.dataset.stringId || 'UNASSIGNED';
-  [...detailSvg.querySelectorAll('.topology-cell')].forEach((cell) => {
-    if (cell.dataset.moduleSymbolVersion === 'v1') return;
+  const cells = [...detailSvg.querySelectorAll('.topology-cell')];
+  const expectedModuleIds = new Set(cells.map((cell) => moduleIdentity(stringId, Number(cell.dataset.electricalIndex))));
+  removeStaleSymbols(detailSvg, expectedModuleIds);
+
+  for (const cell of cells) {
     const electricalIndex = Number(cell.dataset.electricalIndex);
-    if (!Number.isInteger(electricalIndex) || electricalIndex < 1) return;
+    if (!Number.isInteger(electricalIndex) || electricalIndex < 1) continue;
     const moduleId = moduleIdentity(stringId, electricalIndex);
+    const existing = detailSvg.querySelector(`#${CSS.escape(`${moduleId}-SYMBOL`)}`);
+    if (existing && cell.dataset.moduleSymbolVersion === 'v1') continue;
+    existing?.remove();
+
     const x = Number(cell.getAttribute('x'));
     const y = Number(cell.getAttribute('y'));
     const width = Number(cell.getAttribute('width'));
@@ -119,7 +143,7 @@ function decorate(detailSvg) {
     posLabel.textContent = '+';
     group.append(junctionBox, negNode, posNode, negLead, posLead, negConnector, posConnector, negLabel, posLabel);
     cell.parentNode.insertBefore(group, cell.nextSibling);
-  });
+  }
 }
 
 async function resolveTestedSha() {
@@ -134,7 +158,7 @@ async function resolveTestedSha() {
       if (/^[0-9a-f]{40}$/i.test(ref)) return ref.toLowerCase();
     }
   } catch {
-    // Local file use may have no Git metadata.
+    // Local static serving may not expose Git metadata.
   }
   return null;
 }
@@ -154,7 +178,7 @@ let lastFailureSignature = '';
 async function decorateAndMeasure() {
   scheduled = false;
   ensureStyle();
-  const detailSvg = document.querySelector('#detail-canvas.string-strip');
+  const detailSvg = claimLegacyContract();
   decorate(detailSvg);
   if (!detailSvg || !document.querySelector('#status')?.classList.contains('ok')) return;
 
@@ -246,7 +270,7 @@ async function decorateAndMeasure() {
     node.textContent = evidenceJson;
     window.dispatchEvent(new CustomEvent('v11:module-junction-box-evidence', { detail: evidence }));
   }
-  detailSvg.dataset.junctionBoxContract = 'v1';
+  detailSvg.dataset.junctionBoxContract = LEGACY_CONTRACT;
   detailSvg.dataset.sldEvidencePass = String(pass);
   document.documentElement.dataset.moduleJunctionBoxPass = String(pass);
   if (!pass) {
@@ -269,9 +293,13 @@ function schedule() {
 export function installModuleJunctionBoxSymbols() {
   ensureStyle();
   const topologyView = document.querySelector('#topology-view');
-  const observer = new MutationObserver(schedule);
+  const observer = new MutationObserver(() => {
+    claimLegacyContract();
+    schedule();
+  });
   if (topologyView) observer.observe(topologyView, { childList: true, subtree: true });
   window.addEventListener('resize', schedule);
+  claimLegacyContract();
   schedule();
   return observer;
 }
