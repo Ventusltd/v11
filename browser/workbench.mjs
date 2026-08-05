@@ -71,6 +71,10 @@ function readArrayDefinition() {
 
 function adaptedReference(definition) {
   const adapted = structuredClone(referenceFixture);
+  const moduleToModuleMates = definition.modules_per_string - 1;
+  const moduleToStringCableMates = 2;
+  const stringCableToInverterMates = 2;
+  const totalMatedInterfaces = definition.modules_per_string + 3;
   adapted.block_id = `v11_user_array_${definition.string_count}x${definition.modules_per_string}`;
   adapted.array.string_count = definition.string_count;
   adapted.array.modules_per_string = definition.modules_per_string;
@@ -80,7 +84,27 @@ function adaptedReference(definition) {
   adapted.inverter.mppt_count = definition.mppt_count;
   adapted.inverter.strings_per_mppt = definition.inputs_per_mppt;
   adapted.inverter.physical_dc_input_count = definition.physical_dc_input_count;
-  adapted.conductors.connector_count_per_string = definition.modules_per_string + 1;
+  delete adapted.conductors.connector_count_per_string;
+  delete adapted.conductors.connector_count_per_string_status;
+  adapted.conductors.connector_resistance_policy = {
+    ...adapted.conductors.connector_resistance_policy,
+    schema_version: 'globalgrid2050.v11.connector-resistance-policy.v1',
+    evidence_state: 'provisional_fixture',
+    applies_to: 'all_completed_mated_interfaces',
+    included_interface_classes: [
+      'module_to_module',
+      'module_to_string_cable',
+      'string_cable_to_inverter',
+    ],
+    module_to_module_mate_count: moduleToModuleMates,
+    module_to_string_cable_mate_count: moduleToStringCableMates,
+    string_cable_to_inverter_mate_count: stringCableToInverterMates,
+    total_mated_interface_count: totalMatedInterfaces,
+    note: 'Derived from adapted array cardinality: N - 1 module mates plus two module-to-string-cable and two string-cable-to-inverter interfaces.',
+  };
+  if (adapted.conductors.connector_resistance_policy.total_mated_interface_count !== definition.modules_per_string + 3) {
+    throw new Error('Adapted connector resistance policy must equal N + 3 completed interfaces');
+  }
   adapted.routing.route_lengths_m = Array(definition.string_count).fill(0);
   adapted.provenance = {
     ...adapted.provenance,
@@ -511,6 +535,17 @@ async function verifyNonDefaultArray() {
     const definition = readArrayDefinition();
     const candidateLayout = buildLayout(definition);
     const candidateReference = adaptedReference(definition);
+    const connectorPolicy = candidateReference.conductors.connector_resistance_policy;
+    if ('connector_count_per_string' in candidateReference.conductors
+        || 'connector_count_per_string_status' in candidateReference.conductors) {
+      throw new Error('Non-default array reintroduced deprecated connector compatibility fields');
+    }
+    if (connectorPolicy.module_to_module_mate_count !== 19
+        || connectorPolicy.module_to_string_cable_mate_count !== 2
+        || connectorPolicy.string_cable_to_inverter_mate_count !== 2
+        || connectorPolicy.total_mated_interface_count !== 23) {
+      throw new Error('Non-default array connector policy must contain 19 + 2 + 2 = 23 mated interfaces');
+    }
     const { reference: adapted, derivation } = referenceFromLayout(candidateReference, candidateLayout, {
       inverterPoint: definition.inverter_point,
       geometryAllowance: 1.1,
@@ -525,7 +560,7 @@ async function verifyNonDefaultArray() {
       throw new Error('Non-default array self-check returned inconsistent input allocation');
     }
     return {
-      schema_version: 'globalgrid2050.v11.array-editor-self-check.v2',
+      schema_version: 'globalgrid2050.v11.array-editor-self-check.v3',
       pass: true,
       strings: 12,
       modules_per_string: 20,
@@ -534,6 +569,17 @@ async function verifyNonDefaultArray() {
       inputs_per_mppt: 2,
       string_strips: 12,
       topology_cells: 240,
+      connector_accounting: {
+        module_connector_ends: 40,
+        string_cable_connector_ends: 4,
+        inverter_connector_ends: 2,
+        complete_system_connector_ends: 46,
+        module_to_module_mates: connectorPolicy.module_to_module_mate_count,
+        module_to_string_cable_mates: connectorPolicy.module_to_string_cable_mate_count,
+        string_cable_to_inverter_mates: connectorPolicy.string_cable_to_inverter_mate_count,
+        total_mated_interfaces: connectorPolicy.total_mated_interface_count,
+        deprecated_compatibility_fields_absent: true,
+      },
       final_input_id: finalString.input_id,
       final_mppt_id: finalString.mppt_id,
       layout_hash: candidateLayout.layout_hash,
