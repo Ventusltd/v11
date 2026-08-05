@@ -45,20 +45,31 @@ class ConnectorAccountingTests(unittest.TestCase):
         self.assertEqual(accounting["string_cable_to_inverter_mate_count"], 2)
         self.assertEqual(accounting["loose_module_connector_end_count_before_home_runs"], 2)
 
-    def test_reference_uses_completed_interface_count(self):
+    def test_reference_exposes_only_named_resistance_policy(self):
         reference = json.loads((ROOT / "reference/lab_inverter_block_24_strings.json").read_text())
         conductors = reference["conductors"]
+        policy = conductors["connector_resistance_policy"]
         accounting = connector_accounting(reference["array"]["modules_per_string"])
-        self.assertEqual(conductors["connector_count_per_string"], 33)
+
+        self.assertNotIn("connector_count_per_string", conductors)
+        self.assertNotIn("connector_count_per_string_status", conductors)
         self.assertEqual(
-            conductors["connector_count_per_string"],
+            policy["module_to_module_mate_count"],
+            accounting["module_to_module_mate_count"],
+        )
+        self.assertEqual(
+            policy["module_to_string_cable_mate_count"],
+            accounting["module_to_string_cable_mate_count"],
+        )
+        self.assertEqual(
+            policy["string_cable_to_inverter_mate_count"],
+            accounting["string_cable_to_inverter_mate_count"],
+        )
+        self.assertEqual(
+            policy["total_mated_interface_count"],
             accounting["total_mated_interface_count"],
         )
-        self.assertNotEqual(conductors["connector_count_per_string"], 31)
-        self.assertEqual(
-            conductors["connector_count_per_string_status"],
-            "deprecated_compatibility_projection",
-        )
+        self.assertEqual(policy["applies_to"], "all_completed_mated_interfaces")
 
     def test_provisional_resistance_policy_is_explicit(self):
         policy = resistance_accounting(30, 0.00035)
@@ -67,20 +78,15 @@ class ConnectorAccountingTests(unittest.TestCase):
         self.assertEqual(policy["evidence_state"], "provisional_fixture")
         self.assertAlmostEqual(policy["total_connector_contact_resistance_ohm"], 0.01155)
 
-    def test_python_simulation_ignores_deprecated_compatibility_count(self):
+    def test_python_simulation_ignores_injected_legacy_count(self):
         reference = load_reference_block(ROOT / "reference/lab_inverter_block_24_strings.json")
         expected = simulate_block(reference, strategy="leapfrog")
 
-        stale = deepcopy(reference)
-        stale["conductors"]["connector_count_per_string"] = 999
-        stale_result = simulate_block(stale, strategy="leapfrog")
+        legacy = deepcopy(reference)
+        legacy["conductors"]["connector_count_per_string"] = 999
+        legacy_result = simulate_block(legacy, strategy="leapfrog")
 
-        absent = deepcopy(reference)
-        absent["conductors"].pop("connector_count_per_string")
-        absent_result = simulate_block(absent, strategy="leapfrog")
-
-        self.assertEqual(canonical_json(stale_result), canonical_json(expected))
-        self.assertEqual(canonical_json(absent_result), canonical_json(expected))
+        self.assertEqual(canonical_json(legacy_result), canonical_json(expected))
 
 
 if __name__ == "__main__":

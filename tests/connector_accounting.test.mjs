@@ -28,12 +28,18 @@ test('30-module subsystem accounting is complete', () => {
   assert.equal(accounting.string_cable_to_inverter_mate_count, 2);
 });
 
-test('fixture compatibility projection is corrected from 31 to 33', () => {
+test('fixture exposes only the named connector resistance policy', () => {
   const accounting = connectorAccounting(reference.array.modules_per_string);
-  assert.equal(reference.conductors.connector_count_per_string, 33);
-  assert.equal(reference.conductors.connector_count_per_string, accounting.total_mated_interface_count);
-  assert.notEqual(reference.conductors.connector_count_per_string, 31);
-  assert.equal(reference.conductors.connector_count_per_string_status, 'deprecated_compatibility_projection');
+  const conductors = reference.conductors;
+  const policy = conductors.connector_resistance_policy;
+
+  assert.equal(Object.hasOwn(conductors, 'connector_count_per_string'), false);
+  assert.equal(Object.hasOwn(conductors, 'connector_count_per_string_status'), false);
+  assert.equal(policy.module_to_module_mate_count, accounting.module_to_module_mate_count);
+  assert.equal(policy.module_to_string_cable_mate_count, accounting.module_to_string_cable_mate_count);
+  assert.equal(policy.string_cable_to_inverter_mate_count, accounting.string_cable_to_inverter_mate_count);
+  assert.equal(policy.total_mated_interface_count, accounting.total_mated_interface_count);
+  assert.equal(policy.applies_to, 'all_completed_mated_interfaces');
 });
 
 test('resistance policy includes all completed interface classes', () => {

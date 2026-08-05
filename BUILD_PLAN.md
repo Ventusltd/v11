@@ -14,12 +14,13 @@ Current authority: PR 3 on `build/v11-inverter-block-simulator`. The laboratory 
 
 ## Consumed exact-head receipt
 
-Head `9d39db6485def72c5189b8976977ee5563b25310` passed `V11 Control Plane Validation` run `30948072103`.
+Head `bd0d77cd8925838fa0294f4bd12483ccf17cabd8` passed `V11 Control Plane Validation` run `30959012979`.
 
-- Control-plane job `92122927993`: success; artefact `8907902976`, digest `sha256:aadf27231946a8eeb7ceceb58c882e2f96d7a9f4b29484f31f997428b4d2fffa`.
-- Visible pinned-Chromium job `92122927866`: success; artefact `8907909776`, digest `sha256:1ff75b101b6d497845b0b704a819631cbda4ba3dd078e1ce536f70d890933a9d`.
-- Immutable public-endpoint job `92122927980`: success; artefact `8907903828`, digest `sha256:39a23ddaf57b8ad5deb474608b4bf351f9f27a8a10e4e802201871167b88b620`.
-- Chromium reconfirmed the 24 × 30 and 12 × 20 workbench cases after the pinned-browser cache change.
+- Control-plane job `92158561669`: success; artefact `8912193391`, digest `sha256:d9678821d065e19f6fb3151b52a33dd99d11b746b90db253109095bd17e8bd9c`.
+- Visible pinned-Chromium job `92158561762`: success; artefact `8912238353`, digest `sha256:8969bac93145939ffa7bbf861158ee07d07ab8f561a512907dc7edc56866f280`.
+- Immutable public-endpoint job `92158561717`: success; artefact `8912191624`, digest `sha256:528db76055099b180c618eff41fdb6d7dea61efd1b273fea66a173b628a720b9`.
+- Connector-accounting job `92158561747`: success; artefact `8912196433`, digest `sha256:c03e1418952739707e3d18fa598c0f17df42dd2633d52c6bb6debb5ae82b3c59`.
+- Exact-head evidence confirms both simulation engines ignore injected legacy counts and continue to agree on the named `N + 3` interface policy.
 
 ## Connector-accounting authority
 
@@ -36,14 +37,14 @@ For `N` modules in one completed string:
 - positive/red ends: `N + 3`;
 - negative/blue ends: `N + 3`.
 
-The provisional resistance policy currently applies one declared contact resistance to all `N + 3` completed mated interfaces. Manufacturer-specific resistance evidence remains incomplete. The legacy `connector_count_per_string` input is retained only as a deprecated compatibility projection and must equal `total_mated_interface_count`; it is no longer allowed to carry an unexplained value of 31.
+The provisional resistance policy currently applies one declared contact resistance to all `N + 3` completed mated interfaces. Manufacturer-specific resistance evidence remains incomplete. The deprecated `connector_count_per_string` and status fields are removed from the authoritative fixture; Python and JavaScript derive the interface count from `array.modules_per_string` and consume the named resistance policy directly.
 
 ## Numbered engineering targets
 
 - [x] 1. Connector-marker visual contract: central browser contract, black cable bodies, red/blue connector markers, orange inverter, dashed black provisional routes, unique connector IDs, computed-style validation and structured exact-head evidence.
 - [x] 2. Module/junction-box symbol V1: selected-string modules expose explicit `JBOX_NEG` and `JBOX_POS` nodes, black factory leads and red/blue connector markers with stable identities and structured evidence. Default STR-01 acceptance is 30 modules, 60 terminal nodes and 60 connector markers.
 - [x] 2A. Versioned connector-accounting authority: Python/browser parity, explicit subsystem counts, complete-system formulae, provisional interface-class resistance policy and dedicated CI evidence for 30-, 28- and 20-module strings.
-- [ ] 2B. Remove the deprecated simulation compatibility count and make Python/JavaScript simulations consume the named connector-resistance policy directly.
+- [x] 2B. Remove the deprecated simulation compatibility count and make Python/JavaScript simulations consume the named connector-resistance policy directly.
 - [ ] 2C. Project four string-cable connector ends plus two inverter connector ends into the selected-string SLD, proving 66 complete-system ends and 33 red/33 blue markers for 30 modules.
 - [ ] 3. Sungrow PV1+/PV1− through PV24+/PV24− terminals and 12 MPPT ownership groups.
 - [ ] 4. Sequential terminal-to-terminal connection graph.
@@ -70,7 +71,7 @@ The provisional resistance policy currently applies one declared contact resista
 
 ## Current commit gate
 
-The connector-accounting contract is authoritative in `reference/connector_accounting_contract.json` and is implemented independently in Python and browser modules. The default fixture's compatibility count is corrected from 31 to 33, matching `N + 3` completed mated interfaces for `N = 30`. Dedicated CI proves:
+The connector-accounting contract is authoritative in `reference/connector_accounting_contract.json` and is implemented independently in Python and browser modules. The authoritative fixture now contains only the named resistance policy; no compatibility count or compatibility-status field remains. Both simulation engines derive the completed-interface count from module cardinality. Dedicated CI proves:
 
 - `N = 30`: 66 ends, 33 interfaces, 33 red and 33 blue ends;
 - `N = 28`: 62 ends, 31 interfaces, 31 red and 31 blue ends;
@@ -78,4 +79,4 @@ The connector-accounting contract is authoritative in `reference/connector_accou
 
 ## Next pass
 
-Resolve the new exact PR head and consume its PR-visible validation receipt. If green, complete Target 2B by removing direct simulation dependence on `connector_count_per_string` and consuming the named interface policy in both Python and JavaScript. If red, repair only the first proven CI defect. If pending, make no commit.
+Resolve the new exact PR head and consume its PR-visible validation receipt. If green, begin Target 2C by projecting the four string-cable connector ends and two inverter connector ends into the selected-string SLD with stable graph IDs and complete 66-end/33-red/33-blue evidence. If red, repair only the first proven CI defect. If pending, make no commit.

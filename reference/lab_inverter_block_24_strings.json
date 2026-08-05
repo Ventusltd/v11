@@ -52,8 +52,6 @@
       "evidence_state": "generic_tinned_copper_fixture"
     },
     "connector_resistance_ohm_each": 0.00035,
-    "connector_count_per_string": 33,
-    "connector_count_per_string_status": "deprecated_compatibility_projection",
     "connector_accounting_contract": "reference/connector_accounting_contract.json",
     "connector_resistance_policy": {
       "schema_version": "globalgrid2050.v11.connector-resistance-policy.v1",
@@ -68,7 +66,7 @@
       "module_to_string_cable_mate_count": 2,
       "string_cable_to_inverter_mate_count": 2,
       "total_mated_interface_count": 33,
-      "note": "The compatibility count is retained only until Python and JavaScript simulation inputs consume the named policy directly."
+      "note": "Python and JavaScript simulations derive completed interface counts from array.modules_per_string and consume this named policy directly; no compatibility count is accepted as an input."
     }
   },
   "routing": {
