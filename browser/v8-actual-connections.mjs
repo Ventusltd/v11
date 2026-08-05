@@ -19,7 +19,7 @@ function ensureStyle() {
     #detail-canvas .actual-connection-subtitle { fill:#edf3f8; font:700 9px ui-monospace,monospace; }
     #selected-order { display:block!important; }
     @media(max-width:600px){
-      #selected-detail { position:static!important; order:initial!important; }
+      #selected-detail { position:sticky!important; top:0!important; z-index:5!important; order:-1!important; }
       #selected-detail .detail-scroll { display:block!important; min-height:460px; }
       #detail-canvas.v8-actual-connection-detail { display:block!important; height:460px!important; min-width:2200px!important; width:2200px!important; }
       #selected-order { display:block!important; font-size:11px; }
