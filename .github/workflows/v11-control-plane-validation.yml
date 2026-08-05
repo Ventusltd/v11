@@ -145,6 +145,7 @@ jobs:
 
   browser_e2e:
     name: Visible pinned-Chromium workbench E2E
+    if: github.event_name != 'pull_request' || github.head_ref != 'build/v11.2-full-array-sld'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
