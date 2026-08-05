@@ -14,6 +14,7 @@
       <button data-mode="sequential">SEQUENTIAL</button>
       <button data-mode="leapfrog" class="active">LEAPFROG</button>
       <button id="fit">FIT WIDTH</button>
+      <button id="actual-size">100% VIEW</button>
     </nav>
   </header>
   <main id="viewport" aria-label="Full 24-string electrical single-line drawing">
@@ -242,13 +243,21 @@
       const jboxEvidenceHonest = jboxTerminals.every((terminal) =>
         terminal.dataset.physicalXMm === 'unverified'
         && Number(terminal.dataset.physicalYMm) === PHYSICAL.jbox_axis_y_mm);
+      const viewControls = [
+        document.querySelector('[data-mode="sequential"]'),
+        document.querySelector('[data-mode="leapfrog"]'),
+        document.querySelector('#fit'),
+        document.querySelector('#actual-size'),
+      ];
+      const viewControlsComplete = viewControls.every(Boolean);
       const pass = moduleBodies.length === 720
         && jboxes.length === 720
         && jboxTerminals.length === 1440
         && moduleConnectors.length === 1440
         && factoryLeads.length === 1440
         && coordinatesComplete
-        && jboxEvidenceHonest;
+        && jboxEvidenceHonest
+        && viewControlsComplete;
 
       const evidence = {
         schema_version: 'globalgrid2050.v11.2.module-coordinate-evidence.v1',
@@ -268,6 +277,12 @@
         screen_order_inference_used: false,
         coordinates_complete: coordinatesComplete,
         evidence_state_preserved: jboxEvidenceHonest,
+        view_controls: {
+          sequential: Boolean(viewControls[0]),
+          leapfrog: Boolean(viewControls[1]),
+          fit_width: Boolean(viewControls[2]),
+          actual_size_100_percent: Boolean(viewControls[3]),
+        },
         pass,
       };
       window.__V11_2_GEOMETRY_EVIDENCE__ = evidence;
@@ -291,7 +306,20 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       const svg = document.querySelector('#sld');
-      if (!svg) return;
+      const viewport = document.querySelector('#viewport');
+      const actualSize = document.querySelector('#actual-size');
+      if (!svg || !viewport || !actualSize) return;
+      actualSize.addEventListener('click', () => {
+        const width = Number(svg.getAttribute('width'));
+        const height = Number(svg.getAttribute('height'));
+        if (!Number.isFinite(width) || !Number.isFinite(height)) {
+          throw new Error('V11.2 100% view requires finite SVG dimensions');
+        }
+        svg.style.width = `${width}px`;
+        svg.style.height = `${height}px`;
+        viewport.scrollTo({ left: 0, top: 0, behavior: 'auto' });
+        actualSize.dataset.viewScale = '1';
+      });
       new MutationObserver(schedule).observe(svg, { childList: true, subtree: true });
       schedule();
     });
