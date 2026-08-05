@@ -92,6 +92,18 @@ function applyConnectorRecord(element, record, graph) {
   title.textContent = graphRecordTitle(record, graph.strategy);
 }
 
+function appendInverterSocketProjection(group, graph, record, terminalNode) {
+  if (!record) throw new Error('missing inverter socket connector record');
+  const socket = svgElement('circle', {
+    cx: Number(terminalNode.getAttribute('cx')),
+    cy: Number(terminalNode.getAttribute('cy')),
+    r: 5,
+    class: 'inverter-connector-end',
+  });
+  applyConnectorRecord(socket, record, graph);
+  group.append(socket);
+}
+
 function appendCableProjection(detailSvg, graph, polarity, y) {
   const suffix = polarity === 'positive' ? 'POS' : 'NEG';
   const moduleRecord = graph.connector_ends.find((item) => item.connector_end_id === `${graph.string_id}-${suffix}-STRING-CABLE-MODULE-END`);
@@ -193,8 +205,7 @@ async function projectAndMeasure() {
     || group.dataset.graphHash !== graph.graph_hash
     || group.dataset.displayMode !== mode
     || detailSvg.querySelectorAll('[data-connector-system-boundary="string_cable"]').length !== 4
-    || terminalNodes[0].dataset.connectorEndId !== inverterNegative.connector_end_id
-    || terminalNodes[1].dataset.connectorEndId !== inverterPositive.connector_end_id;
+    || group.querySelectorAll('[data-connector-system-boundary="inverter"]').length !== 2;
 
   if (needsProjection) {
     group?.remove();
@@ -208,11 +219,8 @@ async function projectAndMeasure() {
     });
     detailSvg.append(group);
 
-    applyConnectorRecord(terminalNodes[0], inverterNegative, graph);
-    applyConnectorRecord(terminalNodes[1], inverterPositive, graph);
-    terminalNodes[0].classList.add('inverter-connector-end');
-    terminalNodes[1].classList.add('inverter-connector-end');
-
+    appendInverterSocketProjection(group, graph, inverterNegative, terminalNodes[0]);
+    appendInverterSocketProjection(group, graph, inverterPositive, terminalNodes[1]);
     appendCableProjection(detailSvg, graph, 'negative', Number(terminalNodes[0].getAttribute('cy')));
     appendCableProjection(detailSvg, graph, 'positive', Number(terminalNodes[1].getAttribute('cy')));
 
