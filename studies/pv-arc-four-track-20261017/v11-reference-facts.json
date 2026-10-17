@@ -1,0 +1,41 @@
+{
+  "id": "V11_PR3_24_STRING_PROVISIONAL_EQUIPMENT_FIXTURE_NOT_OEM_CERTIFIED",
+  "source": {
+    "repository": "Ventusltd/v11",
+    "draft_pull_request": 3,
+    "commit": "89731abb7a678e1c0e9861e2be34886013a5ad7f",
+    "path": "reference/lab_inverter_block_24_strings.json"
+  },
+  "module": {
+    "rated_wp": 660,
+    "vmpp_v": 38.13,
+    "imp_a": 17.31,
+    "voc_stc_v": 45.75,
+    "isc_a": 18.4,
+    "temp_coeff_voc_per_c": -0.0024
+  },
+  "plant": {
+    "strings": 24,
+    "modules_per_string": 30,
+    "mppt_groups": 12,
+    "strings_per_mppt": 2,
+    "inverter_kva": 352
+  },
+  "what_if": {
+    "min_cell_temp_c": -10,
+    "rds_typ_ohm": 0.027,
+    "rds_hot_typ_ohm": 0.038,
+    "shunt_original_ohm": 0.1,
+    "shunt_research_ohm": 0.0005,
+    "alternate_rds_ohm": 0.003,
+    "snubber_cap_f": [
+      0.0000022,
+      0.0000047
+    ],
+    "snubber_v_scenarios": [
+      50,
+      1500
+    ]
+  },
+  "provenance_notice": "These are provisional V11 fixtures, not independently confirmed module, MPPT, inverter or route OEM data."
+}
