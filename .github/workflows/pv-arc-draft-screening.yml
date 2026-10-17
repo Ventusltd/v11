@@ -1,0 +1,28 @@
+name: PV arc draft analytical screening
+on:
+  pull_request:
+    paths:
+      - 'studies/pv-arc-four-track-20261017/**'
+      - '.github/workflows/pv-arc-draft-screening.yml'
+permissions:
+  contents: read
+jobs:
+  screening:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run research regression tests
+        working-directory: studies/pv-arc-four-track-20261017
+        run: python -S -m unittest -v test_model.py
+      - name: Generate illustrative results
+        working-directory: studies/pv-arc-four-track-20261017
+        run: python -S model.py --output results.json
+      - name: Upload non-authoritative calculation
+        uses: actions/upload-artifact@v4
+        with:
+          name: pv-arc-draft-screening
+          path: studies/pv-arc-four-track-20261017/results.json
