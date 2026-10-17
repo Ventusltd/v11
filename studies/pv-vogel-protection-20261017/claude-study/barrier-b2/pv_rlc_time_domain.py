@@ -61,6 +61,8 @@ class Config:
     fault_resistance_ohm: float = 0.8
     dump_resistance_ohm: float = 1.0
     keep_samples: bool = False
+    pv_output_capacitance_f: float | None = None
+    mppt_input_capacitance_f: float | None = None
 
 def fixture():
     return json.loads(FIXTURE.read_text(encoding="utf-8"))
@@ -177,6 +179,12 @@ def run(cfg=Config()):
         raise ValueError("trip must be divisible by step")
     f=fixture()
     p=parameters(f,cfg.location)
+    if cfg.pv_output_capacitance_f is not None:
+        p["pv_output_c_f"]=cfg.pv_output_capacitance_f
+    if cfg.mppt_input_capacitance_f is not None:
+        p["c_f"]=cfg.mppt_input_capacitance_f
+    if p["pv_output_c_f"] <= 0 or p["c_f"] <= 0:
+        raise ValueError("energy storage capacitances must be positive")
     y=[0.0,0.0,0.0,p["v_cap_initial"],0.0,0.0,0.0,0.0,
        p["v_pv_open_circuit"],p["v_pv_open_circuit"]]
     ec0=.5*p["c_f"]*y[3]*y[3]
