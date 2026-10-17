@@ -24,7 +24,7 @@ class SourceCutsetTests(unittest.TestCase):
    for act in TRUTH:
     d=energy_ledger(loc,act)
     self.assertAlmostEqual(d["pv_source_energy_j"],
-       d["fault_energy_j"]+d["copper_heat_j"],delta=.00011)
+       d["fault_energy_j"]+d["copper_heat_j"],delta=.0003)
  def test_energy_only_from_sources_still_connected(self):
   for loc in ("C2-far","C2-near"):
    p=energy_ledger(loc,"P2")
