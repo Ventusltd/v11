@@ -15,14 +15,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Run research regression tests
+      - name: Run arithmetic regression tests
         working-directory: studies/pv-arc-four-track-20261017
-        run: python -S -m unittest -v test_model.py
-      - name: Generate illustrative results
+        run: |
+          python -S -m unittest -v test_model.py
+          python -S -m unittest -v test_latest_iteration.py
+      - name: Generate illustrative array envelope
         working-directory: studies/pv-arc-four-track-20261017
         run: python -S model.py --output results.json
-      - name: Upload non-authoritative calculation
+      - name: Generate 24x30 V11 fixture sensitivity
+        working-directory: studies/pv-arc-four-track-20261017
+        run: python -S latest_iteration_sensitivity.py > latest-iteration-results.json
+      - name: Upload research-only results
         uses: actions/upload-artifact@v4
         with:
           name: pv-arc-draft-screening
-          path: studies/pv-arc-four-track-20261017/results.json
+          path: |
+            studies/pv-arc-four-track-20261017/results.json
+            studies/pv-arc-four-track-20261017/latest-iteration-results.json
