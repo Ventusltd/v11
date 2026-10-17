@@ -51,3 +51,10 @@ Your final report (returned to the orchestrator) MUST contain, in this order:
 6. `SOURCES:` for `source-register.csv`.
 7. `BLOCKERS:` what you could not do and why (missing data, tool, licence).
 Never pad. Never claim something ran if it did not.
+
+## 5. Addendum 2026-10-17 21:40 — Kuiper core and L10 verdicts
+- The live Kuiper core law (see `kuiper/KUIPER-CORE-USE.md`) is recorded for every scenario key as `kuiper_core_xy`,
+  alongside the Line Wafer `kuiper_xy`. Both are addresses only.
+- Every verification verdict (controllers, contradiction register, supervisory review) uses kuiper-belt LAWS.md L10:
+  `HONOURED` / `OVERREACHED` (first concrete deviation named) / `NOT EVALUATED` (statements listed) / `DISCLOSED`
+  (acknowledged gap, never waives a numerical contradiction). Disagreement is settled by pinned evidence only.

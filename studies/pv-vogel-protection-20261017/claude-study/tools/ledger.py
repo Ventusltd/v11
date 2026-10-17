@@ -33,6 +33,25 @@ def kuiper_xy(key: int):
     return r * math.cos(t), r * math.sin(t)
 
 
+# ---- Kuiper CORE placement law (live www.globalgrid2050.com/kuiper/), reproduced exactly ----
+# Source: Ventusltd/globalgrid2050 commit da7d8f6e6a7806ad5039701f5c86637d84be0704,
+# kuiper/releases/202609192301-kuiper-shell/index.html  (function keyPlace, line 566):
+#     m = Math.imul((k % 2^32) >>> 0, G32) >>> 0 ; theta = 2*pi*m/2^32 ; r = sqrt(k + 0.5)
+# with G32 = 2654435769 (floor(2^32/phi)). Same law in kuiper-belt cosmos/wafer-meta.json
+# ("r = sqrt(key), theta = 2 pi frac(key x 2654435769 / 2^32)"). The 32-bit wrap is part of the law.
+G32 = 2654435769
+CORE_LAW = "r = sqrt(key + 0.5); theta = 2*pi*((key mod 2^32)*G32 mod 2^32)/2^32; G32 = 2654435769  [address only]"
+
+
+def kuiper_core_xy(key: int):
+    if type(key) is not int or key < 0 or key > MAX_SAFE_KEY:
+        raise ValueError("Kuiper core key must be an integer in 0..2^53-1")
+    m = ((key % 4294967296) * G32) % 4294967296
+    theta = 2.0 * math.pi * m / 4294967296.0
+    r = math.sqrt(key + 0.5)
+    return r * math.cos(theta), r * math.sin(theta)
+
+
 def enumerate_cycle1():
     """Deterministic enumeration of cycle-1 scenario identities (order is permanent)."""
     rows = []
@@ -110,18 +129,26 @@ def build():
     for i, row in enumerate(rows):
         key = PHASE0_LAST_KEY + 1 + i
         x, y = kuiper_xy(key)
+        cx, cy = kuiper_core_xy(key)
         ledger.append({**row, "key": key, "family": FAMILY, "kuiper_xy": [round(x, 8), round(y, 8)],
+                       "kuiper_core_xy": [round(cx, 8), round(cy, 8)],
                        "model_revision": "cycle1-v1", "evidence_links": []})
     ids = [r["scenario_id"] for r in ledger]
     assert len(ids) == len(set(ids)), "duplicate scenario_id"
     return {
-        "ledger_version": 1,
+        "ledger_version": 2,
+        "ledger_changelog": [
+            "v1 2026-10-17: family cycle1-physical-v1 keys 2561..2959 with kuiper_xy (Line Wafer law); entries sha256 218b25d9293526fbe38d4430e2db556d5a833bf6b0f44c38a46a288d6bfec6b3",
+            "v2 2026-10-17: added kuiper_core_xy (live Kuiper core law, keyPlace) to every entry; keys, scenario_ids and kuiper_xy unchanged",
+        ],
+        "core_address_law": CORE_LAW,
+        "core_law_source": "Ventusltd/globalgrid2050@da7d8f6e kuiper/releases/202609192301-kuiper-shell/index.html keyPlace; kuiper-belt@40df5a3e cosmos/wafer-meta.json law",
         "family": FAMILY,
         "first_key": PHASE0_LAST_KEY + 1,
         "last_key": PHASE0_LAST_KEY + len(ledger),
         "count": len(ledger),
         "phase0_frozen_keys": [1, PHASE0_LAST_KEY],
-        "address_law": "r=sqrt(key); theta=key*pi*(3-sqrt(5)); x=r*cos(theta); y=r*sin(theta)  [address only]",
+        "address_law": "r=sqrt(key); theta=key*pi*(3-sqrt(5)); x=r*cos(theta); y=r*sin(theta)  [Line Wafer law, lib.mjs; address only]",
         "append_only_rule": "new identities are appended with the next key; existing rows are never reordered, renumbered or deleted",
         "entries": ledger,
     }
