@@ -1,0 +1,50 @@
+{
+  "id": "PV_ARC_20261017_UNVERIFIED_EXAMPLE",
+  "module": {
+    "voc_v": 48,
+    "vmpp_v": 41,
+    "impp_a": 18,
+    "isc_a": 19.5,
+    "cold_multiplier": 1.12
+  },
+  "switch": {
+    "part": "IMZA65R027M1H",
+    "rated_v": 650,
+    "rds_ohm": 0.027,
+    "balance_ohm": 10000000,
+    "leakage_difference_a": 0.00005,
+    "shunt_ohm": 0.1,
+    "shunt_rating_w": 1
+  },
+  "network": {
+    "inverter_efficiency": 0.98,
+    "transformer_efficiency": 0.99,
+    "lv_v_ll": 690,
+    "hv_v_ll": 33000,
+    "power_factor": 0.99,
+    "opening_s": 0.000001,
+    "loop_L_h": [
+      0.000001,
+      0.00001,
+      0.0001
+    ]
+  },
+  "cases": [
+    {
+      "name": "24 string example (350 kW AC)",
+      "strings": 24,
+      "strings_per_mppt": 3,
+      "modules_per_string": 26,
+      "inverter_ac_kw": 350,
+      "dc_link_C_f": 0.002
+    },
+    {
+      "name": "80 string example (1.1 MW AC)",
+      "strings": 80,
+      "strings_per_mppt": 4,
+      "modules_per_string": 26,
+      "inverter_ac_kw": 1100,
+      "dc_link_C_f": 0.004
+    }
+  ]
+}
