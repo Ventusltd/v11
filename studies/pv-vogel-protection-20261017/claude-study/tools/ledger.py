@@ -23,9 +23,12 @@ HERE = Path(__file__).resolve().parent
 LEDGER = HERE.parent / "experiments" / "scenario-ledger.json"
 
 
+MAX_SAFE_KEY = 9007199254740991  # Number.MAX_SAFE_INTEGER, the bound lib.mjs parseKey enforces
+
+
 def kuiper_xy(key: int):
-    if type(key) is not int or key < 1:
-        raise ValueError("Kuiper key must be a positive integer")
+    if type(key) is not int or key < 1 or key > MAX_SAFE_KEY:
+        raise ValueError("Kuiper key must be an integer in 1..2^53-1 (lib.mjs parseKey bound)")
     r, t = math.sqrt(key), key * GOLDEN
     return r * math.cos(t), r * math.sin(t)
 

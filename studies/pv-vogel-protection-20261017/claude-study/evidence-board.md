@@ -34,3 +34,10 @@ Workers (model `opus`), waves aligned to barriers:
 
 ## Receipts
 (appended by orchestrator as each agent returns: agent id, model, task, files, tests run, result)
+
+### R-01 SUP-D (model `fable`, Track D supervisor) — completed 2026-10-17 ~20:19 BST
+- Files: review/track-D-charter-and-initial-attack.md (239 lines); review/supd-pilot/ (place_node.mjs, verify_address_law.py, pilot_bench.py, spice_pilot/run_pilot.py, README.md — placed in-tree by orchestrator, paths made relative).
+- Ran: tools/ledger.py --check MATCHES 218b25d9; lib.mjs place(key) vs ledger kuiper_xy keys 1..2959 — 2819/2966 bit-identical, 147 differ ≤2 ulp, 0 differ after round(·,8); Kuiper proof/wafer.check.mjs 30 checks PASS (read-only); Phase 0 11/11; ngspice RLC pilot 98.1390 J vs analytic 98.1380 J (h=1 µs), halving change −7.3e-6.
+- Findings carried: bounded Vogel disk covers 78.54 % of the unit square (61.69 % d=4, 48.45 % d=6); corner box [0.9,1]² unreachable at any N; arc-law envelope 1.50–7.49 kJ over 5 s at 17.31 A (×5 spread); C_in energy 32.7–327 J; L_loop 0.667 mH (6.4 mm) vs 2.559 mH (1.0 m separation).
+- Objections OBJ-D1..D5 logged (→ contradictions X-009..X-011 at barrier B1). Blockers: proofs/test_ledger.py missing (W08 queue); kuiper_xy lacks 2^53−1 bound (orchestrator to add); arc calibration UNKNOWN.
+- Tokens 172,696; tool uses 42; duration 912 s.
