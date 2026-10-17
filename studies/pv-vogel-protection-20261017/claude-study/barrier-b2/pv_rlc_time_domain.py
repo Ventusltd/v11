@@ -17,9 +17,10 @@ Circuit dynamical identities while a path is connected:
   L_j di_j/dt = Vsource_j(i_j) - R_j i_j - Vf
   Vf = Rf * sum(i_j)
   C_in dVc/dt = -i_cap
-Input source: phenomenological nonlinear STC I-V fitted to four fixture
-points, not calibrated physical single diode. Cap starts at Vmppt=1143.9V,
-PV fault-feed currents start at 0A (open-circuit/precharged capacitive state,
+Input source: nonlinear STC I(V) current-source fitted to four fixture
+points, plus assumed PV-side output capacitance. NOT a calibrated single diode.
+Input cap starts at Vmppt=1143.9V; PV current paths start at 0A,
+PV terminal voltage at open-circuit Voc (precharged capacitive state,
 NOT a loaded inverter at MPP). R_fault is a RESISTOR, NOT plasma.
 
 When a control trip occurs, ideal isolation **redirects** the existing
@@ -28,8 +29,9 @@ fault immediately); it accounts for inductive energy, but NOT Vds/driver,
 semiconductor SOA, achievable commutation time or clamp qualification.
 The capacitor retains energy after its input side is disconnected.
 
-Energy balance E_PV + E_Cinitial = E_fault + E_copper + E_dump +
-E_Cfinal + E_Lfinal within numeric tolerance. Everything in SI units.
+Energy balance E_PV + E_MPPT_Cinitial + E_PV_Cinitial = E_fault +
+E_copper + E_dump + E_MPPT_Cfinal + E_PV_Cfinal + E_Lfinal within
+numeric tolerance. Everything in SI units.
 """
 import json
 import math
@@ -39,7 +41,7 @@ from typing import NamedTuple
 
 FIXTURE = Path(__file__).resolve().parents[1] / "fixture/system-fixture.json"
 BRANCHES = ("S20", "S19", "CAP")
-STATES = ("i20","i19","icap","vcap","e_pv","e_wire","e_fault","e_dump")
+STATES = ("i20","i19","icap","vcap","e_pv","e_wire","e_fault","e_dump","vpv20","vpv19")
 CUT_SETS = {
     "P0": (), "P1": ("S20",), "P1b": (),
     "P2": ("S19","CAP"), "P2b": ("S20",),
@@ -83,6 +85,8 @@ def parameters(f, location):
     # finite inductance for all three branches; parasitics of breaker UNKNOWN
     cap_f = f["inverter_dc_side"]["mppt_input_capacitance_f"]["value"]
     return {"length_m":lengths,"r_ohm":r,"l_h":l,"c_f":cap_f,
+            "pv_output_c_f":0.000020, # EXPLICIT ASSUMPTION, NOT OEM PV capacitance
+            "v_pv_open_circuit":f["module"]["voc_stc_v"]*f["plant"]["modules_per_string"],
             "v_cap_initial":f["plant"]["string_derived"]["vmpp_string_v"]}
 
 def string_v_from_i(current, f):
@@ -97,6 +101,18 @@ def string_v_from_i(current, f):
         return voc*max(0.0,1-i/isc)**(1/n)
     return -2.0*(i-isc) # extrapolation; physically unverified
 
+
+def string_i_from_v(voltage, f):
+    """Stable photovoltaic current-source fit through STC Isc/Voc/Impp/Vmpp.
+    Illustrative, NOT an actual calibrated single-diode physical model.
+    """
+    m=f["module"]
+    voc=m["voc_stc_v"]*f["plant"]["modules_per_string"]
+    vmpp=m["vmpp_v"]*f["plant"]["modules_per_string"]
+    isc,imp=m["isc_a"],m["impp_a"]
+    n=math.log(1-imp/isc)/math.log(vmpp/voc)
+    return isc*max(0.0,1-(max(0.0,voltage)/voc)**n)
+
 def _trip_active(time, config):
     return time >= config.trip_at_s-1e-13
 
@@ -105,24 +121,31 @@ def _derivative(time, state, cfg, f, p):
     currents=[max(0.0,x) for x in state[:3]]
     contributing=[0.0 if BRANCHES[j] in active else currents[j] for j in range(3)]
     vf=cfg.fault_resistance_ohm*sum(contributing)
-    d=[0.0]*8
+    d=[0.0]*10
+    for j in range(2):
+        terminal_v=state[8+j]
+        produced_i=string_i_from_v(terminal_v,f)
+        # Each PV source has an explicit, hypothesised terminal capacitance.
+        # The photogenerated current charges it; active branch discharge
+        # follows Kirchoff exactly. This avoids the unbounded derivative of
+        # the inverse I(V) fit near Isc and accounts for stored PV-side energy.
+        d[8+j]=(produced_i-contributing[j])/p["pv_output_c_f"]
+        d[4]+=terminal_v*produced_i
     for j in range(3):
         i=currents[j]
         if BRANCHES[j] in active:
-            # The inductor is *diverted away from the fault* to a dump load.
-            # Actual switching and clamp voltage/stress remain unmodelled.
-            d[j]= -cfg.dump_resistance_ohm*i / p["l_h"][j]
-            d[7] += cfg.dump_resistance_ohm*i*i
+            # Current redirected to a hypothetical passive dump outside the fault.
+            # This is NOT proof of real switch/clamp commutation feasibility.
+            d[j]=-cfg.dump_resistance_ohm*i/p["l_h"][j]
+            d[7]+=cfg.dump_resistance_ohm*i*i
         else:
-            source = (string_v_from_i(i,f) if j in (0,1) else state[3])
+            source=(state[8+j] if j<2 else state[3])
             d[j]=(source-vf-p["r_ohm"][j]*i)/p["l_h"][j]
-            d[5] += p["r_ohm"][j]*i*i
-            if j<2:
-                d[4] += source*i
-            else:
-                d[3] = -i/p["c_f"]
-        if state[j] <= 0.0 and d[j] < 0:
-            d[j] = 0.0   # no reverse-feed model; unsupported diode blocking
+            d[5]+=p["r_ohm"][j]*i*i
+            if j==2:
+                d[3]=-i/p["c_f"]
+        if state[j]<=0.0 and d[j]<0:
+            d[j]=0.0 # positive-current-only model; reverse feeding excluded
     d[6]=vf*sum(contributing)
     return d
 
@@ -154,8 +177,10 @@ def run(cfg=Config()):
         raise ValueError("trip must be divisible by step")
     f=fixture()
     p=parameters(f,cfg.location)
-    y=[0.0,0.0,0.0,p["v_cap_initial"],0.0,0.0,0.0,0.0]
+    y=[0.0,0.0,0.0,p["v_cap_initial"],0.0,0.0,0.0,0.0,
+       p["v_pv_open_circuit"],p["v_pv_open_circuit"]]
     ec0=.5*p["c_f"]*y[3]*y[3]
+    epv0=.5*p["pv_output_c_f"]*(y[8]**2+y[9]**2)
     peak_fault_a=0.0;peak_vf=0.0; peak_cap_a=0.0
     samples=[]
     checkpoint=max(1,count//100)
@@ -177,8 +202,9 @@ def run(cfg=Config()):
         y=_rk4(t+(1e-11 if is_off else -1e-11),y,cfg.step_s,cfg,f,p)
     il=.5*sum(p["l_h"][j]*y[j]**2 for j in range(3))
     ec=.5*p["c_f"]*y[3]**2
-    ein=ec0+y[4]
-    eout=y[5]+y[6]+y[7]+ec+il
+    epv=.5*p["pv_output_c_f"]*(y[8]**2+y[9]**2)
+    ein=ec0+epv0+y[4]
+    eout=y[5]+y[6]+y[7]+ec+epv+il
     residual=ein-eout
     out={
         "status":"B2_LUMPED_RLC_NUMERICAL_ONLY_NOT_ARC_OR_PROTECTION_VALIDATION",
@@ -190,6 +216,9 @@ def run(cfg=Config()):
         "source_lengths_m":p["length_m"],"source_resistances_ohm":dict(zip(BRANCHES,p["r_ohm"])),
         "source_inductances_h":dict(zip(BRANCHES,p["l_h"])),
         "mppt_input_capacitance_f":p["c_f"],
+        "assumed_pv_output_capacitance_f_per_string":p["pv_output_c_f"],
+        "energy_pv_output_caps_start_j":round(epv0,5),
+        "energy_pv_output_caps_end_j":round(epv,5),
         "energy_pv_source_j":round(y[4],5),
         "energy_cap_start_j":round(ec0,5),
         "energy_fault_resistor_j":round(y[6],5),
