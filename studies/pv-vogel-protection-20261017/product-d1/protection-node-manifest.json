@@ -1,0 +1,119 @@
+{
+  "id": "PV-D1-NODE-TOPOLOGY-v0.1",
+  "status": "MODEL_ONLY_NO_HARDWARE_OR_SAFETY_CERTIFICATION",
+  "inputs": {
+    "origin": "V11 PR7 fixture/system-fixture.json",
+    "module_wp": 660,
+    "substrings": 3,
+    "series_cells_per_substring": 22,
+    "branch_halves_parallel": 2,
+    "diode_approximation": "piecewise negative 0.45V plus 0.01Ohm"
+  },
+  "nodes": [
+    "J_MINUS",
+    "N1",
+    "N2",
+    "J_PLUS",
+    "TAIL_PLUS",
+    "STRING_POSITIVE"
+  ],
+  "electrically_series_substrings": [
+    [
+      "J_MINUS",
+      "N1",
+      "S1"
+    ],
+    [
+      "N1",
+      "N2",
+      "S2"
+    ],
+    [
+      "N2",
+      "J_PLUS",
+      "S3"
+    ]
+  ],
+  "bypass_diodes": [
+    {
+      "id": "D1",
+      "anode": "J_MINUS",
+      "cathode": "N1",
+      "parallel_to": "S1"
+    },
+    {
+      "id": "D2",
+      "anode": "N1",
+      "cathode": "N2",
+      "parallel_to": "S2"
+    },
+    {
+      "id": "D3",
+      "anode": "N2",
+      "cathode": "J_PLUS",
+      "parallel_to": "S3"
+    }
+  ],
+  "proposed_switch_positions": [
+    {
+      "id": "SW-SS2-IN",
+      "terminal_a": "N1",
+      "terminal_b": "S2_INTERNAL",
+      "location": "within S2 cell branch; D2 bypass path remains intact",
+      "function": "bypass a selected substring without opening whole string",
+      "status": "RESEARCH_ONLY",
+      "hazards": [
+        "fault with dark module or failed bypass may transfer high system potential",
+        "bypass thermal overstress",
+        "arc outside substring not contained"
+      ]
+    },
+    {
+      "id": "SW-M-OUT",
+      "terminal_a": "J_PLUS",
+      "terminal_b": "TAIL_PLUS",
+      "location": "outside entire module bypass loop",
+      "function": "series interruption in module positive lead",
+      "status": "HOLD_NO_VOLTAGE_RATING",
+      "hazards": [
+        "possible near string-level off-state voltage depending network topology",
+        "high common-mode isolation",
+        "fault elsewhere may remain fed"
+      ]
+    },
+    {
+      "id": "SW-STR-ARR",
+      "terminal_a": "TAIL_PLUS",
+      "terminal_b": "STRING_POSITIVE",
+      "location": "array end of field home run",
+      "function": "remove array-side PV feed to cable",
+      "status": "HOLD_NEEDS_COUPLED_DESIGN",
+      "hazards": [
+        "inverter-side MPPT capacitor and paired string may continue feeding cable"
+      ]
+    },
+    {
+      "id": "SW-STR-INV",
+      "location": "inverter end of field home run",
+      "function": "remove paired-string and MPPT-side source",
+      "status": "HOLD_NEEDS_COUPLED_DESIGN",
+      "hazards": [
+        "array-side modules may continue feeding fault"
+      ]
+    }
+  ],
+  "explicit_missing": [
+    "second earth fault paths",
+    "reverse blocking body diodes",
+    "semiconductor driver references",
+    "snubber and surge suppression",
+    "IV measured fit",
+    "DC link model",
+    "connector temperature sensing"
+  ],
+  "immutable_provenance": {
+    "parent_pr": 9,
+    "original_v11_pr": 7,
+    "scope": "draft research no write outside V11"
+  }
+}

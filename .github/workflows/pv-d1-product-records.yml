@@ -1,0 +1,64 @@
+name: PV D1 module model and product record proof
+on:
+  pull_request:
+    paths:
+      - 'studies/pv-vogel-protection-20261017/product-d1/**'
+      - '.github/workflows/pv-d1-product-records.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  physical-module-and-design-records:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout research PR
+        uses: actions/checkout@v4
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 24 PV module and product-record numerical/integrity tests
+        working-directory: studies/pv-vogel-protection-20261017/product-d1
+        run: python -m unittest -v test_pv_module.py test_records.py
+      - name: Reproduce STC constrained parameter fit
+        working-directory: studies/pv-vogel-protection-20261017/product-d1
+        run: |
+          python -m pip install scipy==1.14.1
+          python fit_stc.py > d1-fit-parameters.json
+          python - <<'PY'
+          import json
+          from pv_module import Substring
+          d=json.load(open('d1-fit-parameters.json'))
+          p=Substring()
+          assert d['status']=='FOUR_POINT_STC_FIT_TO_PROVISIONAL_FIXTURE_NOT_DEVICE_VALIDATION'
+          assert d['max_abs_constraint_error'] < 1e-7
+          for key,expected in [('iph_stc_a',p.iph_stc_a),('rs_ohm',p.rs_ohm),
+                               ('rsh_ohm',p.rsh_ohm),('i0_stc_a',p.i0_stc_a)]:
+              assert abs(d[key]-expected) <= 1e-5*max(1.0,abs(expected)),(key,d[key],expected)
+          print('Fitted STC parameters reproduce provisional fixture; NOT an OEM physical model')
+          PY
+      - name: Reproduce module operating and shaded bypass states
+        working-directory: studies/pv-vogel-protection-20261017/product-d1
+        run: |
+          python pv_module.py > d1-conditional-module-screening.json
+          python - <<'PY'
+          import json
+          d=json.load(open('d1-conditional-module-screening.json'))
+          assert abs(d['stc_voc']-45.75)<.01
+          assert abs(d['stc_at_imp']['module_voltage_v']-38.13)<.01
+          shade=d['shaded_10pct_at_17_31a']['substrings'][1]
+          assert shade['bypass_current_a']>15
+          assert 8 < (-shade['voltage_v'])*shade['bypass_current_a'] < 12
+          assert 'no actual OEM IV or bypass diode trace' in d['explicit_limitations']
+          print('Model shade bypass A:',shade['bypass_current_a'])
+          print('Model shade bypass diode W:',-shade['voltage_v']*shade['bypass_current_a'])
+          PY
+      - name: Archive simulation and fit evidence — NOT qualification
+        uses: actions/upload-artifact@v4
+        with:
+          name: pv-d1-module-provisional-model-receipts
+          path: |
+            studies/pv-vogel-protection-20261017/product-d1/d1-fit-parameters.json
+            studies/pv-vogel-protection-20261017/product-d1/d1-conditional-module-screening.json
