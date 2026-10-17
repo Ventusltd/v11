@@ -65,3 +65,14 @@ IEC TS 62738: https://webstore.iec.ch/en/publication/26942
 IEC 62548 current: https://webstore.iec.ch/en/publication/110893
 IEC 61643-31 scope: https://webstore.ansi.org/standards/iec/IEC6164331Ed2018
 Sandia: https://www.sandia.gov/research/publications/details/electrical-simulations-of-series-and-parallel-pv-arc-faults-2013-06-01/
+
+
+## Additional V11 geometry and device-count observations
+
+The reference V11 topology in draft PR #3 includes 24 strings, 30 modules per string, 720 module junction boxes and 12 groups of two strings/MPPT. The separate V11.2 drawing-only PR #4 records 33 completed mating interfaces per string (29 module-to-module, 2 module/string, 2 string/inverter), or 792 mates and 1584 connector ends. A module-local detector is **not automatically sensitive to all 792 mated interface locations**; protection zones must be explicitly defined for module and external field tails.
+
+At an illustrative effective dielectric relative permittivity of 2, transmission propagation velocity is roughly 2.12e8 m/s. A 936 m route has a one-way propagation delay around 4.42 microseconds (and a reflected round-trip around 8.83 microseconds); a 78 m route roughly 0.37 microseconds. A claimed **under-1-microsecond whole-array fault response is physically not justified** without defining both detector and fault positions, because electromagnetic information cannot arrive before the travelling wave. That does not exclude a submicrosecond *local semiconductor opening* response under a defined stimulus; it means the complete detection-to-extinction requirement must be characterised as a function of circuit location and line geometry.
+
+Power-budget research requirement: For 660 Wp at Imp 17.31 A, limiting nominal added module conduction loss to 1% of power (6.6 W) requires combined series on-state resistance below approx 22.0 milliohms **for all switching and sensing components together**, before auxiliary consumption. For 0.5% power, the combined conduction path budget is approximately 11.0 milliohms. These are design targets derived from a static operating point, not approved energy-yield or reliability criteria. The existing two MOSFETs alone total 54 milliohms typical at 25 C; adding the published shunt raises the path to 154 milliohms.
+
+The proposed target is difficult if the device has to block full string overvoltages, withstand destructive arc interruption, permit bi-directional reverse-feed isolation, avoid false faults and dissipate less than a few watts. This should be tackled as a rigorous multiobjective design trade-off rather than assumed achievable inside the existing packaging and 1.80 USD cost target.
