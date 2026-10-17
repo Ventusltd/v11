@@ -1,0 +1,17 @@
+* proto: dark string equivalent element DC sweep, k=90 substrings
+.options temp=25 tnom=25
+.model DC90 D (IS=3.5117178e-08 N=2661.4)
+.model DB90 D (IS=1.146e-5 N=90 RS=0.45)
+V1 a 0 DC 0
+Vs a b 0
+Rs b j 1.9573
+Dc j 0 DC90
+Rsh j 0 45000
+Db 0 b DB90
+.dc V1 0 1600 100
+.control
+run
+wrdata t1.dat i(Vs) v(j)
+quit
+.endc
+.end

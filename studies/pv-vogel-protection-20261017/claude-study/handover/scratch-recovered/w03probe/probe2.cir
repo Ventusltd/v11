@@ -1,0 +1,21 @@
+* probe2: resistor model TNOM/TC1, LTRA params in subckt, meas INTEG, softplus identity, min/sgn
+.model RCU20 R(tc1=0.00393 tnom=20)
+.subckt LT a b c d params: len=100 rpm=6.78m
+O1 a b c d LTRAM
+.model LTRAM LTRA R={rpm} L=593n G=0 C=37.5p LEN={len}
+.ends
+I1 0 a 17.31
+R1 a c 3.39 RCU20
+R2 c 0 1
+I2 0 x 17.31
+X1 x 0 y 0 LT len=936 rpm={2*3.39m*(1+0.00393*40)}
+Ry y 0 1
+Rg0 x 0 1e9
+Bt t 0 V = sgn(-3)*min(5, abs(-7)) + uramp(-2) + ln(1+exp(-abs(1000))) + uramp(1000)
+Rt t 0 1k
+.temp 60
+.control
+op
+print v(a) v(c) v(x) v(y) v(t)
+.endc
+.end

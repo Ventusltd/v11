@@ -1,0 +1,24 @@
+* t1_dz_c_def
+O1 inv_p 0 arr_p 0 LTA
+.model LTA LTRA R=6.780m L=593.0n G=0 C=37.526p LEN=936 
+Isw 0 arr_p PWL(0 18.4 1u 18.4 2u 0)
+Dp arr_p kp DCL
+Vkp kp 0 1500
+Dn kn arr_p DCL
+Vkn 0 kn 1500
+.model DCL D(IS=1e-12 N=1 RS=0.05)
+Carr arr_p 0 1n
+Vmi inv_p cin_p 0
+Cin cin_p 0 150u
+RL cin_p 0 62.1685
+
+.options reltol=1e-4
+.control
+tran 2n 100u 0 5n
+set wr_singlescale
+set wr_vecnames
+option numdgt=10
+wrdata t1_dz_c_def.txt v(arr_p) i(vmi)
+quit
+.endc
+.end

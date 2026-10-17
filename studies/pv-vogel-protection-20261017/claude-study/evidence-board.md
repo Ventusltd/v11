@@ -92,3 +92,9 @@ Workers (model `opus`), waves aligned to barriers:
 - X-006 REJECTED (general claim): bounded Vogel 5th/5 on planted-region misses in all 9 (d,N) cells; corners and categorical holdout unreachable by construction; discrepancy 73× worse than Sobol at N=1024, d=2; only win is 2-D minimum point separation. Cause is the disk map, not the golden-angle sequence (golden lattice on the full square matches Sobol). Phase 0 screen understates its own worst case ×1.52 (X-012); pass counts are layout properties, not rates.
 - Recommended wave-2/Phase D design: enumerated categoricals + explicit corner block (all 2^d or resolution-IV fraction) + scrambled Sobol fill shared across candidates (X-013 for the ledger).
 - Tokens 368,966; tool uses 88; duration 6096 s.
+
+### R-08 HANDOVER — orchestrator stopped the swarm 2026-10-17 ~22:00 BST (owner instruction: finalise as it stands, lose nothing, hand scope to ChatGPT)
+- Stopped (partial or no in-tree output): W01r, W02, W03, W04, W05, W07, W08, W21, W22, W23, W24, W25, W26, W27, W28, W29, W30, W31, CTRL-01..CTRL-10 (all `opus`). Last status lines are in the session transcript; in-tree partial files: models/arc_model.py + .lib (W07, ngspice self-check failing at stop), models/detection.py (W05), electronics/switch_models.lib (W04), review/controls/CTRL-01 and CTRL-02 phase-1 clean-room files.
+- 128 scratch prototype/probe files recovered verbatim into handover/scratch-recovered/ with MANIFEST.json (status PARTIAL_UNVERIFIED_SCRATCH).
+- Barrier B1 not reached; no wave-2 simulation ran; no architecture was compared against baseline. See HANDOVER-TO-CHATGPT.md.
+- Owner's session usage at the time: 82 % of the 5-hour window (screenshot 21:55 BST).

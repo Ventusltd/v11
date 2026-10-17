@@ -1,0 +1,24 @@
+* probe B-source functions in ngspice 42
+.param pa = {pwr(0.5, 0.12)}
+.param pb = {max(0, 1e-12)}
+.param pc = {20 + 0.534*3}
+V1 n1 0 DC -2
+B1 o1 0 V = pwr(v(n1), 0.12)
+B2 o2 0 V = sgn(v(n1))
+B3 o3 0 V = abs(v(n1)) >= 1 ? 7 : 3
+B4 o4 0 V = {pa}
+B5 o5 0 V = {pb}
+B6 o6 0 V = pow(v(n1), 3)
+B7 o7 0 V = {pc}
+R1 o1 0 1
+R2 o2 0 1
+R3 o3 0 1
+R4 o4 0 1
+R5 o5 0 1
+R6 o6 0 1
+R7 o7 0 1
+.control
+op
+print v(o1) v(o2) v(o3) v(o4) v(o5) v(o6) v(o7)
+.endc
+.end

@@ -1,0 +1,8 @@
+warning, can't find model 'b' from line
+    q1 a b
+Netlist line no. 3:
+Undefined parameter [undefined_param]
+Netlist line no. 3:
+Cannot compute substitute
+
+ERROR: fatal error in ngspice, exit(1)

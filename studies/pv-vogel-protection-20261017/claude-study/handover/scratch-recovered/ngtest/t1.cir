@@ -1,0 +1,27 @@
+* test wrdata format
+C_in  c_p 0 150e-6 ic=1143.9
+L_loop c_p l_out 0.667e-3 ic=0
+R_loop l_out r_out 6.346
+S1 r_out s_out ctl 0 SWIDEAL
+Vctl ctl 0 PWL(0 0 1e-9 1)
+.model SWIDEAL SW(Ron=1e-3 Roff=1e9 Vt=0.5 Vh=0)
+Vsense s_out arc_p 0
+B_arc arc_p 0 V = 20*i(Vsense)*pow(i(Vsense)*i(Vsense)+1e-12, (0.12-1)/2)
+.options reltol=1e-4 abstol=1e-9 vntol=1e-6 method=gear
+.tran 1e-6 20e-3 0 1e-6 uic
+.control
+set wr_vecnames
+run
+let h_v_arc = v(arc_p)
+let h_i = i(Vsense)
+let h_vsw = v(r_out,s_out)
+wrdata export.dat h_v_arc h_i h_vsw v(c_p)
+let h_p = v(arc_p)*i(Vsense)
+meas tran h_e_fault integ h_p from=0 to=20e-3
+let h_e2 = integ(h_p)
+print h_e2[length(h_e2)-1]
+set numdgt=12
+print h_e2[length(h_e2)-1]
+quit
+.endc
+.end

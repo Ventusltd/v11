@@ -1,0 +1,125 @@
+* =====================================================================================
+* switch_models.lib -- V11 cycle-1 (2026-10-17) GENERIC, NON-VENDOR switch subcircuits
+* Worker W04 (Track B). Written from first principles for this study; contains NO vendor
+* model, NO vendor data and NO copied netlist. Licence: same as the V11 study repository.
+* Evidence grade of anything simulated with these: illustrative_simulation (NOT validated
+* against any device trace). Units: SI (V, A, ohm, s, F, H). ngspice 42, batch mode.
+*
+* CONVENTIONS (read before use)
+*  Gate command  : an abstract, ideal, ISOLATED LOGIC input. V(G,ref) > vth  => command ON.
+*                  It draws no current and is NOT a gate-drive circuit. Gate-supply loss is
+*                  modelled by the command going to 0 V (enhancement-mode devices default OFF).
+*  Channel       : bidirectional resistance R(x) = exp( x*ln(rds) + (1-x)*ln(roff) ).
+*                  Internal state x in [0,1] slews 0->1 in 'ton' and 1->0 in 'toff'
+*                  (constant slope, tanh-softened end). 'toff' is the model's channel
+*                  turn-off interval, NOT a datasheet td(off)/tf. Conduction is log-linearly
+*                  interpolated between rds and roff during the interval.
+*  Body diode    : anode = source, cathode = drain. Exponential diode with forward drop 'vbd'
+*                  at current 'ibdref' (IS = 1e-12 A, emission coefficient derived), series
+*                  resistance 'rbd'. Optional drain-source avalanche at 'vavl' (default 1e6 V =
+*                  disabled) is placed on the body diode (BV), so an unclamped device that is
+*                  forced off by an inductive current avalanches at about vavl.
+*  Coss          : LINEAR capacitor 'coss' drain-source (dv/dt limiter; not a Coss(V) model).
+*  Failure modes : fail = 0 normal; 1 = channel stuck ON (fail-short at rds);
+*                  2 = channel stuck OFF (fail-open; body diode and avalanche remain).
+*  Clamp (TVS)   : breakdown diode(s) with breakdown 'vbr' (IBV = 1 mA) and total dynamic
+*                  resistance 'rclamp'. Clamp voltage at current i is about
+*                  vbr + rclamp*i + ~1 V (forward diode of the bidirectional pair + knee).
+*  Sense sources : 0 V sources expose every current the post-processor needs:
+*                  vch (channel, D->S positive), vbd (body diode, S->D positive),
+*                  vco (Coss, D->S positive), vtv (clamp, first pin -> second pin positive).
+*                  Hierarchical names, e.g. i(v.x1.xq1.vch), i(v.x1.xc.vtv).
+*  Initial state : with '.tran ... uic' the state node x starts at 0 (OFF) unless set, e.g.
+*                  '.ic v(x1.xq1.x)=1'. Without uic the DC operating point sets x = command.
+*
+* NOT MODELLED: gate charge / Miller plateau, Vth(T), Rds(Tj) self-heating (set rds to the hot
+* value for worst-case conduction), Coss(V) nonlinearity, reverse recovery, package/stray
+* inductance, SOA/short-circuit withstand, TVS pulse-power derating and self-heating,
+* gate-driver isolation capacitance (add externally at node M / S), any vendor behaviour.
+* =====================================================================================
+
+* -------------------------------------------------------------------------------------
+* SWCORE: one generic power switch (channel + body diode + Coss) with a logic command.
+* Pins: D S G REF   (command = V(G,REF))
+* -------------------------------------------------------------------------------------
+.subckt SWCORE D S G REF params: rds=10m roff=1e9 ton=1u toff=1u vbd=0.8 ibdref=17.31
++ rbd=1m coss=100p vavl=1e6 fail=0 vth=0.5
+Bcmd cmd 0 V = ({fail} > 1.5) ? 0 : (({fail} > 0.5) ? 1 : ((V(G,REF) > {vth}) ? 1 : 0))
+Rcmd cmd 0 1e6
+Bx 0 x I = 1e-9 * ((V(cmd) > V(x)) ? {1/ton} : {1/toff}) * tanh((V(cmd) - V(x)) / 5e-3)
+Cx x 0 1e-9
+Rx x cmd 1e9
+Vch D dch 0
+Bch dch S I = V(dch,S) * exp(-(V(x) * ln({rds}) + (1 - V(x)) * ln({roff})))
+Vbd S sb 0
+Dbd sb D DBODY
+.model DBODY D(IS=1e-12 N={(vbd - ibdref*rbd)/(0.0258646*ln(ibdref/1e-12))} RS={rbd}
++ BV={vavl} IBV=1e-3)
+Vco D dco 0
+Cos dco S {coss}
+.ends SWCORE
+
+* -------------------------------------------------------------------------------------
+* TVS_BI: bidirectional breakdown clamp between A and B (two breakdown diodes in
+* anti-series). Pins: A B. Clamp current A->B positive in i(v.<inst>.vtv).
+* -------------------------------------------------------------------------------------
+.subckt TVS_BI A B params: vbr=1000 rclamp=1
+Vtv A at 0
+D1 at mid DTVSB
+D2 B mid DTVSB
+.model DTVSB D(IS=1e-12 N=1 RS={rclamp/2} BV={vbr} IBV=1e-3)
+.ends TVS_BI
+
+* -------------------------------------------------------------------------------------
+* TVS_UNI: unidirectional breakdown clamp, cathode K, anode A. Breakdown current K->A
+* positive in i(v.<inst>.vtv); forward conduction A->K gives a negative reading.
+* -------------------------------------------------------------------------------------
+.subckt TVS_UNI K A params: vbr=1000 rclamp=1
+Vtv K kt 0
+D1 A kt DTVSU
+.model DTVSU D(IS=1e-12 N=1 RS={rclamp} BV={vbr} IBV=1e-3)
+.ends TVS_UNI
+
+* -------------------------------------------------------------------------------------
+* SW_ANTISERIES: bidirectional common-source pair Q1 (drain A, source M) + Q2 (drain B,
+* source M) with ONE bidirectional TVS across A-B. Gate commands V(G1,M), V(G2,M) are
+* referenced to the common-source node M (one floating driver can serve both).
+* Pins: A B M G1 G2
+* Both OFF: blocks both directions up to the clamp. One OFF: blocks ONE direction only
+* (the other conducts through the OFF device's body diode). See archetypes.md section 3.
+* -------------------------------------------------------------------------------------
+.subckt SW_ANTISERIES A B M G1 G2 params: rds=10m roff=1e9 ton=1u toff=1u vbd=0.8
++ ibdref=17.31 rbd=1m coss=100p vavl=1e6 vbr=1000 rclamp=1 fail1=0 fail2=0 vth=0.5
+XQ1 A M G1 M SWCORE rds={rds} roff={roff} ton={ton} toff={toff} vbd={vbd} ibdref={ibdref}
++ rbd={rbd} coss={coss} vavl={vavl} fail={fail1} vth={vth}
+XQ2 B M G2 M SWCORE rds={rds} roff={roff} ton={ton} toff={toff} vbd={vbd} ibdref={ibdref}
++ rbd={rbd} coss={coss} vavl={vavl} fail={fail2} vth={vth}
+XC A B TVS_BI vbr={vbr} rclamp={rclamp}
+.ends SW_ANTISERIES
+
+* -------------------------------------------------------------------------------------
+* SW_SINGLE_BODYDIODE: one switch, unidirectional blocking (blocks D->S only when OFF;
+* S->D always conducts through the body diode). No internal clamp: add TVS_UNI/TVS_BI
+* externally, or set vavl to let the device avalanche. Command V(G,S). Pins: D S G
+* -------------------------------------------------------------------------------------
+.subckt SW_SINGLE_BODYDIODE D S G params: rds=10m roff=1e9 ton=1u toff=1u vbd=0.8
++ ibdref=17.31 rbd=1m coss=100p vavl=1e6 fail=0 vth=0.5
+XQ D S G S SWCORE rds={rds} roff={roff} ton={ton} toff={toff} vbd={vbd} ibdref={ibdref}
++ rbd={rbd} coss={coss} vavl={vavl} fail={fail} vth={vth}
+.ends SW_SINGLE_BODYDIODE
+
+* -------------------------------------------------------------------------------------
+* SSB_SIC: single 1700 V-class SiC solid-state-breaker switch with a unidirectional clamp
+* D-S. Defaults are GENERIC ASSUMED values for a 1700 V-class SiC die (rds 30 mOhm at 25 C,
+* body-diode drop 4 V, Coss 150 pF, toff 500 ns, clamp 1600 V / 1 ohm) -- NOT a vendor
+* model. Clamp window for a 1500 V-class PV string: vbr must exceed the maximum static
+* off-state voltage (cold string Voc 1487.79 V + tolerance) and vbr + rclamp*I must stay
+* below the device V(BR)DSS. Unidirectional: reverse (S->D) current always flows through
+* the body diode / clamp forward path. Command V(G,S). Pins: D S G
+* -------------------------------------------------------------------------------------
+.subckt SSB_SIC D S G params: rds=30m roff=1e9 ton=500n toff=500n vbd=4.0 ibdref=17.31
++ rbd=5m coss=150p vavl=1e6 vbr=1600 rclamp=1 fail=0 vth=0.5
+XQ D S G S SWCORE rds={rds} roff={roff} ton={ton} toff={toff} vbd={vbd} ibdref={ibdref}
++ rbd={rbd} coss={coss} vavl={vavl} fail={fail} vth={vth}
+XC D S TVS_UNI vbr={vbr} rclamp={rclamp}
+.ends SSB_SIC

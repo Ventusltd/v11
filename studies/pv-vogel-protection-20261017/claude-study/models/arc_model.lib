@@ -1,0 +1,82 @@
+* arc_model.lib -- V11 cycle-1 behavioural DC arc elements for ngspice 42 (batch mode)
+* Owner: worker W07 (Track E). Status: ILLUSTRATIVE, UNCALIBRATED. Evidence grade of any
+* result produced with these elements: illustrative_simulation (never validated_against_trace).
+* Use with:  .include /absolute/path/to/claude-study/models/arc_model.lib
+* Original work for this study; no vendor SPICE model and no standards text is reproduced here.
+*
+* Static law (fixture claude-study/fixture/system-fixture.json, arc_model.static_vi_law, ASSUMED):
+*   |v| = (va0 + va1*gap_mm) * |i|^nexp ,  va0=20 V, va1=0.534 V/mm, nexp=0.12, for |i| >= i_min
+*   This is the Stokes-Oppenlander high-current form. Secondary sources relay it as valid ABOVE the
+*   transition current I_t = 10 + 0.2*gap_mm (A); below I_t the published characteristic is inverse.
+*   The fixture applies it down to i_min; that is an extrapolation (see README-arc.md).
+* Below i_min (fixture 0.5 A, ASSUMED) a real arc extinguishes. This file instead continues the law
+* with the C1 odd quadratic  v = ca*i + cb*i*|i|  (matches value and slope at |i| = i_min, passes
+* through 0, strictly increasing). LABEL: NUMERICAL CONTINUATION, NOT PHYSICAL. It exists only so
+* Newton iterations stay well posed (pwr(|i|,0.12) has an infinite slope at i = 0).
+* Extinction is decided in POST-PROCESSING (arc_model.py: extinction()), criterion
+* |i| < i_min continuously for longer than hold_s (ASSUMED 100 us). For physically consistent
+* post-extinction node voltages, re-run with extinguish = t_declared (two-pass method).
+* Ignition is IMPOSED at time 'ignite' (s); ignition physics is NOT modelled and the fixture
+* ignition voltage (15 V) is checked in post-processing (arc_model.py: sustain_check()).
+* Alternative law (fixture cross-check only): law=1 gives v = r_arc*i (constant resistance).
+*
+* Sign convention: i = current entering pin 1 and leaving pin 2; v = v(pin1) - v(pin2) = f(i); f odd.
+* Internal control sources (wi, wx) are referenced to global node 0 and carry no circuit current.
+
+* ---------------------------------------------------------------------------------------------
+* ARC_SERIES  a b   -- series arc in a conductor between nodes a and b
+*   before ignite             : r_short (1 uOhm intact conductor, per task brief)
+*   ignite .. ignite+tramp    : arc voltage blended in linearly (tramp ASSUMED 100 ns, numerical)
+*   after ignite              : r_short*i + v_arc(i)       (r_short term negligible)
+*   after extinguish          : series resistance ramps log-linearly to r_open (1 GOhm, ASSUMED)
+* Parameters: gap_mm [mm], i_min [A], ignite [s] (<=0 means burning at the operating point),
+*   tramp [s], r_short [ohm], extinguish [s] (default 1e9 = never), r_open [ohm],
+*   law (0 = Stokes-Oppenlander form, 1 = constant resistance), r_arc [ohm], va0 [V], va1 [V/mm], nexp [-]
+* ---------------------------------------------------------------------------------------------
+.subckt ARC_SERIES a b params: gap_mm=3 i_min=0.5 ignite=0 tramp=1e-7 r_short=1e-6
++ extinguish=1e9 r_open=1e9 law=0 r_arc=1 va0=20 va1=0.534 nexp=0.12
+.param kso = {va0 + va1*gap_mm}
+.param vmin = {kso*pwr(i_min, nexp)}
+.param ca = {(2 - nexp)*vmin/i_min}
+.param cb = {-(1 - nexp)*vmin/(i_min*i_min)}
+.param lnrs = {ln(r_short)}
+.param lnro = {ln(r_open)}
+.param wi0 = {ternary_fcn(ignite <= 0, 1, 0)}
+.param tdi = {max(ignite, 0)}
+Vwi wi 0 PULSE({wi0} 1 {tdi} {tramp} {tramp} 1e12 2e12)
+Vwx wx 0 PULSE(0 1 {extinguish} {tramp} {tramp} 1e12 2e12)
+Vsense a m1 DC 0
+Bsw m1 m2 V = exp({lnrs} + v(wx)*({lnro} - {lnrs})) * i(Vsense)
+Barc m2 b V = v(wi) * ( (1 - {law}) * ( abs(i(Vsense)) >= {i_min}
++ ? sgn(i(Vsense)) * {kso} * pwr(max(abs(i(Vsense)), {i_min}), {nexp})
++ : ({ca}*i(Vsense) + {cb}*i(Vsense)*abs(i(Vsense))) ) + {law} * {r_arc} * i(Vsense) )
+.ends ARC_SERIES
+
+* ---------------------------------------------------------------------------------------------
+* ARC_PARALLEL p n  -- shunt (parallel) arc between two conductors p and n
+*   before ignite             : r_off (1 GOhm intact insulation, ASSUMED numerical)
+*   ignite .. ignite+tramp    : path resistance falls log-linearly r_off -> r_on, arc voltage blended in
+*   after ignite              : (r_on + r_series)*i + v_arc(i);  r_series = optional fault-path resistance
+*   after extinguish          : path resistance rises log-linearly back to r_off
+* Parameters as ARC_SERIES plus r_off [ohm], r_on [ohm] (default 1 uOhm), r_series [ohm] (default 0).
+* NOTE: an ideal current source across an un-ignited ARC_PARALLEL sees r_off (1 GOhm) -> use ignite<=0
+* or provide a parallel path. Parameter 'extinguish' must be later than 'ignite' (both elements).
+* ---------------------------------------------------------------------------------------------
+.subckt ARC_PARALLEL p n params: gap_mm=3 i_min=0.5 ignite=0 tramp=1e-7 r_off=1e9 r_on=1e-6
++ r_series=0 extinguish=1e9 law=0 r_arc=1 va0=20 va1=0.534 nexp=0.12
+.param kso = {va0 + va1*gap_mm}
+.param vmin = {kso*pwr(i_min, nexp)}
+.param ca = {(2 - nexp)*vmin/i_min}
+.param cb = {-(1 - nexp)*vmin/(i_min*i_min)}
+.param lnroff = {ln(r_off)}
+.param lnron = {ln(r_on)}
+.param wi0 = {ternary_fcn(ignite <= 0, 1, 0)}
+.param tdi = {max(ignite, 0)}
+Vwi wi 0 PULSE({wi0} 1 {tdi} {tramp} {tramp} 1e12 2e12)
+Vwx wx 0 PULSE(0 1 {extinguish} {tramp} {tramp} 1e12 2e12)
+Vsense p m1 DC 0
+Bsw m1 m2 V = ( exp({lnroff} + (v(wi) - v(wx))*({lnron} - {lnroff})) + {r_series} ) * i(Vsense)
+Barc m2 n V = v(wi) * ( (1 - {law}) * ( abs(i(Vsense)) >= {i_min}
++ ? sgn(i(Vsense)) * {kso} * pwr(max(abs(i(Vsense)), {i_min}), {nexp})
++ : ({ca}*i(Vsense) + {cb}*i(Vsense)*abs(i(Vsense))) ) + {law} * {r_arc} * i(Vsense) )
+.ends ARC_PARALLEL

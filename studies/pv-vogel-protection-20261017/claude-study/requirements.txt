@@ -1,0 +1,6 @@
+numpy==2.5.3
+scipy==1.18.1
+networkx==3.6.1
+pandas==3.0.5
+matplotlib==3.11.2
+# ngspice 42 (apt: ngspice libngspice0-dev); PySpice 1.5 installed but reports ngspice 42 unsupported - batch ngspice used

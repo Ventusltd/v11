@@ -1,0 +1,10 @@
+* force failure: nonconvergent behavioural source
+V1 a 0 PWL(0 0 1e-6 10)
+B1 a 0 I = 1e3*exp(1e3*v(a))
+.tran 1e-7 1e-5 0 1e-7
+.control
+run
+echo HARNESS_RUN_COMPLETE
+quit
+.endc
+.end

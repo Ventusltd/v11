@@ -1,0 +1,19 @@
+* test ascii raw + dc sweep + temp
+.options temp=25 tnom=25
+.model DC1 D(IS=3e-9 N=26.4)
+Iph a b DC 18.4
+D1 b a DC1
+Rsh b a 100
+Rs b c 0.1
+Vdmy c a 0
+Vref x 0 0
+Rl c x 1
+Rg a 0 1e9
+.dc Vref 0 20 5
+.control
+run
+set filetype=ascii
+write t1.raw
+quit
+.endc
+.end

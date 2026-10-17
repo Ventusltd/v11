@@ -1,0 +1,23 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * timestep too small attempt
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+a                                            0
+b                                       -1e+06
+c                                 -1.16415e-10
+b1#branch                                1e+15
+l1#branch                               -1e+15
+v1#branch                                    0
+
+HARNESS_RUN_COMPLETE
+ngspice-42 done

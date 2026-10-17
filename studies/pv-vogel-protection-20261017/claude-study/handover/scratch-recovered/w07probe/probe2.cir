@@ -1,0 +1,26 @@
+* probe 2: subckt params, i(Vsense) in subckt, ternary, max, PULSE param expressions
+.subckt TST a b params: gap_mm=3 i_min=0.5 n=0.12 t_ignite=0 t_ramp=1e-9 r_short=1e-6
+.param kk = {20 + 0.534*gap_mm}
+.param vm = {kk*pwr(i_min, n)}
+.param aa = {(2-n)*vm/i_min}
+.param bb = {-(1-n)*vm/(i_min*i_min)}
+.param w0 = {ternary_fcn(t_ignite <= 0, 1, 0)}
+.param td = {max(t_ignite, 0)}
+Vign ctl 0 PULSE({w0} 1 {td} {t_ramp} {t_ramp} 1e9 2e9)
+Vsense a n1 DC 0
+Barc n1 b V = (1 - v(ctl)) * {r_short} * i(Vsense) + v(ctl) * ( abs(i(Vsense)) >= {i_min} ? sgn(i(Vsense)) * {kk} * pwr(max(abs(i(Vsense)), {i_min}), {n}) : ({aa} * i(Vsense) + {bb} * i(Vsense) * abs(i(Vsense))) )
+.ends
+V1 s 0 DC 1144
+R1 s a 60
+X1 a 0 TST gap_mm=3 t_ignite=0
+V2 s2 0 DC 1144
+R2 s2 a2 60
+X2 a2 0 TST gap_mm=3 t_ignite=1e-4
+.control
+op
+print v(a) i(V1) v(a2) i(V2)
+tran 1u 1m
+let n = length(time)
+print v(a)[n-1] i(V1)[n-1] v(a2)[n-1] i(V2)[n-1]
+.endc
+.end

@@ -1,0 +1,34 @@
+* prototype: string + arc + latch
+.options temp=25 tnom=25 reltol=1e-4 abstol=1e-9 vntol=1e-6 method=gear
+.model dpv d is=5.798562321e-08 n=2729.0 
+.model dbp d is=4.2e-7 n=90
+.model swi sw vt=0.5 vh=0.1 ron=1e-3 roff=1e9
+Iph 0 p DC 18.4
+D1 p 0 dpv
+Dbp 0 p dbp
+Rs p t 1.759
+Vs t a 0
+* arc with insertion at 1 ms
+Bctl c 0 V = time > 1e-3 ? 1 : 0
+S1 a b c 0 swi
+Barc b 0 V = 20.534*i(Vs)*pow(i(Vs)*i(Vs)+1e-4,-0.44)
+Rload a 0 1e6
+* latch test: q integrates |I| when v(a)<350
+Bq 0 q I = ((v(a) < 350) && (abs(i(Vs)) > 1)) ? abs(i(Vs)) : -1e6*v(q)
+Cq q 0 1
+Rq q 0 1e12
+Bl 0 l I = ((v(q) > 0.0175) && (v(l) < 1)) ? 1e6 : 0
+Cl l 0 1
+Rl l 0 1e12
+Bef 0 ef I = v(a)*i(Vs)
+Cef ef 0 1
+.tran 1u 5m 0 1u
+.control
+set wr_singlescale
+set wr_vecnames
+option numdgt=12
+run
+wrdata t1.dat v(a) i(Vs) v(q) v(l) v(ef)
+quit
+.endc
+.end

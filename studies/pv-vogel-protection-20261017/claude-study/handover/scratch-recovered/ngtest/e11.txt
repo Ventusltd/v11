@@ -1,0 +1,5 @@
+Using SPARSE 1.3 as Direct Linear Solver
+doAnalyses: TRAN:  Timestep too small; time = 1.00096e-14, timestep = 5.21881e-24: cause unrecorded.
+
+
+run simulation(s) aborted

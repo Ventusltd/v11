@@ -1,0 +1,32 @@
+* example with .param and braces in B-source
+.param c_in_f=0.00015 v0_v=1143.9 l_loop_h=0.000667368 r_loop_ohm=6.34608 arc_a_v=20 arc_n=0.12 arc_eps_a2=1e-12
+C_in   c_p   0      {c_in_f} ic={v0_v}
+L_loop c_p   l_out  {l_loop_h} ic=0
+R_loop l_out r_out  {r_loop_ohm}
+S_close r_out s_out ctl 0 sw_close
+V_ctl  ctl   0      PWL(0 0 1e-9 1)
+.model sw_close SW(Ron=1e-3 Roff=1e9 Vt=0.5 Vh=0)
+V_sense s_out arc_p 0
+B_arc  arc_p 0      V = {arc_a_v} * i(V_sense) * pow(i(V_sense)*i(V_sense) + {arc_eps_a2}, ({arc_n} - 1)/2)
+.options reltol=1e-4 abstol=1e-9 vntol=1e-6 method=gear
+.tran 1e-6 20e-3 0 1e-6 uic
+.control
+set noaskquit
+set numdgt=12
+set wr_vecnames
+run
+let hp_v_arc = v(arc_p)
+let hp_i_arc = i(v_sense)
+let hp_v_cin = v(c_p)
+let hp_i_l = i(l_loop)
+let hp_v_sw = v(r_out,s_out)
+let hp_bogus = v(nonexistent_node)
+wrdata export.dat hp_v_arc hp_i_arc hp_v_cin hp_i_l hp_v_sw
+let hx_e_fault = hp_v_arc*hp_i_arc
+meas tran hm_e_fault integ hx_e_fault from=0 to=20e-3
+let hx_e_src = hp_v_cin*hp_i_l
+meas tran hm_e_src integ hx_e_src from=0 to=20e-3
+echo HARNESS_DONE
+quit
+.endc
+.end

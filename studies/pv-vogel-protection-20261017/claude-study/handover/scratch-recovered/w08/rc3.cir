@@ -1,0 +1,18 @@
+* RC discharge, R=1 ohm fault, C=150u from 1143.9 V
+C1 a 0 150u
+R1 a b 1
+Vsense b 0 DC 0
+.ic v(a)=1143.9
+.tran 1u 3m 0 1u
+.control
+run
+let p = v(a)*i(vsense)
+meas tran efault integ p from=0 to=3m
+let ecum = integ(p)
+print ecum[length(ecum)-1]
+set wr_singlescale
+set wr_vecnames
+wrdata rc3.txt v(a) i(vsense)
+quit
+.endc
+.end

@@ -1,0 +1,12 @@
+* RC discharge probe without uic (op point via IC on node using .ic)
+C1 a 0 150u
+R1 a b 10
+Vsense b 0 DC 0
+.ic v(a)=1143.9
+.tran 1u 3m
+.control
+run
+wrdata rc2.txt v(a) i(vsense)
+quit
+.endc
+.end

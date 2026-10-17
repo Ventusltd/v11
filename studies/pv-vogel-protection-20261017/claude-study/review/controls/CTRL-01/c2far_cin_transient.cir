@@ -1,0 +1,24 @@
+* CTRL-01 bonus cross-check: C2-far lumped transient, P0, V_BOOST, G=1000, gap 1 mm (illustrative_simulation)
+* Fixture-derived: C_in 150 uF at Vmpp_string 1143.9 V; S20 home-run inverter-side section 931 m:
+*   R = 2*931*3.39e-3 = 6.31218 ohm, L = 931*(0.613+0.1)e-6 = 663.803 uH; strings = ideal 18.4 A sources;
+*   inverter draw stops at t=0+ (ASSUMED); arc = fixture S-O law at 1 mm, 20.534*I^0.12 (UNCALIBRATED).
+* NOT modelled: distributed line, S19 route inductance, inverter control, C_in ESR/ESL, arc dynamics.
+Cin node 0 150u IC=1143.9
+Is19 0 node DC 18.4
+Rh node m 6.31218
+Lh m arcp 663.803u IC=-17.31
+Is20 0 arcp DC 18.4
+Vs arcp a1 DC 0
+Barc a1 0 V = 20.534*pow(abs(i(Vs))+1e-9, 0.12)
+.options reltol=1e-6 abstol=1e-9 vntol=1e-7
+.tran 1u 50m 0 1u UIC
+.control
+run
+let parc = v(arcp)*i(Vs)
+meas tran earc50 integ parc from=0 to=0.05
+meas tran earc10 integ parc from=0 to=0.01
+meas tran iarcmax max i(Vs)
+meas tran vnodeend find v(node) at=0.05
+quit
+.endc
+.end

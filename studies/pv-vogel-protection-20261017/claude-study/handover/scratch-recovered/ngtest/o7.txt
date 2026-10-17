@@ -1,0 +1,31 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * braces in pwl and .model, xspice aswitch with -n
+
+Reducing trtol to 1 for xspice 'A' devices
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+a                                           10
+b                                           10
+ctl                                          0
+ctl2                                         0
+c                                        5e-09
+d                                            5
+v3#branch                               -5e-09
+v2#branch                                    0
+v_ctl#branch                                 0
+v1#branch                               -1e-08
+
+
+No. of Data Rows : 123
+i(v1)[length(time)-1] = -9.99000999000999e+00
+HARNESS_RUN_COMPLETE
+ngspice-42 done

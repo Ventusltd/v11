@@ -1,0 +1,22 @@
+* probe: LTRA + B-source ternary/tanh + control block in batch mode
+.func softp(x) {x > 40 ? x : ln(1+exp(x))}
+.subckt SEG a b c d params: len=100
+O1 a b c d LTRAM
+.model LTRAM LTRA R=6.78m L=593n G=0 C=37.5p LEN={len}
+.ends
+I1 0 a 18.4
+X1 a 0 c 0 SEG len=926
+R1 c 0 60
+C1 c 0 150u
+Rf 0 0 1
+Bt t 0 V = tanh(time/1u) + softp(time/1u - 3)
+Rt t 0 1k
+.control
+set wr_singlescale
+set wr_vecnames
+option numdgt=12
+tran 5n 20u
+wrdata probe1.txt v(a) v(c) v(t)
+quit
+.endc
+.end

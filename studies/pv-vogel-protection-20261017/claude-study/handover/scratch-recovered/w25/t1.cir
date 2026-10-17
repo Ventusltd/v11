@@ -1,0 +1,31 @@
+* test RC
+.param v0=1143.9 cin=150u ra=100k cl=33.9768n rb=10meg
+CA na 0 {cin} ic={v0}
+RA na 0 {ra}
+CB nb 0 {cl} ic={v0}
+RB nb 0 {rb}
+VNODE mpp 0 DC 1143.9
+VARR arrp arrn DC 1372.5
+RIM 0 hrn 100meg
+RIP mpp hrp 100meg
+RAM arrn hrn 100meg
+RAP arrp hrp 100meg
+RBC hrp hrn 10meg
+CC hrp hrn {cl} ic={v0}
+.options reltol=1e-6 abstol=1e-15 vntol=1e-9 chgtol=1e-20
+.control
+set noaskquit
+set wr_singlescale
+set wr_vecnames
+set numdgt=12
+tran 10m 60 0 10m uic
+wrdata a.dat v(na)
+tran 1m 1.5 0 1m uic
+let vhr = v(hrp)-v(hrn)
+wrdata b.dat v(nb) vhr
+op
+let vhrop = v(hrp)-v(hrn)
+print vhrop v(hrp) v(hrn) v(arrn)
+quit
+.endc
+.end

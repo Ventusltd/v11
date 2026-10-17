@@ -1,0 +1,18 @@
+* check t=0 point
+C1 n1 0 150e-6 ic=1143.9
+L1 n1 n2 0.6674e-3 ic=0
+Vs n2 n3 0
+R1 n3 0 2
+.tran 1e-6 2e-3 0 1e-6 uic
+.options reltol=1e-4 abstol=1e-9 vntol=1e-6 method=gear
+.control
+run
+set numdgt=15
+print time[0] time[1] time[2] v(n1)[0] v(n1)[1]
+print length(time)
+let hp_v = v(n1)
+print hp_v[0]
+wrdata a0.dat v(n1) hp_v
+quit
+.endc
+.end

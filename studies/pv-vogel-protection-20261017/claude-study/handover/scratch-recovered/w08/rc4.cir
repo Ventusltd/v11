@@ -1,0 +1,15 @@
+* same with uic
+C1 a 0 150u IC=1143.9
+R1 a b 1
+Vsense b 0 DC 0
+.tran 1u 3m 0 1u uic
+.control
+run
+print v(a)[0] time[0] v(a)[1] time[1]
+let p = v(a)*i(vsense)
+meas tran efault integ p from=0 to=3m
+set wr_singlescale
+wrdata rc4.txt v(a) i(vsense)
+quit
+.endc
+.end

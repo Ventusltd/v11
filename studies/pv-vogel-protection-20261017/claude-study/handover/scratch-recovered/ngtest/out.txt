@@ -1,0 +1,15 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * test wrdata format
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using transient initial conditions
+
+No. of Data Rows : 20065
+h_e_fault           =  5.62175e+00 from=  1.00000e-11 to=  2.00000e-02
+h_e2[length(h_e2)-1] = 5.621745e+00
+h_e2[length(h_e2)-1] = 5.621745171438e+00
+ngspice-42 done

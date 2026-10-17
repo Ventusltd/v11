@@ -1,0 +1,27 @@
+* test parameterized model inside subckt + B-source features
+.subckt TST A B params: vbr=100 rcl=1
+.model DZ D(IS=1e-12 N=1 BV={vbr} IBV=1m RS={rcl/2})
+D1 M A DZ
+D2 M B DZ
+.ends
+.subckt BS A B params: ron=1m roff=1e9
+Bx 0 x I = 1n/100n*tanh(50*(1-V(x)))
+Cx x 0 1n IC=0
+Bsw A B I = V(A,B)*exp(-(V(x)*ln(ron)+(1-V(x))*ln(roff)))
+.ends
+V1 in 0 PWL(0 0 1u 200)
+R1 in a 1
+X1 a 0 TST vbr=150 rcl=2
+V2 in2 0 DC 10
+R2 in2 b 1
+X2 b 0 BS ron=10m
+.options method=gear
+.tran 1n 2u 0 5n uic
+.control
+set wr_singlescale
+set wr_vecnames
+run
+wrdata t1.dat v(a) i(V1) v(b) i(V2)
+quit
+.endc
+.end

@@ -1,0 +1,11 @@
+* syntax error netlist
+V1 a 0 10
+R1 a 0 {undefined_param}
+Q1 a b
+.tran 1e-7 1e-5 0 1e-7
+.control
+run
+echo HARNESS_RUN_COMPLETE
+quit
+.endc
+.end

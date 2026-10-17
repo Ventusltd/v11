@@ -1,0 +1,12 @@
+* check t=0 point without uic (op point)
+V1 n1 0 PWL(0 0 1e-4 10)
+R1 n1 0 2
+.tran 1e-6 2e-3
+.control
+run
+set numdgt=15
+print time[0] time[1] length(time)
+wrdata a1.dat v(n1)
+quit
+.endc
+.end

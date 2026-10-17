@@ -1,0 +1,21 @@
+* braces in PWL and .model, XSPICE aswitch with -n
+.param t_close_s=1e-9 ron=1e-3 roff=1e9
+V1 a 0 10
+R1 a b 1
+S1 b 0 ctl 0 swm
+V_ctl ctl 0 PWL(0 0 {t_close_s} 1)
+.model swm SW(Ron={ron} Roff={roff} Vt=0.5 Vh=0)
+A1 ctl2 c d asw
+.model asw aswitch(cntl_off=0.0 cntl_on=1.0 r_off=1e9 r_on=1.0 log=TRUE)
+V2 ctl2 0 PWL(0 0 1e-6 1)
+R2 c 0 1
+V3 d 0 5
+.tran 1e-7 1e-5 0 1e-7
+.control
+run
+set numdgt=15
+print i(V1)[length(time)-1]
+echo HARNESS_RUN_COMPLETE
+quit
+.endc
+.end

@@ -1,0 +1,21 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * force failure: nonconvergent behavioural source
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+a                                            0
+v1#branch                                -1000
+
+
+No. of Data Rows : 111
+HARNESS_RUN_COMPLETE
+ngspice-42 done
