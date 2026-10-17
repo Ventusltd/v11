@@ -1,0 +1,62 @@
+name: PV B2 conditional RLC energy conservation
+on:
+  pull_request:
+    paths:
+      - 'studies/pv-vogel-protection-20261017/claude-study/barrier-b2/**'
+      - '.github/workflows/pv-b2-rlc-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  b2-lumped-rlc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run conditional numerical tests
+        working-directory: studies/pv-vogel-protection-20261017/claude-study/barrier-b2
+        run: python -m unittest -v test_pv_rlc_time_domain.py
+      - name: Produce source-resolved transient receipt
+        working-directory: studies/pv-vogel-protection-20261017/claude-study/barrier-b2
+        run: |
+          python pv_rlc_time_domain.py > b2-transient-screening.json
+          python - <<'PY'
+          import json
+          d=json.load(open('b2-transient-screening.json'))
+          assert set(d)=={'C2-far','C2-near'}
+          assert all(set(a)=={'P0','P2','P2b','P3'} for a in d.values())
+          for loc, cases in d.items():
+              for action,x in cases.items():
+                  assert x['status']=='B2_LUMPED_RLC_NUMERICAL_ONLY_NOT_ARC_OR_PROTECTION_VALIDATION'
+                  assert x['energy_residual_relative'] < .01, (loc,action,x['energy_residual_relative'])
+              print(loc,'conditional fault energy [J]:',[(k,v['energy_fault_resistor_j']) for k,v in cases.items()])
+          PY
+      - name: Delay and capacitor sensitivity (nonvalidated assumptions)
+        working-directory: studies/pv-vogel-protection-20261017/claude-study/barrier-b2
+        run: |
+          python parameter_sensitivity.py > b2-parameter-sensitivity.json
+          python - <<'PY'
+          import json
+          d=json.load(open('b2-parameter-sensitivity.json'))
+          assert len(d['timing']) == 2
+          for loc,s in d['timing'].items():
+              assert s['baseline_energy_j'] > 0
+              assert s['ideal_two_end_switch_timing'][0]['fault_resistor_energy_j'] == 0
+              assert all(x['energy_conservation_relative'] < .01 for x in s['ideal_two_end_switch_timing'])
+              print(loc,'P3 trip latency / fault J:',
+                  [(x['trip_at_s'],x['fault_resistor_energy_j']) for x in s['ideal_two_end_switch_timing']])
+          for group, s in d['storage_uncertainty'].items():
+              assert all(x['worst_conservation_relative'] < .01 for x in s['entries']),group
+              print(group,'sensitivity:',[(x['capacitance_f_per_fixture_parameter'],x['P3_fault_energy_j']) for x in s['entries']])
+          PY
+      - name: Archive conditional numerical results — not safety evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: pv-b2-conditional-lumped-rlc
+          path: |
+            studies/pv-vogel-protection-20261017/claude-study/barrier-b2/b2-transient-screening.json
+            studies/pv-vogel-protection-20261017/claude-study/barrier-b2/b2-parameter-sensitivity.json
