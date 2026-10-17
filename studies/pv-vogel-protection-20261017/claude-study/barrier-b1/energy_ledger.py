@@ -28,7 +28,7 @@ def energy_ledger(location, action, f=None, fault_v=30.0, horizon_s=5.0):
             "wire_j": round(cable_power*horizon_s, 5),
             "fault_j": round(fault_power*horizon_s, 5),
         }
-    fault_j = result["source_feed_current_a"]*fault_v*horizon_s
+    fault_j = sum(result["source_currents_a"].values())*fault_v*horizon_s
     err = pv_source_j-(fault_j+conductor_heat_j)
     if abs(err) > 1e-6 + pv_source_j*1e-8:
         raise AssertionError("source-energy ledger fails")
