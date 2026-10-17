@@ -218,6 +218,104 @@
    "status": "DERIVED",
    "bounds": "exact",
    "used_by": "tools/ledger.py kuiper_xy bound"
+  },
+  {
+   "id": "A-022",
+   "name": "mppt_perturb_step_fraction",
+   "value": "0.01-0.02 of Vmpp",
+   "origin": "SUP-C",
+   "status": "ASSUMED",
+   "bounds": "0.5-3 %",
+   "used_by": "benign set B1; C1 DC-dip discrimination"
+  },
+  {
+   "id": "A-023",
+   "name": "module_current_mismatch_fraction",
+   "value": 0.03,
+   "origin": "SUP-C",
+   "status": "ASSUMED",
+   "bounds": "1-5 %",
+   "used_by": "C1 DC-dip discrimination"
+  },
+  {
+   "id": "A-024",
+   "name": "cable_diurnal_temperature_swing_k",
+   "value": 40,
+   "origin": "SUP-C",
+   "status": "ASSUMED",
+   "bounds": "20-60 K; UNKNOWN for buried/tray",
+   "used_by": "C3 detectability ratio"
+  },
+  {
+   "id": "A-025",
+   "name": "minimum_arc_voltage_v",
+   "value": "12-13 (Cu/Ag contacts)",
+   "origin": "SUP-C, general literature",
+   "status": "ASSUMED/UNKNOWN; conflicts with fixture V_ignite 15 V and S-O >=18.9 V",
+   "bounds": "10-20 V",
+   "used_by": "C1 in-loop sustain question (X-009)"
+  },
+  {
+   "id": "A-026",
+   "name": "bypass_diode_dynamic_resistance_ohm",
+   "value": "0.0015-0.02",
+   "origin": "SUP-C",
+   "status": "ASSUMED",
+   "bounds": "device dependent",
+   "used_by": "HF leakage estimate"
+  },
+  {
+   "id": "A-027",
+   "name": "module_hf_series_impedance",
+   "value": null,
+   "origin": "none",
+   "status": "UNKNOWN (cell junction capacitance 0.5-5 nF per string ASSUMED for order of magnitude)",
+   "bounds": "-",
+   "used_by": "HF detectability bounds"
+  },
+  {
+   "id": "A-028",
+   "name": "boost_ripple_amplitude_a_pkpk",
+   "value": "0.05-0.5; edge ringing 1-10 MHz 0.1-1 A",
+   "origin": "SUP-C",
+   "status": "ASSUMED",
+   "bounds": "-",
+   "used_by": "benign set B2"
+  },
+  {
+   "id": "A-029",
+   "name": "comms_latency_to_sw_m_out_s",
+   "value": {
+    "wired": "1e-3 to 1e-2",
+    "plc": "0.1 to 2",
+    "wireless": "0.01 to 0.1"
+   },
+   "origin": "SUP-C",
+   "status": "ASSUMED",
+   "bounds": "-",
+   "used_by": "latency budget for remote-commanded SW-M-OUT"
+  },
+  {
+   "id": "A-030",
+   "name": "sensor_bandwidths_hz",
+   "value": {
+    "dc": "1e4-1e5",
+    "hf": "1e6",
+    "comparator_s": "1e-6 to 1e-5"
+   },
+   "origin": "SUP-C",
+   "status": "ASSUMED generic",
+   "bounds": "-",
+   "used_by": "latency budget"
+  },
+  {
+   "id": "A-031",
+   "name": "array_run_length_m",
+   "value": 72,
+   "origin": "SUP-C (30 x 2.4 m)",
+   "status": "ASSUMED; fixture pitch 1.308 m gives 39 m \u2014 W03 to reconcile",
+   "bounds": "39-72 m",
+   "used_by": "within-array loop inductance"
   }
  ]
 }
