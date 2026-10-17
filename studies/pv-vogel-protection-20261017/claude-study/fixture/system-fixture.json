@@ -1,0 +1,184 @@
+{
+  "fixture_id": "V11_CYCLE1_SHARED_FIXTURE_v1",
+  "status": "ILLUSTRATIVE_PROVISIONAL_NOT_OEM_VERIFIED",
+  "prepared": "2026-10-17",
+  "unit_system": "SI base units unless the key name carries a unit suffix (_v, _a, _ohm, _ohm_per_km, _m, _mm2, _f, _h, _s, _us, _c, _wp, _kva, _j, _w). No other units permitted in derived files.",
+  "provenance": {
+    "primary": {
+      "repository": "Ventusltd/v11",
+      "draft_pull_request": 3,
+      "commit": "89731abb7a678e1c0e9861e2be34886013a5ad7f",
+      "path": "reference/lab_inverter_block_24_strings.json",
+      "evidence_state": "provisional_fixture"
+    },
+    "ancestry": {
+      "pr5_reference_facts": "studies/pv-arc-four-track-20261017/v11-reference-facts.json",
+      "pr6_phase0": "studies/pv-vogel-protection-20261017/vogel_study.py (commit 4aacee6e78e7602896619aca178533258fe5fc36)"
+    },
+    "kuiper_source": {
+      "repository": "Ventusltd/globalgrid2050",
+      "commit": "da7d8f6e6a7806ad5039701f5c86637d84be0704",
+      "path": "testcode/202609151339/lib.mjs",
+      "sha256": "b96c855de1f5477e0bbd46ff3a2aed6811ba074ba5da76975984fef505c06b0d",
+      "mode": "read_only"
+    }
+  },
+  "module": {
+    "rated_wp": 660.0,
+    "vmpp_v": 38.13,
+    "impp_a": 17.31,
+    "voc_stc_v": 45.75,
+    "isc_a": 18.4,
+    "voc_temp_coeff_per_c": -0.0024,
+    "isc_temp_coeff_per_c": {"value": 0.0005, "label": "ASSUMED_typical_crystalline_silicon"},
+    "pmpp_temp_coeff_per_c": {"value": -0.0034, "label": "ASSUMED_typical_crystalline_silicon"},
+    "noct_c": {"value": 45.0, "label": "ASSUMED"},
+    "internal_structure": {
+      "label": "ASSUMED_typical_660Wp_half_cut_layout_pending_datasheet",
+      "substrings_per_module": 3,
+      "cells_in_series_per_substring": 22,
+      "parallel_half_cell_branches_per_substring": 2,
+      "bypass_diode_per_substring": true,
+      "bypass_diode_type": "Schottky_assumed_Vf_0p45_V_at_17A",
+      "bypass_diode_chain": "D1,D2,D3 in series from J- to J+, each in anti-parallel across one substring; tap nodes N1 (S1/S2 junction) and N2 (S2/S3 junction)",
+      "junction_box_terminals": ["J-", "J+"],
+      "positive_lead_m": 0.35,
+      "negative_lead_m": 0.28
+    },
+    "single_diode_fit": {
+      "method": "five-parameter single-diode model fitted to STC Voc, Isc, Vmpp, Impp; fit values MUST be produced by claude-study/models/pv_module.py and recorded with residuals; do not hand-type them here",
+      "cells_in_series_total": 66,
+      "evidence_state": "ASSUMED_until_datasheet_IV_curve_obtained"
+    }
+  },
+  "plant": {
+    "strings": 24,
+    "modules_per_string": 30,
+    "modules_total": 720,
+    "dc_nameplate_wp": 475200.0,
+    "inverter_kva": 352.0,
+    "physical_dc_inputs": 24,
+    "mppt_groups": 12,
+    "strings_per_mppt": 2,
+    "mppt_pairing": {"rule": "consecutive string indices (S01+S02 ... S23+S24)", "label": "ASSUMED_pending_OEM_schematic"},
+    "system_voltage_class_v": 1500,
+    "string_derived": {
+      "vmpp_string_v": 1143.9,
+      "voc_string_stc_v": 1372.5,
+      "voc_string_cold_minus10c_v": 1487.79,
+      "voc_module_cold_minus10c_v": 49.593,
+      "impp_a": 17.31,
+      "isc_a": 18.4,
+      "pmpp_string_w": 19800.9
+    }
+  },
+  "conductors": {
+    "factory_lead": {"area_mm2": 4.0, "resistance_ohm_per_km_20c": 5.09, "temp_coeff_per_c": 0.00393, "evidence_state": "generic_tinned_copper_fixture"},
+    "field_cable": {"area_mm2": 6.0, "resistance_ohm_per_km_20c": 3.39, "temp_coeff_per_c": 0.00393, "evidence_state": "generic_tinned_copper_fixture"},
+    "connector_resistance_ohm_each": 0.00035,
+    "mated_interfaces_per_string": {"module_to_module": 29, "module_to_string_cable": 2, "string_cable_to_inverter": 2, "total": 33},
+    "route_lengths_m": [78, 78, 78, 78, 200, 200, 200, 200, 200, 300, 300, 300, 300, 300, 600, 600, 600, 600, 600, 936, 936, 936, 936, 936],
+    "route_length_semantics": {"value": "one_way_length_of_the_home_run_pair; loop conductor length = 2 x route", "label": "ASSUMED_consistent_with_phase0_one_way_delay"},
+    "home_pair_separation_m": 0.0064,
+    "sequential_row_return_separation_m": 1.0,
+    "effective_relative_permittivity": 2.0,
+    "two_wire_line_defaults": {
+      "label": "DERIVED_by_claude-study/models/cable_line.py; values here are orchestrator sanity figures only",
+      "conductor_radius_6mm2_m": 0.001382,
+      "loop_external_inductance_uh_per_m_approx": 0.613,
+      "loop_internal_inductance_dc_uh_per_m_approx": 0.1,
+      "line_capacitance_pf_per_m_approx": 36.3,
+      "characteristic_impedance_ohm_approx": 130,
+      "propagation_velocity_m_per_s": 211985280.0,
+      "one_way_delay_936m_us": 4.415
+    }
+  },
+  "inverter_dc_side": {
+    "architecture_variants": {
+      "V_BOOST": {"description": "Per-MPPT boost stage with series diode; input capacitor C_in per MPPT; shared DC link behind the boost diode cannot discharge into the PV side", "label": "ASSUMED_DEFAULT_typical_large_string_inverter"},
+      "V_DIRECTBUS": {"description": "Strings connected directly to a common DC bus capacitor without boost diode; DC link CAN discharge into a PV-side fault", "label": "ADVERSARIAL_VARIANT"}
+    },
+    "mppt_input_capacitance_f": {"value": 0.00015, "range": [0.00005, 0.0005], "label": "ASSUMED"},
+    "dc_link_capacitance_f": {"value": 0.002, "range": [0.001, 0.004], "label": "ASSUMED_from_PR5_illustrative_input"},
+    "mppt_control_timescale_s": {"value": 0.1, "label": "ASSUMED_perturb_and_observe_step_interval"},
+    "mppt_switching_frequency_hz": {"value": 16000, "range": [8000, 40000], "label": "ASSUMED_boost_stage"},
+    "input_voltage_window_v": {"min": 500, "max": 1500, "label": "ASSUMED"},
+    "earthing": {"value": "floating_IT_array_with_IMD_at_inverter", "label": "ASSUMED_typical_transformerless_1500V"}
+  },
+  "existing_conventional_protection_baseline_P0": {
+    "string_fuses": {"present": false, "reason": "two strings per MPPT: typical omission; reverse current limited to one string Isc", "label": "ASSUMED"},
+    "inverter_afci": {"present": true, "type": "series_arc_detection_at_MPPT_input", "detect_to_trip_s_variants": [0.1, 0.5, 2.0], "action": "inverter ceases to draw current from the affected MPPT input (string goes to open circuit at inverter side)", "label": "ASSUMED_generic_not_a_product_specification"},
+    "spd": {"present": true, "type": "Type_2_PV_DC_at_inverter_input", "label": "ASSUMED; not modelled for arcs"},
+    "imd": {"present": true, "action": "warning only; no interruption", "label": "ASSUMED"},
+    "dc_disconnect": {"present": true, "type": "manual load-break switch at inverter", "label": "ASSUMED"}
+  },
+  "arc_model": {
+    "label": "UNCALIBRATED_ASSUMPTION; must be replaced by published-measurement calibration (Track E) before any extinction claim",
+    "static_vi_law": "Stokes-Oppenlander form V_arc = (20 + 0.534 * gap_mm) * I^0.12 (I in A, V in V) for I above a minimum sustaining current; arc extinguishes when I < I_min",
+    "gap_mm_variants": [1.0, 3.0, 5.0],
+    "minimum_sustaining_current_a": {"value": 0.5, "label": "ASSUMED"},
+    "ignition_voltage_v": {"value": 15.0, "label": "ASSUMED_minimum_series_arc_voltage"},
+    "alternative": "constant-resistance arc R_arc in {1, 2, 5} ohm as a cross-check only",
+    "hf_signature": "NOT modelled physically; detection studies use a separately documented synthetic HF band-noise injection labelled SYNTHETIC"
+  },
+  "protection_candidates": {
+    "P0": {"name": "baseline_no_added_device", "description": "existing conventional protection only (see existing_conventional_protection_baseline_P0)"},
+    "P1": {"name": "module_level_series_switch_outside_bypass_loop", "placement": "SW-M-OUT: anti-series bidirectional MOSFET pair in the module positive lead, outside the bypass-diode chain", "action": "open: interrupts the whole string loop at that module", "sensing": "local DC current, local HF band, local terminal voltage"},
+    "P1b": {"name": "module_level_per_substring_switch_inside_bypass_loop", "placement": "SW-SS: one low-voltage switch in series with each substring, inside its own bypass-diode loop; opening a substring switch forces string current through that bypass diode", "action": "open faulted substring(s): module behaves as shaded; string current continues through D1..D3", "sensing": "per-substring current and voltage"},
+    "P2": {"name": "string_level_solid_state_breaker_inverter_end", "placement": "SW-STR-INV: 1500 V class SiC breaker at the inverter end of the string home-run", "action": "open: separates string from MPPT node, paired string and input capacitor", "sensing": "string current, HF band, string voltage at inverter"},
+    "P2b": {"name": "string_level_disconnect_array_end", "placement": "SW-STR-ARR: switch at the array end of the home-run (last module junction box or string-end box)", "action": "open: separates the 30 modules from the home-run cable", "sensing": "string current, HF band at array end"},
+    "P3": {"name": "hierarchical_hybrid", "placement": "SW-STR-INV + SW-STR-ARR coordinated, or SW-STR-INV + all SW-M-OUT with string-wide signal", "action": "open both ends of the home-run", "sensing": "combined"}
+  },
+  "priority_cases": {
+    "C1": {
+      "name": "module_internal_series_arc",
+      "phase0_label": "internal_series_arc",
+      "faulted_string": "S20",
+      "paired_string": "S19",
+      "string_route_m": {"S20": 936, "S19": 600},
+      "fault_location": "series arc in substring SS2 of module M15 of string S20 (cell interconnect), INSIDE the bypass-diode loop of SS2",
+      "fault_phase": "arc ignites at t = 0 while string operates at MPP under STC irradiance",
+      "irradiance_variants_w_per_m2": [1000, 500, 200],
+      "cell_temperature_variants_c": [-10, 25, 70]
+    },
+    "C2": {
+      "name": "external_field_cable_parallel_arc",
+      "phase0_label": "parallel_arc",
+      "faulted_string": "S20",
+      "paired_string": "S19",
+      "string_route_m": {"S20": 936, "S19": 600},
+      "fault_location_variants": {
+        "C2-far": "positive-to-negative parallel arc 5 m from the array end of the S20 home-run (931 m from inverter)",
+        "C2-near": "positive-to-negative parallel arc 5 m from the inverter end of the S20 home-run"
+      },
+      "fault_phase": "insulation breakdown to arc at t = 0 while both strings operate at MPP",
+      "inverter_variants": ["V_BOOST", "V_DIRECTBUS"],
+      "irradiance_variants_w_per_m2": [1000, 500, 0],
+      "note": "irradiance 0 = night backfeed case: only capacitors and paired string (also dark) are sources"
+    },
+    "C3": {
+      "name": "high_resistance_hot_connector_no_arc",
+      "phase0_label": "high_resistance_hot_connector",
+      "faulted_string": "S20",
+      "fault_location": "module-to-module mated connector between M12 (+) and M13 (-) of string S20, OUTSIDE any module bypass loop",
+      "resistance_variants_ohm": [0.05, 0.2, 1.0],
+      "fault_phase": "resistance ramps linearly from 0.00035 ohm to the variant value over 600 s; no arc ignition",
+      "thermal": {"connector_thermal_mass_j_per_k": {"value": 8.0, "label": "ASSUMED"}, "connector_to_ambient_w_per_k": {"value": 0.25, "label": "ASSUMED"}, "ambient_c": 35}
+    }
+  },
+  "figures_of_merit": {
+    "E_fault_j": "integral over time of v_fault * i_fault from fault inception until extinction or horizon; report contribution per source",
+    "horizon_s": {"C1": 5.0, "C2": 5.0, "C3": 3600.0},
+    "device_stress": ["max_vds_v", "max_vgs_v", "max_i_a", "clamp_energy_j", "tj_max_c_estimate"],
+    "residual_voltage": "post-trip voltage at module terminals, section, string array end, string inverter end, MPPT node",
+    "evidence_grades": ["algebra", "illustrative_simulation", "validated_against_trace", "independent_lab_tested", "certified"]
+  },
+  "explicit_prohibitions": [
+    "no probability or failure-rate inference from Vogel/geometric sample fractions",
+    "no full-string Voc assigned to a module switch by assumption: solve the node",
+    "no arc-extinction claim from the uncalibrated arc law without stating it as illustrative",
+    "no claim that existing certified AFCI/SPD/fuses/IMD can be replaced",
+    "no reproduction of copyrighted standards text or vendor SPICE models",
+    "no agents or model families reported that were not actually invoked"
+  ]
+}

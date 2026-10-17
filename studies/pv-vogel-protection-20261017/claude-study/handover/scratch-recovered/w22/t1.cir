@@ -1,0 +1,18 @@
+* ngspice feature probe: B-source V=f(i(V)), pow, wrdata options
+.options temp=25 tnom=25 reltol=1e-4 method=gear
+Vs in 0 DC 20
+R1 in a1 1
+Vsen a1 a2 0
+Varc_sig sig 0 PWL(0 0 1u 1)
+Barc a2 0 V = v(sig) * 15.534 * i(Vsen) * pow(i(Vsen)*i(Vsen) + 1e-4, -0.44)
+.tran 1u 20u 0 1u
+.control
+set wr_singlescale
+set wr_vecnames
+set numdgt=12
+option numdgt=12
+run
+wrdata t1.dat v(a2) i(Vsen) v(sig)
+quit
+.endc
+.end

@@ -1,0 +1,13 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * plain rlc, check t=0 row, numdgt effect, inductor current
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using transient initial conditions
+
+No. of Data Rows : 2011
+length(hp_v) = 2.011000000000000e+03
+ngspice-42 done

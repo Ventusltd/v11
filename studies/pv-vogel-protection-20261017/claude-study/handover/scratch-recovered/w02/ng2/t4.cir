@@ -1,0 +1,11 @@
+* step-by-step probe A: single SUBT open circuit
+.include lib.inc
+.options reltol=1e-9 abstol=1e-15 vntol=1e-12
+XA 0 a f f SUBT
+.control
+set numdgt=15
+op
+print v(a)
+quit
+.endc
+.end

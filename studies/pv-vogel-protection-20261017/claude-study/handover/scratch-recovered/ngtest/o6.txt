@@ -1,0 +1,28 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * save-only test with branch currents and differential voltages
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using transient initial conditions
+
+No. of Data Rows : 20065
+Here are the vectors currently active:
+
+Title: * save-only test with branch currents and differential voltages
+Name: tran1 (Transient Analysis)
+Date: Sat Oct 17 21:33:56  2026
+
+    arc_p               : voltage, real, 20065 long
+    c_p                 : voltage, real, 20065 long
+    l_loop#branch       : current, real, 20065 long
+    l_out               : voltage, real, 20065 long
+    r_out               : voltage, real, 20065 long
+    s_out               : voltage, real, 20065 long
+    time                : time, real, 20065 long [default scale]
+    v_sense#branch      : current, real, 20065 long
+hx_ef_last = 5.621750178086e+00
+HARNESS_COMPLETE
+ngspice-42 done

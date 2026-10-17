@@ -1,0 +1,13 @@
+* probe D: three SUBT in series at top level
+.include lib.inc
+.options reltol=1e-9 abstol=1e-15 vntol=1e-12
+XS1 0 n1 f1 f1 SUBT G=1000 T=25
+XS2 n1 n2 f2 f2 SUBT G=1000 T=25
+XS3 n2 jp f3 f3 SUBT G=1000 T=25
+.control
+set numdgt=15
+op
+print v(jp) v(n1) v(n2)
+quit
+.endc
+.end

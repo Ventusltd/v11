@@ -1,0 +1,20 @@
+* bounding: 1500 V source, 0.66 mH, SW_ANTISERIES, 1144 V load, I0 = 17.31 A
+.include /home/claude/v11/studies/pv-vogel-protection-20261017/claude-study/electronics/switch_models.lib
+Vsrc src 0 DC 1500
+Rs src n1 0.01
+L1 n1 a 0.66m IC=17.31
+XSW a b m g1 g2 SW_ANTISERIES rds=30m vbd=4 coss=150p toff=1u ton=1u vbr=1600 rclamp=2
+Vg1 g1 m PWL(0 10 1u 10 1.001u 0)
+Vg2 g2 m PWL(0 10 1u 10 1.001u 0)
+Vload b 0 DC 1144
+.ic v(xsw.xq1.x)=1 v(xsw.xq2.x)=1
+.options method=gear reltol=1e-4 abstol=1e-9 vntol=1e-6
+.tran 1n 20u 0 5n uic
+.control
+set wr_singlescale
+set wr_vecnames
+run
+wrdata b1.dat v(a) v(b) v(m) i(L1) i(v.xsw.xq1.vch) i(v.xsw.xq1.vbd) i(v.xsw.xq1.vco) i(v.xsw.xq2.vch) i(v.xsw.xq2.vbd) i(v.xsw.xq2.vco) i(v.xsw.xc.vtv) v(xsw.xq1.x)
+quit
+.endc
+.end

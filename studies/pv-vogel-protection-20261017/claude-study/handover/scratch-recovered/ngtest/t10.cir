@@ -1,0 +1,15 @@
+* force timestep too small: stiff hysteretic switch loop
+I1 0 a 1
+C1 a 0 1e-12
+S1 a 0 a 0 swh
+.model swh SW(Ron=1e-6 Roff=1e12 Vt=1 Vh=0.9)
+.tran 1e-9 1e-3 0 1e-9
+.control
+run
+echo RUN_RC_DONE
+let tt = time[length(time)-1]
+print tt
+echo HARNESS_RUN_COMPLETE
+quit
+.endc
+.end

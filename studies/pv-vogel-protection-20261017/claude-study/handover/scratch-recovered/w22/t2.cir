@@ -1,0 +1,23 @@
+* ngspice probe: op + wrdata, subckt params
+.options temp=25 tnom=25
+.model DCELL D(IS=1.7818e-08 N=28.6)
+.subckt SS lo hi params: iph=18.4
+Iph lo c DC {iph}
+Dc c lo DCELL
+Rsh c lo 500
+Rs c hi 0.02
+.ends SS
+X1 0 a SS iph=18.4
+X2 0 b SS iph=9.2
+Vn c 0 DC 10
+X3 0 c SS iph=18.4
+.control
+set wr_singlescale
+set wr_vecnames
+option numdgt=12
+op
+wrdata t2.dat v(a) v(b) i(Vn)
+print v(a) v(b) i(Vn)
+quit
+.endc
+.end

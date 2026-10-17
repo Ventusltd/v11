@@ -1,0 +1,27 @@
+* p5: LTRA cascade, CM ties as 0V sources, clamp, 60us interruption
+.func softp(x) {x > 40 ? x : ln(1+exp(x))}
+.subckt LT3 inv_p inv_n t1p t1n t2p t2n ap an
+O1 inv_p inv_n t1p t1n LTA
+O2 t1p t1n t2p t2n LTB
+O3 t2p t2n ap an LTA
+.model LTA LTRA R=6.78m L=593n G=0 C=37.5p LEN=5
+.model LTB LTRA R=6.78m L=593n G=0 C=37.5p LEN=926
+Vcm1 t1n inv_n 0
+Vcm2 t2n inv_n 0
+Vcm3 an inv_n 0
+.ends
+X1 inv_p 0 t5p t5n t931p t931n arr_p arr_n LT3
+Isw arr_n arr_p PWL(0 18.4 1u 18.4 2u 0)
+Bcl arr_p arr_n I = 10*(softp(v(arr_p,arr_n)-1500) - softp(-v(arr_p,arr_n)-1500))
+Vmi inv_p cin_p 0
+Cin cin_p 0 150u
+RL cin_p 0 62.1685
+.control
+tran 2n 60u 0 5n
+set wr_singlescale
+set wr_vecnames
+option numdgt=10
+wrdata p5.txt v(arr_p,arr_n) i(vmi) i(v.x1.vcm3) i(v.x1.vcm1)
+quit
+.endc
+.end

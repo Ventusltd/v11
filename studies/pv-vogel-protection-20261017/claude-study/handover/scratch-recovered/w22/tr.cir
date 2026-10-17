@@ -1,0 +1,82 @@
+* proto C1in
+.options temp=25 tnom=25 reltol=1e-4 abstol=1e-9 vntol=1e-6 method=gear
+.model DCELL D(IS=1.7818373090e-08 N=28.600000)
+.model DBYP D(IS=4.1837115287e-05 N=1.1 RS=0.005)
+.subckt SS lo hi params: iph=18.4
+Iph lo c DC {iph}
+Dc c lo DCELL
+Rsh c lo 500.0
+Rs c hi 0.02
+.ends SS
+.subckt MOD jm jp params: iph=18.4
+XA jm na SS iph={iph}
+XB na nb SS iph={iph}
+XC nb jp SS iph={iph}
+DA jm na DBYP
+DB na nb DBYP
+DC nb jp DBYP
+.ends MOD
+XM1 n0 n1 MOD iph=18.4
+XM2 n1 n2 MOD iph=18.4
+XM3 n2 n3 MOD iph=18.4
+XM4 n3 n4 MOD iph=18.4
+XM5 n4 n5 MOD iph=18.4
+XM6 n5 n6 MOD iph=18.4
+XM7 n6 n7 MOD iph=18.4
+XM8 n7 n8 MOD iph=18.4
+XM9 n8 n9 MOD iph=18.4
+XM10 n9 n10 MOD iph=18.4
+XM11 n10 n11 MOD iph=18.4
+XM12 n11 n12 MOD iph=18.4
+XM13 n12 n13 MOD iph=18.4
+XM14 n13 n14 MOD iph=18.4
+XM16 n15 n16 MOD iph=18.4
+XM17 n16 n17 MOD iph=18.4
+XM18 n17 n18 MOD iph=18.4
+XM19 n18 n19 MOD iph=18.4
+XM20 n19 n20 MOD iph=18.4
+XM21 n20 n21 MOD iph=18.4
+XM22 n21 n22 MOD iph=18.4
+XM23 n22 n23 MOD iph=18.4
+XM24 n23 n24 MOD iph=18.4
+XM25 n24 n25 MOD iph=18.4
+XM26 n25 n26 MOD iph=18.4
+XM27 n26 n27 MOD iph=18.4
+XM28 n27 n28 MOD iph=18.4
+XM29 n28 n29 MOD iph=18.4
+XM30 n29 n30 MOD iph=18.4
+XS1 n14 n15a SS iph=18.4
+Vsd1 n14 d1a 0
+D1 d1a n15a DBYP
+Iph2 n15a c2 DC 18.4
+Dc2 c2 n15a DCELL
+Rsh2 c2 n15a 500.0
+Rs2 c2 m 0.02
+Barc m x V = v(sig)*12.534000*i(Vsarc)*pow(i(Vsarc)*i(Vsarc)+1e-4,-0.44)
+Vsarc x n15b 0
+Vsd2 n15a d2a 0
+D2 d2a n15b DBYP
+XS3 n15b n15 SS iph=18.4
+Vsd3 n15b d3a 0
+D3 d3a n15 DBYP
+Vsig sig 0 PWL(0 0 0.5m 0 0.501m 1)
+Rp n30 lp 3.17304
+Lp lp invl 0.00033368399999999994
+Vsstr invl invp 0
+Rn 0 ln 3.17304
+Ln ln n0 0.00033368399999999994
+Cin invp 0 150u
+Isink invp 0 DC 14.7902218125
+Bmeter 0 em I = (v(m)-v(x))*i(Vsarc)
+Cmeter em 0 1m
+Rmeter em 0 1e12
+.tran 1e-06 20m 0 1e-06
+.control
+set wr_singlescale
+set wr_vecnames
+option numdgt=12
+run
+wrdata out.dat i(Vsarc) v(m,x) i(Vsd2) i(Vsstr) v(invp) v(n30,n0) v(n15,n14) v(em)
+quit
+.endc
+.end

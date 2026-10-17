@@ -1,0 +1,70 @@
+{
+ "manifest_version": "cycle1-handover-v1",
+ "programme_id": "v11-native-control-plane-20260802 (control plane NOT modified)",
+ "study_id": "pv-vogel-protection-20261017 / claude-study cycle 1",
+ "status": "HANDED OVER 2026-10-17 ~22:05 BST \u2014 barrier B1 NOT reached; no fault waveform campaign run; see HANDOVER-TO-CHATGPT.md",
+ "repository": "Ventusltd/v11",
+ "branch": "analysis/pv-vogel-protection-20261017-cycle1",
+ "draft_pr": 7,
+ "head_at_manifest_write": "81501b5234e9e723d4715b603852b38738feebe3",
+ "baseline": {
+  "pr": 6,
+  "branch": "analysis/pv-vogel-protection-20261017",
+  "commit": "4aacee6e78e7602896619aca178533258fe5fc36",
+  "stacked_on_pr": 5,
+  "pr5_head": "4fb2ce59",
+  "main": "debb30e092a1983e775d2ab4126995ab7bb72fe3 (untouched)"
+ },
+ "read_only_sources": {
+  "kuiper_line_wafer": {
+   "repo": "Ventusltd/globalgrid2050",
+   "commit": "da7d8f6e6a7806ad5039701f5c86637d84be0704",
+   "lib_mjs_sha256": "b96c855de1f5477e0bbd46ff3a2aed6811ba074ba5da76975984fef505c06b0d"
+  },
+  "kuiper_core_shell": {
+   "path": "kuiper/releases/202609192301-kuiper-shell/index.html",
+   "sha256": "5b59979c093d0713d05e6ab3d2c36395e5edcefaa7e5a0336c9fdb3b7f6e1e30"
+  },
+  "kuiper_belt": {
+   "repo": "Ventusltd/kuiper-belt",
+   "commit": "40df5a3eebc1fcadc94118a9b0d6c9b70bdcdab5"
+  },
+  "pr3_fixture": {
+   "commit": "89731abb7a678e1c0e9861e2be34886013a5ad7f",
+   "path": "reference/lab_inverter_block_24_strings.json"
+  },
+  "frozen_laboratory": {
+   "repo": "Ventusltd/solar-electrical-topology-analysis-engine-text-based",
+   "commit": "d3b4c497144c2c9b3e8f0e82117e7e9abe4672b9",
+   "mode": "not cloned, not read, not modified"
+  }
+ },
+ "unit_system": "SI; key-name unit suffixes per fixture/system-fixture.json",
+ "scenario_identity_algorithm": "tools/ledger.py \u2014 append-only; Phase 0 keys 1..2560 frozen; family cycle1-physical-v1 keys 2561..2959; Line Wafer law kuiper_xy and Kuiper core law kuiper_core_xy (both addresses only)",
+ "ledger_entries_sha256": "9cba84acb94a8a5ac4ae63f15a0ea2a3a035c1b9060c8cb4830b92d2aade7113",
+ "file_hashes": {
+  "fixture/system-fixture.json": "2027dd717d4eac24f96ef7106fb6df9899cec701cc08df5d19ceb7a145fea6a3",
+  "tools/ledger.py": "1370f8fb6e3cf4867d65b55fcbf602ab349dd63dc1a6da82a08dd507b4cdce18",
+  "experiments/scenario-ledger.json": "f75724b07d4791f4048dc040ba9910538d3bdceccc79f62e4d123a7c0e2553a6",
+  "experiments/sampling_benchmark.py": "f31bd61c066a7324d09411a4638fafe275e4cefbffead0ccca8c9a6674a6882b",
+  "experiments/sampling-benchmark-results.csv": "73e122ece05f0cbf9cade8c8b14ab0f23134914cf8e8f724c768b58568e69c86",
+  "experiments/sampling-benchmark-summary.json": "e2b701b2a577defd45fee16827188577656c4061a76af04cb7b85ade363d47a2",
+  "WORKER_PROTOCOL.md": "c7ac2acbd7b979b6248fc2005c12ac05b035a37a6e013dd4c00ac5b41dcdc515",
+  "contradictions.md": "30cfb1d22ca1297fc49b62bd8d1b341c1cf42606414a1e5bc01184e5280b5f09",
+  "assumptions.json": "290307d1a732e3e8178389bf2fa6fcc3981bb7d95bb1876e710424fcb712d3fd",
+  "source-register.csv": "a9b0679de749b5b4064d6328103fc6b737cce2841ce9f4b45c87f6d28728f98d",
+  "kuiper/KUIPER-CORE-USE.md": "95cbb8567d5f4ad1f397fc8e489ba973f006d2aa1dd509517c97bbaeded59ecb"
+ },
+ "tool_versions": {
+  "python": "3.13.16",
+  "numpy": "2.5.3",
+  "scipy": "1.18.1",
+  "ngspice": "ngspice-42 : Circuit level simulation program",
+  "node": "v22.22.0"
+ },
+ "model_families_invoked": {
+  "claude_fable": "5 supervisors (SUP-A..E), completed",
+  "claude_opus": "W06 completed; W01 failed (output-token limit); W01r, W02, W03, W04, W05, W07, W08, W21..W31, CTRL-01..CTRL-10 stopped at handover",
+  "astra_codex_gpt_gemini": "NOT available, NOT invoked"
+ }
+}

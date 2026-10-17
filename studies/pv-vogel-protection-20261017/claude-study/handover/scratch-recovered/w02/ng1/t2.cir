@@ -1,0 +1,26 @@
+* probe constants, temperature law, precision, subckt naming
+.options reltol=1e-10 abstol=1e-16 vntol=1e-13 gmin=1e-15
+.model DA D (IS=1e-14 N=1 TNOM=25)
+.model DT D (IS=3.5e-11 N=22 EG=24.53 XTI=66 TNOM=25)
+.subckt SUBA a params: T=25
+I1 0 a DC 1.0
+VPRB a b 0
+D1 b 0 DT temp={T}
+.ends
+IA 0 a1 DC 1e-3
+DA1 a1 0 DA temp=25
+IB 0 a2 DC 1e-3
+DA2 a2 0 DA temp=-10
+X1 c1 SUBA T=-10
+X2 c2 SUBA T=70
+.control
+set numdgt=15
+op
+print v(a1) v(a2) v(c1) v(c2)
+print i(v.x1.vprb)
+set filetype=ascii
+write t2.raw v(a1) v(a2) v(c1) v(c2)
+wrdata t2.txt v(a1) v(a2) v(c1) v(c2)
+quit
+.endc
+.end

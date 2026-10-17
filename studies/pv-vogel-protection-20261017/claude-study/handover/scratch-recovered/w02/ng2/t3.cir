@@ -1,0 +1,16 @@
+* feature probe
+.include lib.inc
+.options reltol=1e-9 abstol=1e-15 vntol=1e-12
+X1 0 a STRT
+X2 0 b STRT T=-10
+X3 0 c STRT T=-10 T2=70
+XM 0 d dn1 dn2 MODT SH1=0.1
+IM 0 d DC 17
+.control
+set numdgt=15
+op
+print v(a) v(b) v(c) v(d) v(dn1)
+print i(v.xm.xs1.vby) i(v.xm.xs1.vcp) i(v.x1.xm1.xs2.vcp)
+quit
+.endc
+.end

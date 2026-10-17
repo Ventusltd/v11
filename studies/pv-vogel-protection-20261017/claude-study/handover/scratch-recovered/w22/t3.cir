@@ -1,0 +1,14 @@
+* ngspice constant probe: diode IS=1e-12 N=1 at 1 mA, 25 C
+.options temp=25 tnom=25
+.model DX D(IS=1e-12 N=1)
+I1 0 a DC 1e-3
+D1 a 0 DX
+.control
+set wr_singlescale
+set wr_vecnames
+option numdgt=15
+op
+wrdata t3.dat v(a)
+quit
+.endc
+.end

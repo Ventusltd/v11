@@ -1,0 +1,70 @@
+# fixture V11_CYCLE1_SHARED_FIXTURE_v1
+fit Iph=18.4006 A I0=3.990e-08 A n=1.3525 Rs=0.0636 ohm Rsh=2000 ohm; residuals=[np.float64(0.0), np.float64(0.0), np.float64(0.0), np.float64(0.0), np.float64(0.0)]
+module incremental conductance at MPP g = 0.4540 A/V  (r_mpp = 2.203 ohm); string r = 66.1 ohm
+R_loop 936 m = 6.346 ohm; 931 m = 6.312; 600 m = 4.068; 5 m = 0.0339 ohm; dR/dT(936) = 24.9 mohm/K
+L_loop 936 m = 667 uH; 5 m = 3.57 uH; C_line 936 m = 0.034 uF; Z0 = 140 ohm
+one-way delay: 936 m 4.415 us; 931 m 4.392 us; 5 m 23.6 ns; 72 m array run 0.340 us (ASSUMED 30 x 2.4 m)
+IR drop S20 at Impp: 109.9 V; cable loss 1902 W = 9.6 % of string Pmpp
+# C1(a) series arc in string loop (outside bypass loop), node held, R_loop 936 m
+  V_arc=20 V: dV_module=+0.608 V, dI=-0.276 A (-1.60 %), P_arc=341 W
+  V_arc=40 V: dV_module=+1.217 V, dI=-0.552 A (-3.19 %), P_arc=670 W
+  V_arc=60 V: dV_module=+1.825 V, dI=-0.828 A (-4.79 %), P_arc=989 W
+  exact IV: V_node=1034.0 V; I(20 V)=17.001 A (-1.79 %); I(60 V)=16.151 A (-6.70 %)
+  S-O V_arc(gap 1.0 mm) at 17.31 A = 28.9 V; at 0.5 A = 18.9 V (ILLUSTRATIVE, uncalibrated)
+  S-O V_arc(gap 3.0 mm) at 17.31 A = 30.4 V; at 0.5 A = 19.9 V (ILLUSTRATIVE, uncalibrated)
+  S-O V_arc(gap 5.0 mm) at 17.31 A = 31.9 V; at 0.5 A = 20.9 V (ILLUSTRATIVE, uncalibrated)
+# C1(b) arc inside bypass loop of SS2 (fixture location)
+  substring Voc STC 15.25 V, cold 16.53 V; max gap voltage with diode conducting = Voc_ss+Vf = 15.70 V (STC) / 16.98 V (-10 C)
+  string-level DC signature = -(V_ss2(Impp)+Vf) = -(12.71+0.45) = -13.16 V  (same as one shaded substring)
+  arc power upper bound inside loop ~ (Voc_ss+Vf)*I_b, I_b<=Isc: 289 W; substring Pmpp = 220 W
+  string loop |Z| at 100 kHz (936 m route only) = 419 ohm vs diode r_d ~ 1.5 mohm -> HF current division ratio ~ 3.6e-06
+# C2-far: arc 5 m from array end of S20 (931 m from inverter)
+  V_arc=20 V: V_node(steady, S19 at ~Isc)=136 V, S19 module V=4.5 V -> I_S19=18.40 A; S20 array-end V=20.6 V; S20 modules at 0.69 V each -> I=18.40 A
+  V_arc=40 V: V_node(steady, S19 at ~Isc)=156 V, S19 module V=5.2 V -> I_S19=18.40 A; S20 array-end V=40.6 V; S20 modules at 1.35 V each -> I=18.40 A
+  V_arc=60 V: V_node(steady, S19 at ~Isc)=176 V, S19 module V=5.9 V -> I_S19=18.40 A; S20 array-end V=60.6 V; S20 modules at 2.02 V each -> I=18.40 A
+  pre-fault node V (S19 estimate) = 1073 V; C_in energy 1/2CV^2 = 86 J (150 uF), 288 J (500 uF); DC link 2 mF at node V = 1152 J, at 1500 V = 2250 J
+  cap-discharge current into far fault, resistive limit = 164 A; tau R*C_in = 0.95 ms; tau R*C_dc = 12.6 ms
+  first wave step at inverter end: (V_node - V_arc)/Z0 = 7.9 A per round trip (8.78 us)
+  inverter-end S20 current swing: +17.31 A -> about -18.40 A steady (sign change, 35.7 A swing), transient -164 A
+  C2-near (5 m from inverter): L_loop 3.57 uH, C_in 150 uF -> Z=0.154 ohm, I_pk ~ V/Z = 6963 A (ESR/arc ignored), f_ring = 6.9 kHz; R_5m = 33.9 mohm
+# C3 hot connector detectability
+  R=0.05 ohm: dV=0.87 V, P=15.0 W, dT_ss=60 K (tau 32 s), equiv cable dT=2.0 K, ratio vs 40 K drift=0.050, ramp rate 0.083 mohm/s vs drift 40K/4h=0.069 mohm/s -> rate ratio 1.2; paired-string dI=-0.012 A (-0.07 %)
+  R=0.2 ohm: dV=3.46 V, P=59.9 W, dT_ss=240 K (tau 32 s), equiv cable dT=8.0 K, ratio vs 40 K drift=0.200, ramp rate 0.333 mohm/s vs drift 40K/4h=0.069 mohm/s -> rate ratio 4.8; paired-string dI=-0.048 A (-0.28 %)
+  R=1.0 ohm: dV=17.31 V, P=299.6 W, dT_ss=1199 K (tau 32 s), equiv cable dT=40.1 K, ratio vs 40 K drift=1.002, ramp rate 1.667 mohm/s vs drift 40K/4h=0.069 mohm/s -> rate ratio 24.1; paired-string dI=-0.239 A (-1.38 %)
+  string Voc temp sensitivity = 2.75 V/K (at Vmpp scale) vs 0.87 V signal
+  module mismatch: 3 % of Impp = 0.52 A vs paired-string dI above (ASSUMED 3 % current mismatch)
+# commutation into clamp
+  L=667 uH, I=17.31 A, (V_clamp-V_src)=100 V: t_comm = 115.5 us; E_L = 100 mJ
+  L=667 uH, I=17.31 A, (V_clamp-V_src)=200 V: t_comm = 57.8 us; E_L = 100 mJ
+  L=667 uH, I=17.31 A, (V_clamp-V_src)=500 V: t_comm = 23.1 us; E_L = 100 mJ
+# energy to arc during latency budgets (W x s)
+  P=300 W: 1e-06s->0.0003 J, 1e-05s->0.003 J, 0.0001s->0.03 J, 0.001s->0.3 J, 0.01s->3 J, 0.1s->30 J, 0.5s->150 J, 2s->600 J
+  P=1100 W: 1e-06s->0.0011 J, 1e-05s->0.011 J, 0.0001s->0.11 J, 0.001s->1.1 J, 0.01s->11 J, 0.1s->110 J, 0.5s->550 J, 2s->2200 J
+# script sha256 490fc466b20c3b30a4b8b105e8a9bdf7370e212da2c7249a9c7f6dd3af2d7a3d
+# HF propagation along the home-run
+  f=1e+04 Hz: skin depth 0.660 mm, Rac/Rdc=1.0, loop Rac=7 ohm, line attenuation over 936 m = 0.10 dB; |2 pi f L_loop| = 42 ohm -> i_n per 1 V rms arc noise = 23.85 mA rms
+  f=1e+05 Hz: skin depth 0.209 mm, Rac/Rdc=3.3, loop Rac=21 ohm, line attenuation over 936 m = 0.33 dB; |2 pi f L_loop| = 419 ohm -> i_n per 1 V rms arc noise = 2.38 mA rms
+  f=1e+06 Hz: skin depth 0.066 mm, Rac/Rdc=10.5, loop Rac=66 ohm, line attenuation over 936 m = 1.03 dB; |2 pi f L_loop| = 4193 ohm -> i_n per 1 V rms arc noise = 0.24 mA rms
+# quarter-wave line resonance f = v/(4*route) for inverter-end steps (C_in ~ short, array ~ high Z)
+  route 78 m: f1 = 679.4 kHz, one-way delay 0.368 us
+  route 200 m: f1 = 265.0 kHz, one-way delay 0.943 us
+  route 300 m: f1 = 176.7 kHz, one-way delay 1.415 us
+  route 600 m: f1 = 88.3 kHz, one-way delay 2.830 us
+  route 936 m: f1 = 56.6 kHz, one-way delay 4.415 us
+# C2 energy split of the C_in discharge (far fault, V_arc = 40 V)
+  Q = C_in*(V0-Vf) = 0.138 C; E_arc from C_in = V_arc*Q = 5.5 J; E_total released = 85 J; rest in cable R (DERIVED)
+  DC link 2 mF (V_DIRECTBUS): Q = 1.83 C -> E_arc = 73 J; tau = 12.6 ms
+  L/R of home-run = 106 us; loop energy at 164 A = 9.0 J, at 18.4 A = 113 mJ
+# steady arc power (S-O 1 mm, ILLUSTRATIVE): both strings 36.8 A, one string 18.4 A
+  I=36.8 A: V_arc=31.7 V, P=1165 W, E over 5 s = 5.82 kJ
+  I=18.4 A: V_arc=29.1 V, P=536 W, E over 5 s = 2.68 kJ
+# first-opened module switch under C2 (fault bridges S20+ to S20- via arc)
+  T=25 C: V_switch = 30*Voc_mod - V_arc = 1372 - 40 = 1332 V (all other 29 modules at Voc, no current)
+  T=-10 C: V_switch = 30*Voc_mod - V_arc = 1488 - 40 = 1448 V (all other 29 modules at Voc, no current)
+  healthy string, single open switch: V = V_string_oc - V_node: STC node 1073 V -> 300 V; cold, node 500 V -> 988 V; node 0 V -> 1488 V
+# dark string forward conduction with node energised (ADV night backfeed, V_DIRECTBUS)
+  V_node=1073 V -> 0.542 V/cell -> I_reverse ~ 0.24 A (illustrative single-diode fit, Rs neglected, Iph=0)
+  V_node=1500 V -> 0.758 V/cell -> I_reverse ~ 117.24 A (illustrative single-diode fit, Rs neglected, Iph=0)
+# partial shade DC equivalence: one substring bypassed -> string loses 13.16 V; dI with node held = -0.182 A
+# cloud enhancement: 1200 W/m2 -> I ~ 20.77 A ( 12.9 % above Isc_STC ) ASSUMED linear with G
+# script sha256 (final) 490fc466b20c3b30a4b8b105e8a9bdf7370e212da2c7249a9c7f6dd3af2d7a3d

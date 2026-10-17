@@ -1,0 +1,21 @@
+* probe E: two SUBT in series, no bypass resistor trick
+.options reltol=1e-9 abstol=1e-15 vntol=1e-12
+.model DCELLT D (IS=3.0e-09 N=26.4 EG=24.42 XTI=66 TNOM=25)
+.model DBYPT D (IS=4.0e-05 N=1.1 RS=0.005 EG=0.69 XTI=2 TNOM=25)
+.subckt SUBU n p f1 f2 params: G=1000 T=25
+IPH n c DC {G/1000*18.4*(1+0.0005*(T-25))}
+D1 c n DCELLT temp={T}
+RSH c n {287.5/3}
+RS c f1 {0.094/3}
+VCP f2 p DC 0
+DBP n p DBYPT temp={T}
+.ends SUBU
+XS1 0 n1 f1 f1 SUBU G=1000 T=25
+XS2 n1 n2 f2 f2 SUBU G=1000 T=25
+.control
+set numdgt=15
+op
+print v(n1) v(n2)
+quit
+.endc
+.end

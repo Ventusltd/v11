@@ -1,0 +1,901 @@
+{
+ "note": "Scratch files recovered verbatim at handover 2026-10-17 ~22:00 BST from the stopped agents' session scratchpad. None of these is a deliverable; none was verified by the orchestrator; treat as prototypes and probes. Raw ngspice .dat exports > 300 kB were not kept.",
+ "files": [
+  {
+   "path": "w02/ng1/t1.cir",
+   "owner": "W02 PV module/string model",
+   "bytes": 701,
+   "sha256": "6e017f46dbf55c5421fef9dbcf10d0b651c1e4c8dcf0fc1462e991ed29e1a3f1",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w02/ng1/t1_out.txt",
+   "owner": "W02 PV module/string model",
+   "bytes": 226,
+   "sha256": "21d38154217ae9a52e9b3fcff6b277ccc79c9e6a7f0b678809a57b2d3dcfbc90",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w02/ng1/t2.cir",
+   "owner": "W02 PV module/string model",
+   "bytes": 577,
+   "sha256": "f1dc0df3ee47a5434189e44ce1ae722d3df5bc61462ad00b7b7ba9f1253636c9",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w02/ng1/t2.txt",
+   "owner": "W02 PV module/string model",
+   "bytes": 185,
+   "sha256": "0c1967f04e96b4a8f67a14763c6eabc6dcfb557a14c2b1976f6f0e8c8fddacfd",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w02/ng2/t3.cir",
+   "owner": "W02 PV module/string model",
+   "bytes": 307,
+   "sha256": "d1ce901206b5e88856a1d1cc8f17120dfc88245c000cb5884bec5c33129c182e",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w02/ng2/t4.cir",
+   "owner": "W02 PV module/string model",
+   "bytes": 181,
+   "sha256": "87a37fed45ecc4f485dfb8b9e92a29061d7d6d6e377834f0248c1e460ee52fb9",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w02/ng2/t5.cir",
+   "owner": "W02 PV module/string model",
+   "bytes": 165,
+   "sha256": "e2f1f4eb2f6c2b5e14f9a808fbdecf640486cf60321e0330e68b86960b47440c",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w02/ng2/t6.cir",
+   "owner": "W02 PV module/string model",
+   "bytes": 204,
+   "sha256": "8ce19817a11cfa1d80828391879f6161136b293851b91a2ed678c85c62624360",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w02/ng2/t7.cir",
+   "owner": "W02 PV module/string model",
+   "bytes": 272,
+   "sha256": "bf082ea741b78226547d11f9d33fd5361b9fea6e8661919af639f71c13b357a5",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w02/ng2/t8.cir",
+   "owner": "W02 PV module/string model",
+   "bytes": 545,
+   "sha256": "0058d8e364235083df5091cf296074bcff777040abad5bf07caa7ab0867f3332",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w02/proto_ea.py",
+   "owner": "W02 PV module/string model",
+   "bytes": 2845,
+   "sha256": "2c3a2f9f598c92a3e2e728a7ea75d5f6edce862eb45239356229139f8db3e483",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w02/proto_fit.py",
+   "owner": "W02 PV module/string model",
+   "bytes": 1163,
+   "sha256": "7b54869a7d5e82b573f29c5dd715220062b22183dbf0c561183208f6de5be534",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w02/proto_laws.py",
+   "owner": "W02 PV module/string model",
+   "bytes": 2302,
+   "sha256": "72d90ec475aefc2a7e6c0b783f3fc4d946f4e69dbdef53167443a084c03681f3",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w02/proto_temp.py",
+   "owner": "W02 PV module/string model",
+   "bytes": 1790,
+   "sha256": "3e7c7682559575ee759515a3ca19530df58663411deea8b40baae7f79ed084fb",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/a1.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 481,
+   "sha256": "d33b526227033465aa6ec57429e6bcdfd575d718891f6e104c239f3ee4781bcc",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/a2.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 490,
+   "sha256": "0109d2325fed57c0abf224ac3574980bf4ea51b52b5f8d81cde5eea28f553bb1",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/a3.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 493,
+   "sha256": "5a57b08ac86d70aa3c04e71ba0da1d2e50f03f986f1c8630675a11246046fc68",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/a4.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 493,
+   "sha256": "dde44829f0c30d84205f813e3a2e9938850f1ecd5232c9ed51a3938d92f81d93",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/a5.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 494,
+   "sha256": "7657f63f6919655f56420784cc25fd628231f0e80e8b7bf741587b9e9a993747",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/harness.py",
+   "owner": "W03 cable/DC-side",
+   "bytes": 941,
+   "sha256": "ed696edda0350992de3af50badcf5e9a2702605bc5d9f1e98bea96538c827005",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/p5.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 764,
+   "sha256": "5a0ab959f4d790f06297a3c70107cf8ca48d4e868070aefe1c1ed20a83a8c3b2",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/p6.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 432,
+   "sha256": "8f493e249f473234df9d16a75e1cbebd3e08852ce12569920c67570082a4bdec",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/p6op.txt",
+   "owner": "W03 cable/DC-side",
+   "bytes": 97,
+   "sha256": "21a669234955c7efed6f3d4e5623aa9ecd64310aa07531596d2b70ec358c0628",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/p6tr.txt",
+   "owner": "W03 cable/DC-side",
+   "bytes": 16962,
+   "sha256": "aabad3453bf12bdf19371908bbbf153779fdeac424dff8511f4cef1bfc9401c9",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/probe1.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 469,
+   "sha256": "48f097b83c6fddddb077b71f0f90c50932fecddec7b34b28d7fa86d6560d5752",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/probe2.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 539,
+   "sha256": "173695cb795ff9e0539d5ed383f140a2c587baadeff918995569ec1bd6a568bd",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/probe3.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 1118,
+   "sha256": "f5d1fc06c6458590275a6134b4eb646ee4f6c1611794a89c7dae37ec52a81dcd",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/probe4.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 949,
+   "sha256": "d8cb946dc7355edbd5490e638758bf3e7a3869184f44853e4dacf8612bd4a2f0",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/t1.py",
+   "owner": "W03 cable/DC-side",
+   "bytes": 1101,
+   "sha256": "a4f7d35a1d52da84f7e385c9881fd74e8b106cd1488cb3dc26f29c565aca8f22",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/t1_bv_c_NOCONTROL.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 456,
+   "sha256": "f0b1c8bdeb88995203fc5442d73987f2947484586ed1e0c2a509674c74b29b3c",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/t1_bv_c_def.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 435,
+   "sha256": "4482ae42e937ab97dbe77b02a1eb2aa3360ae228337c5911ccc9dc8a3fd6f780",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/t1_bv_n_NOCONTROL.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 441,
+   "sha256": "c9e86386e87e2250dcbd54537eba935b395b6d12e9db25c79c176ddf2b893e0c",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/t1_bv_n_def.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 420,
+   "sha256": "4119995c54c425c75be42b50099ec2e44462eed2090d0dd45b94fde4be50a20e",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/t1_dz_c_NOCONTROL.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 473,
+   "sha256": "320a8273b57f01abe8b31cc5500fb8e23edc9fdc764afb04c2d7f26212889eac",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/t1_dz_c_def.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 452,
+   "sha256": "804693687a280b3f725da3bd1925bdc063d1d4f0ababede2c1b96ad061ea1ee2",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/t1_dz_n_NOCONTROL.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 458,
+   "sha256": "423ba97e2ea3dadd80ef1c9a267077a26af6bcf9c4a0454b85aeb454e662143c",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w03probe/t1_dz_n_def.cir",
+   "owner": "W03 cable/DC-side",
+   "bytes": 437,
+   "sha256": "194a40745fe2cadaaefb1b5937200aceacb92d3426e991d4d0125cc5c96c6d02",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w06/README-template.md",
+   "owner": "W06 sampling (templates)",
+   "bytes": 18308,
+   "sha256": "ea8d46c3a79d979138e4ce5c53e8fe17737bb6fdb1fc4b7d285c12d1eda0b2bb",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w06/blocks.py",
+   "owner": "W06 sampling (templates)",
+   "bytes": 4629,
+   "sha256": "f3b98777e307b5856158696d24eb37cc6c3069f45d9e88050c511cee0eae47da",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w06/tables.py",
+   "owner": "W06 sampling (templates)",
+   "bytes": 2318,
+   "sha256": "6f178c3a469bd7c45c3afee3befbb2a9ab14de6216033497264c480a0921353a",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w07probe/probe.cir",
+   "owner": "W07 arc model probes",
+   "bytes": 445,
+   "sha256": "c9de314a21182cb9c4508e511bbdde4dfa01d71f26fd9cdec54fbe0180f229be",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w07probe/probe2.cir",
+   "owner": "W07 arc model probes",
+   "bytes": 924,
+   "sha256": "c1c05e46e7fc9430a8fa8ffe8f65ddaded6eb169694e3ce0ac74b98f988c2ac0",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w07probe/probe3.cir",
+   "owner": "W07 arc model probes",
+   "bytes": 410,
+   "sha256": "8d902aa76b9b80b64c63a297bfa69f96dcc7810dd1ff6e487e94588c78acc4e0",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w07probe/probe4.cir",
+   "owner": "W07 arc model probes",
+   "bytes": 414,
+   "sha256": "fa0c8b5068e00e477f7fc62099d4de44604e537af8d8000b272f30f62c5d3b4e",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w07probe/smoke.cir",
+   "owner": "W07 arc model probes",
+   "bytes": 660,
+   "sha256": "e6c669b9c03ebbdd8d0a0bc47ae02a46b6161ca5c7e49796eee36363652250dc",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w08/rc.cir",
+   "owner": "W08 energy ledger RC checks",
+   "bytes": 343,
+   "sha256": "a30eb6d25c90623f8d9e808d188e4697650e11ec8d6a9e657099c5d48a3ac9e9",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w08/rc2.cir",
+   "owner": "W08 energy ledger RC checks",
+   "bytes": 194,
+   "sha256": "c4a9991a8cd2b49c3c06b0f232589a0e65fed02a9144a777c2f712f0b8ce7716",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w08/rc2.txt",
+   "owner": "W08 energy ledger RC checks",
+   "bytes": 195520,
+   "sha256": "c90daa6533b1cebf7515657be62ab6a8de9cefb9616c20259807710930eec738",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w08/rc3.cir",
+   "owner": "W08 energy ledger RC checks",
+   "bytes": 324,
+   "sha256": "cd7bf1761fb94fe21db98d5f8fddcaa2abdf01e2cd6a4fa8e4f95b97522ac046",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w08/rc3.txt",
+   "owner": "W08 energy ledger RC checks",
+   "bytes": 147441,
+   "sha256": "1b44978942f213333a022408c3845f18785426d2a7281c52270aefc14ef2b4a1",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w08/rc4.cir",
+   "owner": "W08 energy ledger RC checks",
+   "bytes": 261,
+   "sha256": "1c3f5f852fff3e69e5052f314d45645732edbd92419029955cc3ddf7ada4e765",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w08/rc4.txt",
+   "owner": "W08 energy ledger RC checks",
+   "bytes": 147539,
+   "sha256": "d4219d2abc35fa37d3b20f051f6325d993454a40172e855a322f16923619d6d2",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w08/rc_pairs.txt",
+   "owner": "W08 energy ledger RC checks",
+   "bytes": 195715,
+   "sha256": "35a71080204403520d135c8bbd8aa2641263259cd02f6ba8a8799232c15660fe",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w08/rc_pairs_names.txt",
+   "owner": "W08 energy ledger RC checks",
+   "bytes": 195780,
+   "sha256": "c935864895c7a9f1ece63a634adba997a2298d427e330045e56fe40ee5df6106",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w08/rc_single.txt",
+   "owner": "W08 energy ledger RC checks",
+   "bytes": 147539,
+   "sha256": "d4219d2abc35fa37d3b20f051f6325d993454a40172e855a322f16923619d6d2",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w08/rc_single_names.txt",
+   "owner": "W08 energy ledger RC checks",
+   "bytes": 147588,
+   "sha256": "23d96d6f9ee390f7795ac3235249103b46699bcc273dda358e3e11e52093e5ec",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w22/gen_proto.py",
+   "owner": "W22 in-loop arc demo",
+   "bytes": 2181,
+   "sha256": "8654702ef9a66a349eab5852f9c1ea997eb0bc7a53b4972c9d2bc623bf898bdd",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w22/integ_test.py",
+   "owner": "W22 in-loop arc demo",
+   "bytes": 1170,
+   "sha256": "aa9fc98955f273d047faac4f673c2317e5dc89aa054a309e9cd93cf244a90e58",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w22/op.cir",
+   "owner": "W22 in-loop arc demo",
+   "bytes": 1705,
+   "sha256": "ffc892bfda5cc3b25d0df8ec0b62c368554e46651613df592eb94512ab3d69c2",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w22/preview.py",
+   "owner": "W22 in-loop arc demo",
+   "bytes": 1683,
+   "sha256": "aa911402d91a039624076e1436cb34de17f08650cd9f2b5a670ab55b511b208c",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w22/t1.cir",
+   "owner": "W22 in-loop arc demo",
+   "bytes": 406,
+   "sha256": "685d6f48fe8a8f468b79d56b1afb62b6225de97edf791f058f8e615390002bf4",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w22/t2.cir",
+   "owner": "W22 in-loop arc demo",
+   "bytes": 408,
+   "sha256": "1a9438614c62296d0ee8a04dfe78f4a0409e7e5c873a25348702a9e65c569ded",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w22/t3.cir",
+   "owner": "W22 in-loop arc demo",
+   "bytes": 234,
+   "sha256": "3278177d83136a5a581902f141e1499d553993d8e7dff64eb801ba84029d505d",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w22/tr.cir",
+   "owner": "W22 in-loop arc demo",
+   "bytes": 1929,
+   "sha256": "229224704927d17c4ae2bc933eb20e847015eb1234a705f28e71d1ca836dcbac",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w24proto/fit.py",
+   "owner": "W24 coordination",
+   "bytes": 683,
+   "sha256": "587adc61c1333dfa7d2ea3818ed6dfd626ae9d2671bae6f19f3f0d0579c53329",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w24proto/t1.cir",
+   "owner": "W24 coordination",
+   "bytes": 813,
+   "sha256": "bee9799c6631dff51bc7a855acf7fcf0150687ac08dbfde78ccad801172c91a0",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w25/t1.cir",
+   "owner": "W25 residual voltage",
+   "bytes": 617,
+   "sha256": "038a297bcddc8372f611fc4b3f71547eabb90e99f058324c4187f9cd093379d4",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w27/fit.py",
+   "owner": "W27 earth faults",
+   "bytes": 1156,
+   "sha256": "02d8b5d75661014a3e564ebfea870022129e702b92ff7debd9ee43a294f2b481",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w27/t1.cir",
+   "owner": "W27 earth faults",
+   "bytes": 258,
+   "sha256": "47ca03c2064ff4d926c58409c990f5913b2fb58c48da6cb02117f69901800589",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w28/fit2.py",
+   "owner": "W28 night backfeed",
+   "bytes": 1202,
+   "sha256": "57cd04cc115a99d94d4412e110eedd0415dea088af1c979b6243c1b2664d1366",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w28/fitproto.py",
+   "owner": "W28 night backfeed",
+   "bytes": 884,
+   "sha256": "a33b490f164bdcd763d868f4e1194bd3e2eb5121b90c17f0701b25eec8372a9f",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "w28/t1.cir",
+   "owner": "W28 night backfeed",
+   "bytes": 319,
+   "sha256": "3d704e51bc899b2faa50c8a85148f25767808a88e5d1c439249b8df92b4faa27",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/e10.txt",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 275,
+   "sha256": "e76f6a5bae02df1daee15db8ef4ebb3abeb2793ec5800c63adfffd19739af1ac",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/e11.txt",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 170,
+   "sha256": "96a329392c246e4cd6b0cf617f561a2f957ff0b37b44344e2507b63c28533cfb",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/e2.txt",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 41,
+   "sha256": "ecad944b5406295cbbe5ca01e961bcd1288ed2e2ee58532303c05f90d22697ea",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/e5.txt",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 168,
+   "sha256": "9dad030ff4fd630cacf1800620da9f2a9111fc2f5dbc07440a89925f7eaf6b5f",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/e6.txt",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 41,
+   "sha256": "ecad944b5406295cbbe5ca01e961bcd1288ed2e2ee58532303c05f90d22697ea",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/e7.txt",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 41,
+   "sha256": "ecad944b5406295cbbe5ca01e961bcd1288ed2e2ee58532303c05f90d22697ea",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/e8.txt",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 41,
+   "sha256": "ecad944b5406295cbbe5ca01e961bcd1288ed2e2ee58532303c05f90d22697ea",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/e9.txt",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 195,
+   "sha256": "c696adb8fc978ac0f25d6b3e543bd1432ea0bdab6142919fc031a6bc0340c06e",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/err.txt",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 41,
+   "sha256": "ecad944b5406295cbbe5ca01e961bcd1288ed2e2ee58532303c05f90d22697ea",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/o10.txt",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 0,
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/o11.txt",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 607,
+   "sha256": "01c09c5ba4dc44ae21e2867d4761b5635e0abb9f3c7e9614d024f9559d6fa51d",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/o2.txt",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 281,
+   "sha256": "9a2320f4820647d822f465ea77110efbe9d17098f78251fc1f5b3ab03d390c64",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/o5.txt",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 385,
+   "sha256": "b7c91f1f039496acbd4fcc62e1f51d7fefa25e0f8d7af70d57fff1af52fa7590",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/o6.txt",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 904,
+   "sha256": "cd07a927237ee9f84be3c4b769623cca0f206e4785592da2635e9a00ea797ffc",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/o7.txt",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 930,
+   "sha256": "b642d44adf9bb4bb0264912aa45f1656393388a6df647ba282fef53ed29691e3",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/o8.txt",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 464,
+   "sha256": "bcfd417cd785c63efd27f934fe603b5fdd4be09f520ddb5e9e388eaaf11d4aa5",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/o9.txt",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 74,
+   "sha256": "4c8a887348f1a906a13dca4625b597628197b9bbffc3fbd0bc4d4204adf6a101",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/out.txt",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 355,
+   "sha256": "e1239313ff54f8941d3a5b1790603e7f48b5fb17c0a871caa4cc1cf074144a45",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/t1.cir",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 713,
+   "sha256": "e512f698e28dce405f307641fe534821e5a6f294cfc9970d70dc0fab5d87712a",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/t10.cir",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 274,
+   "sha256": "78c46c8b8c5d57eef7bd1d18a14d87904a15c504ad0079b77a22587ad39fff73",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/t11.cir",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 303,
+   "sha256": "39303237a743b096f180450f99670f31f15645a5238f399924727078e8d8cf5f",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/t2.cir",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 455,
+   "sha256": "676325735b0babe7b15a8a73d9bf1f0d2d9c49c1824c033dccdf8b1a92f7e304",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/t3.cir",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 337,
+   "sha256": "e16699d2bcf0b80437f9826cd690a9d7219f6036630a5df51af5135ad9e261de",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/t4.cir",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 190,
+   "sha256": "6f17f84f8f9e5f0fbdb0183fc8defd4b6ba61f3c9cba29d85e3ea75e69bd61c0",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/t5.cir",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 1081,
+   "sha256": "bd505ee8e5789747c47e4e1c5c612e18feebb98146564c3b6f4042226017a54d",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/t6.cir",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 1022,
+   "sha256": "9cb3180b592973ceeb7263c41ee7712d873f37af7452bfc02234bd3120aef49c",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/t7.cir",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 464,
+   "sha256": "0a9de615334b33c38adf840707fc5d3f225f04b8f83c3e95d10bf1d723d1d5da",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/t8.cir",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 181,
+   "sha256": "165ebbba6447e0eb99cab6012666cecc5d55ef9322aeca4cebffae2ff00416ed",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "ngtest/t9.cir",
+   "owner": "W30 harness ngspice probes (attributed by content)",
+   "bytes": 143,
+   "sha256": "2956bd07013aba59c8c9f3eb0238e5285a5648d87a75f4741514fe4e20cbf60d",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "spicetest/b1.cir",
+   "owner": "unattributed ngspice probe",
+   "bytes": 755,
+   "sha256": "c431b8a639dec8c1335c3b0032c9e5b5af794005422af33b38130859e1135b08",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "spicetest/t1.cir",
+   "owner": "unattributed ngspice probe",
+   "bytes": 578,
+   "sha256": "c566ae696c78cf730bf0499eea75a4c0340553275950d5a8f2d133b87283e536",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "spicetest/t2.cir",
+   "owner": "unattributed ngspice probe",
+   "bytes": 873,
+   "sha256": "1679f5bad19e3b24cc3f0fe775ee01a558f6a6ce8fcf0fbd5b27acf15442d151",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/supA_check.py",
+   "owner": "SUP-A",
+   "bytes": 12695,
+   "sha256": "c74ab6ec5443760cc46fdff79aa835bed4efff38d9e077c454a116b4750efb82",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/supA_check_out.json",
+   "owner": "SUP-A",
+   "bytes": 6561,
+   "sha256": "20dc45344f661f62a0ddfec01929cfc1480d5ff5233657fba47ed8afe1f0546a",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/track-A-check-output.txt",
+   "owner": "SUP-A",
+   "bytes": 6187,
+   "sha256": "9573dd06cbeab1d694c772698f8d7e57cb0a4a9c8078ef61c7a32fa7afb16e81",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/trackB_calcs.py",
+   "owner": "SUP-B",
+   "bytes": 7921,
+   "sha256": "2d2fc7a9d33e2a78068bbdfbd3b5480749cc06d8d05e820b84435c1654ace46c",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/supb_out.txt",
+   "owner": "SUP-B",
+   "bytes": 11630,
+   "sha256": "f504c03cf94ef26c5719de6bd10674d9058d85ae9c46131a6a128a1717167f88",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/track_c_calcs.py",
+   "owner": "SUP-C",
+   "bytes": 12104,
+   "sha256": "53da867041b7602c4057e694e776edc092786e22775127e69f0baae68d25aa76",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/supc_run1.txt",
+   "owner": "SUP-C",
+   "bytes": 6879,
+   "sha256": "5f75f55bd5d66d5e4e72f76dd43070d9bbc2c493edfb7aa26c8b2f6f8c92544c",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/supc_run2.txt",
+   "owner": "SUP-C",
+   "bytes": 6879,
+   "sha256": "5f75f55bd5d66d5e4e72f76dd43070d9bbc2c493edfb7aa26c8b2f6f8c92544c",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/supc_run3.txt",
+   "owner": "SUP-C",
+   "bytes": 6879,
+   "sha256": "5f75f55bd5d66d5e4e72f76dd43070d9bbc2c493edfb7aa26c8b2f6f8c92544c",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/supc_out.txt",
+   "owner": "SUP-C",
+   "bytes": 6879,
+   "sha256": "5f75f55bd5d66d5e4e72f76dd43070d9bbc2c493edfb7aa26c8b2f6f8c92544c",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/te_run1.txt",
+   "owner": "SUP-E",
+   "bytes": 5096,
+   "sha256": "76f7b0db4af157afc622ed734e03c4e4510cdd09fcdee8cc4648af99fdfa0d7d",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/te_run2.txt",
+   "owner": "SUP-E",
+   "bytes": 5096,
+   "sha256": "76f7b0db4af157afc622ed734e03c4e4510cdd09fcdee8cc4648af99fdfa0d7d",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/ctrl02_phase1_freeze.txt",
+   "owner": "CTRL-02",
+   "bytes": 328,
+   "sha256": "906d038c27cb60e69cc6f485597f4ab3442422e81412f698904f0a93f7c107ce",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/ctrl02_run1.txt",
+   "owner": "CTRL-02",
+   "bytes": 4014,
+   "sha256": "9b429fd514d2deb0f554c493e92bf2591853791a4f9e3582460c0872d57aa74b",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/ctrl02_run2.txt",
+   "owner": "CTRL-02",
+   "bytes": 4014,
+   "sha256": "9b429fd514d2deb0f554c493e92bf2591853791a4f9e3582460c0872d57aa74b",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/ctrl02_run3.txt",
+   "owner": "CTRL-02",
+   "bytes": 4056,
+   "sha256": "1d10cd81c62dbff0ec4400988546029293b1ecb4fecd46589c3544e13941b60e",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/ctrl02_run4.txt",
+   "owner": "CTRL-02",
+   "bytes": 4056,
+   "sha256": "1d10cd81c62dbff0ec4400988546029293b1ecb4fecd46589c3544e13941b60e",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/sd_probe.py",
+   "owner": "SUP-D",
+   "bytes": 771,
+   "sha256": "3a334d3a8b4bdbf42c48bb2a27963ce018f9b747adc83dce025a97dd6bc2491b",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/sd_probe2.py",
+   "owner": "SUP-D",
+   "bytes": 1379,
+   "sha256": "1c41c60960f5283855dbad11aa9d4724cc0faf079e092f4eaf8928dbaa64ba00",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/old_conclusion.py",
+   "owner": "W06",
+   "bytes": 13395,
+   "sha256": "dd15256a8b6761dcce8325b3faa8947c116a240c1ec394068a45f6f77035e297",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/common_preamble.md",
+   "owner": "orchestrator",
+   "bytes": 2514,
+   "sha256": "9555c938053c41f1d5f0812b353fc6d965ba9557cdd12de572e02dea10e50d04",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/controller_preamble.md",
+   "owner": "orchestrator",
+   "bytes": 2045,
+   "sha256": "0e5bfd10696e1e4c00529987c824990b85ff712b9b275e0ca5e108f7e1fd660f",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/controller_queue.md",
+   "owner": "orchestrator",
+   "bytes": 2001,
+   "sha256": "b918885fb106c98859296a52155e6d30a57a9261ac9783a2d8032682668de10e",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  },
+  {
+   "path": "orchestrator-and-supervisors/wave2_plan.md",
+   "owner": "orchestrator",
+   "bytes": 2401,
+   "sha256": "62c62e66428e15b4ea0477df398eeb92cc098f1c00138d05ed5ab1655edfb5ec",
+   "status": "PARTIAL_UNVERIFIED_SCRATCH"
+  }
+ ]
+}

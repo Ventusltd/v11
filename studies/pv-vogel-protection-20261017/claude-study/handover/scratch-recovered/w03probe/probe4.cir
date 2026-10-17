@@ -1,0 +1,42 @@
+* probe4: precharge switch via B conductance with PWL control; fault closing; inductor current in subckt; LTRA long run perf
+.subckt SEC a b c d
+L1 a m 1.48u
+R1 m b 16.95m
+L2 c n 1.48u
+R2 n d 16.95m
+C1 a c 93.8p
+C2 b d 93.8p
+.ends
+.subckt LT3 ip in t1p t1n t2p t2n ap an
+O1 ip in t1p t1n LTA
+O2 t1p t1n t2p t2n LTB
+O3 t2p t2n ap an LTA
+.model LTA LTRA R=6.78m L=593n G=0 C=37.5p LEN=5
+.model LTB LTRA R=6.78m L=593n G=0 C=37.5p LEN=926
+Rcm1 t1n in 1e9
+Rcm2 t2n in 1e9
+Rcm3 an in 1e9
+.ends
+Vpre pre 0 1143.9
+Vpc pc 0 PWL(0 1 1n 1 2n 0)
+Bpre pre cin I = V(pc)*1e3*V(pre,cin)
+Vs_c cin cinx 0
+Cin cinx 0 150u
+X1 cin 0 t5p t5n t931p t931n ap an LT3
+Vfc fc 0 PWL(0 0 1u 0 1.01u 1)
+Vsf t5p fx 0
+Bf fx t5n I = V(fc)*1e3*V(fx,t5n)
+XS sa 0 sb 0 SEC
+Isrc 0 sa 1
+Rsb sb 0 10
+.control
+op
+print v(cin) v(t931p,t931n) v(ap,an)
+tran 10n 3m 0 50n
+set wr_singlescale
+set wr_vecnames
+option numdgt=10
+wrdata probe4.txt v(cin) i(vs_c) i(vsf) i(l.xs.l1)
+quit
+.endc
+.end

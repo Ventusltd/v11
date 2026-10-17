@@ -1,0 +1,134 @@
+
+== A. fixture-derived loop constants (936 m home run)
+L_loop_h = 6.6737e-04 (0.713 uH/m x 936 m)   C_line_f = 3.398e-08   R_loop_ohm_20c = 6.346   Z0_ohm = 130
+row-return loop (1.0 m separation) external L = 2.63 uH/m -> +103..190 uH for 39..72 m row (ASSUMED row length; Track A to derive)
+half_L_I2_j at Impp = 17.31 A: 0.1000 J
+half_L_I2_j at Isc_stc = 18.40 A: 0.1130 J
+half_L_I2_j at Isc_70C = 18.81 A: 0.1181 J
+1 us unclamped ramp of Impp: L*dI/dt = 11552 V (fixture L); = 11425 V at 0.66 mH
+distributed-line first step I*Z0 = 2250 V for ~8.8 us round trip; lumped LC ring f = 33423 Hz
+
+== B. post-trip DC standoff across an open series switch (forward = generation direction)
+  node held by paired string at Vmpp_s                          : STC   228.6 V   cold -10C   343.9 V
+  node at MPPT window min                                       : STC   872.5 V   cold -10C   987.8 V
+  node collapsed to arc (C2-near, V_ARC ASSUMED)                : STC  1342.5 V   cold -10C  1457.8 V
+  node at 0 V (inverter off, C_in discharged, paired string dark): STC  1372.5 V   cold -10C  1487.8 V
+  reverse (string dark, node charged): V_BOOST 1143.9 V (C_in at last MPP) .. V_DIRECTBUS 1500 V; both across an anti-series pair or a string switch
+
+== C. clamp trade for the string loop: t_decay = L*I/(Vc-Vs); E_clamp = 0.5*L*I^2*Vc/(Vc-Vs); I = Impp
+  Vs=  228.6 V  Vc=  400 V : t_decay=   67.4 us  E_clamp= 0.233 J  P_avg=   3.5 kW
+  Vs=  228.6 V  Vc=  600 V : t_decay=   31.1 us  E_clamp= 0.162 J  P_avg=   5.2 kW
+  Vs=  228.6 V  Vc= 1000 V : t_decay=   15.0 us  E_clamp= 0.130 J  P_avg=   8.7 kW
+  Vs=  228.6 V  Vc= 1600 V : t_decay=    8.4 us  E_clamp= 0.117 J  P_avg=  13.8 kW
+  Vs=  228.6 V  Vc= 1700 V : t_decay=    7.9 us  E_clamp= 0.116 J  P_avg=  14.7 kW
+  Vs=  228.6 V  Vc= 2500 V : t_decay=    5.1 us  E_clamp= 0.110 J  P_avg=  21.6 kW
+  Vs=  343.9 V  Vc=  400 V : t_decay=  205.9 us  E_clamp= 0.713 J  P_avg=   3.5 kW
+  Vs=  343.9 V  Vc=  600 V : t_decay=   45.1 us  E_clamp= 0.234 J  P_avg=   5.2 kW
+  Vs=  343.9 V  Vc= 1000 V : t_decay=   17.6 us  E_clamp= 0.152 J  P_avg=   8.7 kW
+  Vs=  343.9 V  Vc= 1600 V : t_decay=    9.2 us  E_clamp= 0.127 J  P_avg=  13.8 kW
+  Vs=  343.9 V  Vc= 1700 V : t_decay=    8.5 us  E_clamp= 0.125 J  P_avg=  14.7 kW
+  Vs=  343.9 V  Vc= 2500 V : t_decay=    5.4 us  E_clamp= 0.116 J  P_avg=  21.6 kW
+  Vs=  987.8 V  Vc= 1000 V : t_decay=  946.1 us  E_clamp= 8.189 J  P_avg=   8.7 kW
+  Vs=  987.8 V  Vc= 1600 V : t_decay=   18.9 us  E_clamp= 0.261 J  P_avg=  13.8 kW
+  Vs=  987.8 V  Vc= 1700 V : t_decay=   16.2 us  E_clamp= 0.239 J  P_avg=  14.7 kW
+  Vs=  987.8 V  Vc= 2500 V : t_decay=    7.6 us  E_clamp= 0.165 J  P_avg=  21.6 kW
+  Vs= 1457.8 V  Vc= 1600 V : t_decay=   81.2 us  E_clamp= 1.125 J  P_avg=  13.8 kW
+  Vs= 1457.8 V  Vc= 1700 V : t_decay=   47.7 us  E_clamp= 0.702 J  P_avg=  14.7 kW
+  Vs= 1457.8 V  Vc= 2500 V : t_decay=   11.1 us  E_clamp= 0.240 J  P_avg=  21.6 kW
+  note: Vs follows the PV IV curve from ~0 V (at Impp) to Voc_s-V_node (at zero current); the table uses the end value -> conservative
+
+== D. RCD snubber alternative (capacitor absorbs 0.5*L*I^2 with overshoot dV = I*sqrt(L/C))
+  C_snub=10 uF: dV=141 V at Impp; 150 V at Isc; stored at 1458 V = 10.6 J
+  C_snub=40 uF: dV=71 V at Impp; 75 V at Isc; stored at 1458 V = 42.5 J
+
+== E. conduction-loss budgets (0.5 % and 1 % of STC nameplate at Impp)
+  0.5 %: module 11.01 mOhm | 2-module 22.03 | 4-module (plant/192) 41.30 | string 330.4 mOhm
+  1.0 %: module 22.03 mOhm | 2-module 44.05 | 4-module (plant/192) 82.60 | string 660.8 mOhm
+  illustrative hot anti-series pair resistances by voltage class (ASSUMED market ranges, W04 to verify):
+    60-100 V Si, 1 die/direction              5 mOhm ->   1.5 W/unit =  0.23 % of module; x720 =   1.1 kW; as string unit =  0.01 %
+    150 V Si                                 10 mOhm ->   3.0 W/unit =  0.45 % of module; x720 =   2.2 kW; as string unit =  0.02 %
+    200 V Si                                 20 mOhm ->   6.0 W/unit =  0.91 % of module; x720 =   4.3 kW; as string unit =  0.03 %
+    600-650 V SJ Si                          60 mOhm ->  18.0 W/unit =  2.72 % of module; x720 =  12.9 kW; as string unit =  0.09 %
+    650 V SiC (2x27 mOhm typ x1.4 hot)       76 mOhm ->  22.8 W/unit =  3.45 % of module; x720 =  16.4 kW; as string unit =  0.12 %
+    1200 V SiC                               40 mOhm ->  12.0 W/unit =  1.82 % of module; x720 =   8.6 kW; as string unit =  0.06 %
+    1700 V SiC (2x45 mOhm x1.4)             126 mOhm ->  37.8 W/unit =  5.72 % of module; x720 =  27.2 kW; as string unit =  0.19 %
+
+== F. thermal budget relation: R_pair_hot <= 2*(Tj_max_screen - Ta_box)/(Rth_single*I^2)  [each device own path]
+  Rth_ja=15 K/W (ASSUMED), Ta_box=70 C (ASSUMED), Tj<=125 C: R_pair_hot <= 24.5 mOhm
+  Rth_ja=30 K/W (ASSUMED), Ta_box=70 C (ASSUMED), Tj<=125 C: R_pair_hot <= 12.2 mOhm
+  Rth_ja=60 K/W (ASSUMED), Ta_box=70 C (ASSUMED), Tj<=125 C: R_pair_hot <= 6.1 mOhm
+  fixed-point Tj = Ta + Rth*I^2*R25*(1+alpha*(Tj-25)); loop gain g = Rth*I^2*R25*alpha must be < 1
+    100 V Si 2.5 mOhm a=0.6%/K       Rth= 2 K/W: Tj =   71.9 C  g=0.01  ok
+    100 V Si 2.5 mOhm a=0.6%/K       Rth=15 K/W: Tj =   85.3 C  g=0.07  ok
+    100 V Si 2.5 mOhm a=0.6%/K       Rth=30 K/W: Tj =  103.0 C  g=0.13  ok
+    100 V Si 2.5 mOhm a=0.6%/K       Rth=60 K/W: Tj =  148.2 C  g=0.27  FAIL
+    hypothetical 5 mOhm a=0.8%/K     Rth= 2 K/W: Tj =   74.2 C  g=0.02  ok
+    hypothetical 5 mOhm a=0.8%/K     Rth=15 K/W: Tj =  107.3 C  g=0.18  ok
+    hypothetical 5 mOhm a=0.8%/K     Rth=30 K/W: Tj =  165.4 C  g=0.36  FAIL
+    hypothetical 5 mOhm a=0.8%/K     Rth=60 K/W: Tj =  505.3 C  g=0.72  FAIL
+    650 V SJ 22 mOhm a=0.85%/K       Rth= 2 K/W: Tj =   90.5 C  g=0.11  ok
+    650 V SJ 22 mOhm a=0.85%/K       Rth=15 K/W: Tj =  927.0 C  g=0.84  FAIL
+    650 V SJ 22 mOhm a=0.85%/K       Rth=30 K/W: Tj = RUNAWAY  g=1.68  FAIL
+    650 V SJ 22 mOhm a=0.85%/K       Rth=60 K/W: Tj = RUNAWAY  g=3.36  FAIL
+    650 V SiC 27 mOhm a=0.4%/K       Rth= 2 K/W: Tj =   90.4 C  g=0.06  ok
+    650 V SiC 27 mOhm a=0.4%/K       Rth=15 K/W: Tj =  348.3 C  g=0.49  FAIL
+    650 V SiC 27 mOhm a=0.4%/K       Rth=30 K/W: Tj = 9885.0 C  g=0.97  FAIL
+    650 V SiC 27 mOhm a=0.4%/K       Rth=60 K/W: Tj = RUNAWAY  g=1.94  FAIL
+    1700 V SiC 45 mOhm a=0.4%/K      Rth= 2 K/W: Tj =  105.7 C  g=0.11  ok
+    1700 V SiC 45 mOhm a=0.4%/K      Rth=15 K/W: Tj = 1319.6 C  g=0.81  FAIL
+    1700 V SiC 45 mOhm a=0.4%/K      Rth=30 K/W: Tj = RUNAWAY  g=1.62  FAIL
+    1700 V SiC 45 mOhm a=0.4%/K      Rth=60 K/W: Tj = RUNAWAY  g=3.24  FAIL
+
+== G. adiabatic / semi-infinite pulse bound dTj = 2E/(A*sqrt(pi*rho*cp*k*t))  (uniform current; x2 for crowding)
+  Si  E=0.162 J t=  31 us: A=10 mm2 ->   235 K ; A=25 mm2 ->    94 K
+  Si  E=0.234 J t=  45 us: A=10 mm2 ->   281 K ; A=25 mm2 ->   113 K
+  Si  E=0.702 J t=  48 us: A=10 mm2 ->   817 K ; A=25 mm2 ->   327 K
+  Si  E=1.125 J t=  81 us: A=10 mm2 ->  1008 K ; A=25 mm2 ->   403 K
+  SiC E=0.162 J t=  31 us: A=10 mm2 ->   127 K ; A=25 mm2 ->    51 K
+  SiC E=0.234 J t=  45 us: A=10 mm2 ->   153 K ; A=25 mm2 ->    61 K
+  SiC E=0.702 J t=  48 us: A=10 mm2 ->   444 K ; A=25 mm2 ->   177 K
+  SiC E=1.125 J t=  81 us: A=10 mm2 ->   547 K ; A=25 mm2 ->   219 K
+
+== H. SW-SS (inside bypass loop)
+  Voc_substring cold = 16.53 V; off-state = Voc_ss + Vf = 16.98 V; diode P when bypassing = 7.79 W; 3 diodes = 23.4 W/module
+  L_ss=1 uH (ASSUMED): L*dI/dt = 87 V @ 0.2 us, 17 V @ 1.0 us, 3 V @ 5.0 us; 0.5*L*I^2 = 0.15 mJ
+  L_ss=5 uH (ASSUMED): L*dI/dt = 433 V @ 0.2 us, 87 V @ 1.0 us, 17 V @ 5.0 us; 0.5*L*I^2 = 0.75 mJ
+
+== I. body diode as heater when one device of a pair is OFF or one has failed short
+  Si body diode Vsd~1.0 V (ASSUMED)     :  17.3 W at Impp,  18.4 W at Isc, continuous, not interruptible by the other device
+  SiC body diode Vsd~3.5..5 V (ASSUMED) :  60.6 W at Impp,  64.4 W at Isc, continuous, not interruptible by the other device
+  SiC upper                             :  86.5 W at Impp,  92.0 W at Isc, continuous, not interruptible by the other device
+
+== J. DC shunt (X-005)
+  R=100.0 mOhm: P=29.964 W at Impp (33.856 W at Isc); signal 1731.00 mV; x720 = 21.57 kW; share of 11.01 mOhm budget 908.3 %; 2 nH parasitic corner   7958 kHz
+  R=  2.0 mOhm: P= 0.599 W at Impp ( 0.677 W at Isc); signal   34.62 mV; x720 =  0.43 kW; share of 11.01 mOhm budget  18.2 %; 2 nH parasitic corner    159 kHz
+  R=  1.0 mOhm: P= 0.300 W at Impp ( 0.339 W at Isc); signal   17.31 mV; x720 =  0.22 kW; share of 11.01 mOhm budget   9.1 %; 2 nH parasitic corner     80 kHz
+  R=  0.5 mOhm: P= 0.150 W at Impp ( 0.169 W at Isc); signal    8.65 mV; x720 =  0.11 kW; share of 11.01 mOhm budget   4.5 %; 2 nH parasitic corner     40 kHz
+
+== K. SW-STR-INV capacitor-discharge duty, C2-near (arc 5 m from inverter end)
+  C_in V_BOOST    : stored     98 J at Vmpp_s; undamped peak   7.3 kA at t= 36.8 us; zeta=0.11; initial dI/dt=312 A/us
+  C_dc V_DIRECTBUS: stored   1309 J at Vmpp_s; undamped peak  26.7 kA at t=134.5 us; zeta=0.40; initial dI/dt=312 A/us
+  reactor  20 uH (ASSUMED), trip delay  1.0 us: I_let_through=   66 A  E_L= 0.051 J  E_clamp(Vc=1600 V, Vs=Vmpp_s)=  0.18 J
+  reactor  20 uH (ASSUMED), trip delay  5.0 us: I_let_through=  259 A  E_L= 0.794 J  E_clamp(Vc=1600 V, Vs=Vmpp_s)=  2.78 J
+  reactor  20 uH (ASSUMED), trip delay 10.0 us: I_let_through=  501 A  E_L= 2.966 J  E_clamp(Vc=1600 V, Vs=Vmpp_s)= 10.41 J
+  reactor 100 uH (ASSUMED), trip delay  1.0 us: I_let_through=   28 A  E_L= 0.042 J  E_clamp(Vc=1600 V, Vs=Vmpp_s)=  0.15 J
+  reactor 100 uH (ASSUMED), trip delay  5.0 us: I_let_through=   72 A  E_L= 0.272 J  E_clamp(Vc=1600 V, Vs=Vmpp_s)=  0.96 J
+  reactor 100 uH (ASSUMED), trip delay 10.0 us: I_let_through=  128 A  E_L= 0.845 J  E_clamp(Vc=1600 V, Vs=Vmpp_s)=  2.96 J
+
+== L. X-003 energy scale
+  arc at 30 V x Impp = 519 W; 1 us vs 10 us switch = 4.7 mJ; 1 ms detection = 0.52 J; one home-run interruption clamp >= 0.100 J
+
+== M. responses to B0 objections from Tracks A/C/D
+  D3 variant L_loop at 1.0 m separation over 936 m = 2.559 mH; 0.5*L*I^2 = 0.383 J; 1 us unclamped = 44.3 kV
+     Vs= 343.9 V Vc=1600 V: t_decay=  35.3 us  E_clamp= 0.488 J   (fixture-L:    9.2 us,  0.127 J)
+     Vs=1457.8 V Vc=1600 V: t_decay= 311.5 us  E_clamp= 4.313 J   (fixture-L:   81.2 us,  1.125 J)
+     Vs=1457.8 V Vc=1500 V: t_decay=1049.6 us  E_clamp=13.626 J   (fixture-L:  273.7 us,  3.554 J)
+  B-3 dark S20 on node 1143.9 V: 38.13 V/module -> reverse I =   0.42 A (25 C fit); string absorbs   0.5 kW; body-diode (Vsd 1 V) heater  0.42 W per unidirectional module switch
+  B-3 dark S20 on node 1300.0 V: 43.33 V/module -> reverse I =   4.53 A (25 C fit); string absorbs   5.9 kW; body-diode (Vsd 1 V) heater  4.53 W per unidirectional module switch
+  B-3 dark S20 on node 1500.0 V: 50.00 V/module -> reverse I =  32.70 A (25 C fit); string absorbs  49.1 kW; body-diode (Vsd 1 V) heater 32.70 W per unidirectional module switch
+  P1-shared Vc=200 V: first clamp P = 3.68 kW; E per skew: 0.37 J @ 0.1 ms, 3.68 J @ 1 ms, 36.80 J @ 10 ms, 368.00 J @ 100 ms; after all 30 open each holds 49.6 V (node 0) -> clamps off
+  P1-shared Vc=400 V: first clamp P = 7.36 kW; E per skew: 0.74 J @ 0.1 ms, 7.36 J @ 1 ms, 73.60 J @ 10 ms, 736.00 J @ 100 ms; after all 30 open each holds 49.6 V (node 0) -> clamps off
+  B-2 SPD Up=2500 V (ASSUMED class): array-side line-to-line during clamp = V_node + Vc = 1144 + 1600 = 2744 V -> SPD CONDUCTS; with node at 0: 1600 V -> no
+  B-2 SPD Up=4000 V (ASSUMED class): array-side line-to-line during clamp = V_node + Vc = 1144 + 1600 = 2744 V -> SPD does not conduct; with node at 0: 1600 V -> no
+
+self-checks OK

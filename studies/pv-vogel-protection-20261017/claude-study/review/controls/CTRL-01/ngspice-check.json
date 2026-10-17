@@ -1,0 +1,15 @@
+{
+ "ngspice": {
+  "earc10": 17.374,
+  "earc50": 63.963,
+  "iarcmax": 166.5012,
+  "vnodeend": 147.7942
+ },
+ "ngspice_excess_over_steady_10ms_j": 5.726757584226309,
+ "ngspice_excess_over_steady_50ms_j": 5.726787921131553,
+ "rel_diff_10ms": 2.0938490359334594e-06,
+ "rel_diff_50ms": 3.4666210524392227e-07,
+ "scipy_e_arc_10ms_j": 17.37396362154302,
+ "scipy_e_arc_50ms_j": 63.96297782645944,
+ "within_A018_0p02": true
+}

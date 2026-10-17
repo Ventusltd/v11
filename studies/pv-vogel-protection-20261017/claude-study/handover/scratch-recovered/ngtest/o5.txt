@@ -1,0 +1,15 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * example with .param and braces in b-source
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using transient initial conditions
+
+No. of Data Rows : 20065
+hm_e_fault          =  5.62175e+00 from=  1.00000e-11 to=  2.00000e-02
+hm_e_src            =  9.81265e+01 from=  1.00000e-11 to=  2.00000e-02
+HARNESS_DONE
+ngspice-42 done

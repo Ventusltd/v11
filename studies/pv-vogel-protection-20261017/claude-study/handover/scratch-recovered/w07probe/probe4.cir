@@ -1,0 +1,14 @@
+* probe 4: export subckt-internal branch current, Norton ignition
+.include /home/claude/v11/studies/pv-vogel-protection-20261017/claude-study/models/arc_model.lib
+In 0 pn DC 18.4
+Rn pn 0 74.59239130434783
+Xn pn 0 ARC_PARALLEL gap_mm=3 ignite=100u
+.options reltol=1e-6 abstol=1e-12 vntol=1e-9
+.control
+set wr_singlescale
+set wr_vecnames
+option numdgt=12
+tran 1u 1m
+wrdata probe4.out v(pn) i(v.xn.vsense)
+.endc
+.end

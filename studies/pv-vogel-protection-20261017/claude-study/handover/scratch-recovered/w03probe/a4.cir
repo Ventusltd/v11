@@ -1,0 +1,20 @@
+* a4
+.param vcl=1500 rdyn=1 sv=2
+.func softp(x) {x > 40 ? x : ln(1+exp(x))}
+O1 inv_p 0 arr_p 0 LTA
+.model LTA LTRA R=6.780m L=593.0n G=0 C=37.526p LEN=936 
+Isw 0 arr_p PWL(0 18.4 1u 18.4 2u 0)
+Bcl arr_p 0 I = (sv/rdyn)*(softp((v(arr_p)-vcl)/sv) - softp((-v(arr_p)-vcl)/sv))
+Vmi inv_p cin_p 0
+Cin cin_p 0 150u
+RL cin_p 0 62.1685
+.options method=gear reltol=1e-4
+.control
+tran 2n 100u 0 5n
+set wr_singlescale
+set wr_vecnames
+option numdgt=10
+wrdata a4.txt v(arr_p) i(vmi) i(bcl)
+quit
+.endc
+.end

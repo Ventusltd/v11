@@ -1,0 +1,31 @@
+* test xspice slew, ternary/relational in B source, hierarchical current refs, param expressions
+.param pp=2
+.subckt CORE D S G GREF params: rds=10m roff=1e8 ton=200n toff=100n vbd=0.8 ibd=17.31 rbd=1m fail=0
+Btg tg 0 V = (fail==1) ? 1 : ((fail==2) ? 0 : ((V(G,GREF) > 0.5) ? 1 : 0))
+a1 tg x slw
+.model slw slew(rise_slope={1/ton} fall_slope={1/toff} range=0.02)
+Vch D dch 0
+Bch dch S I = V(dch,S) * exp(-( V(x)*ln(rds) + (1-V(x))*ln(roff) ))
+Vbd S sb 0
+Dbd sb D DBD
+.model DBD D(IS=1e-12 N={(vbd-ibd*rbd)/(0.025865*ln(ibd/1e-12))} RS={rbd})
+.ends
+V1 in 0 DC 10
+R1 in d 1
+X1 d 0 g 0 CORE rds=20m
+Vg g 0 PWL(0 1 1u 1 1.001u 0)
+V2 in2 0 DC -10
+R2 in2 d2 1
+X2 d2 0 g0 0 CORE
+Vg0 g0 0 DC 0
+.tran 1n 3u
+.control
+set wr_singlescale
+set wr_vecnames
+run
+print v(d)[0] v(x1.x)[0] i(V1)[0]
+let vds = v(d)
+wrdata t2.dat vds v(x1.x) i(v.x1.vch) i(v.x2.vbd) v(d2) i(V1)
+quit
+.endc
+.end

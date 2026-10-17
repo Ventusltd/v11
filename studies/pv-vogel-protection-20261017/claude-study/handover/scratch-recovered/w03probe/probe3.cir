@@ -1,0 +1,35 @@
+* probe3: subckt-local .param, LTRA cascade with floating refs + CM ties, softplus clamp, SW, hierarchical names
+.func softp(x) {x > 40 ? x : ln(1+exp(x))}
+.subckt LT3 ip in t1p t1n t2p t2n ap an params: tcond=20 lint=0
+.param rp=3.39e-3 alpha=0.00393 lext=5.930024e-7 lintdc=1e-7 cp=3.752601e-11
+.param rloop={2*rp*(1+alpha*(tcond-20))} lloop={lext+lint*lintdc}
+O1 ip in t1p t1n LTA
+O2 t1p t1n t2p t2n LTB
+O3 t2p t2n ap an LTA
+.model LTA LTRA R={rloop} L={lloop} G=0 C={cp} LEN=5
+.model LTB LTRA R={rloop} L={lloop} G=0 C={cp} LEN=926
+Rcm1 t1n in 1e9
+Rcm2 t2n in 1e9
+Rcm3 an in 1e9
+Bm mon 0 V = rloop
+.ends
+X1 inv_p 0 t5p t5n t931p t931n arr_p arr_n LT3 tcond=60
+Isw arr_n arr_x PWL(0 18.4 2u 18.4 3u 0)
+Vsa arr_x arr_p 0
+Vscl arr_p clp 0
+Bcl clp arr_n I = 10*(softp(v(clp,arr_n)-1500) - softp(-v(clp,arr_n)-1500))
+Vsi inv_p cin_p 0
+Cin cin_p 0 150u
+RL cin_p 0 62.1685
+.options reltol=1e-5
+.control
+op
+print v(arr_p,arr_n) v(inv_p) v(x1.mon) v(t931p,t931n) v(t5p,t5n)
+tran 2n 30u 0 5n
+set wr_singlescale
+set wr_vecnames
+option numdgt=10
+wrdata probe3.txt v(arr_p,arr_n) v(inv_p) i(Vsa) i(Vsi) i(Vscl)
+quit
+.endc
+.end

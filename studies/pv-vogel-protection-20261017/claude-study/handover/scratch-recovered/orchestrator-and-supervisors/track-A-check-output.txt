@@ -1,0 +1,84 @@
+/home/claude/v11/studies/pv-vogel-protection-20261017/claude-study/review/track-A-check.py:49: RuntimeWarning: The iteration is not making good progress, as measured by the 
+ improvement from the last ten iterations.
+  x = fsolve(F, [Rs0, Rsh0], xtol=1e-13)
+== single-diode fits (fixed n; supervisor cross-check only) ==
+n=1.0: Iph=18.4186 A I0=3.467e-11 A Rs=0.1357 ohm Rsh=134.6 ohm residual=5.6e-17
+n=1.2: Iph=18.4060 A I0=3.139e-09 A Rs=0.0938 ohm Rsh=287.6 ohm residual=3.9e-16
+n=1.4: Iph=18.4000 A I0=7.859e-08 A Rs=0.0528 ohm Rsh=4980432903.8 ohm residual=5.0e-03
+
+== arc law (fixture, uncalibrated) ==
+I=  0.50 A: Varc gap1/3/5 mm = 18.90/19.88/20.86 V, P(gap1)=9 W
+I=  3.68 A: Varc gap1/3/5 mm = 24.01/25.26/26.51 V, P(gap1)=88 W
+I=  9.20 A: Varc gap1/3/5 mm = 26.80/28.19/29.59 V, P(gap1)=247 W
+I= 17.31 A: Varc gap1/3/5 mm = 28.91/30.42/31.92 V, P(gap1)=500 W
+I= 18.40 A: Varc gap1/3/5 mm = 29.12/30.64/32.15 V, P(gap1)=536 W
+I= 36.77 A: Varc gap1/3/5 mm = 31.65/33.29/34.94 V, P(gap1)=1164 W
+
+== C1 substring loop (SS2 of M15) ==
+T=-10 C: Voc_ss=16.53 V, loop max Voc_ss+Vf=16.98 V, Varc(Imin=0.5 A,gap1)=18.90 V -> sustain? False
+T=+25 C: Voc_ss=15.25 V, loop max Voc_ss+Vf=15.70 V, Varc(Imin=0.5 A,gap1)=18.90 V -> sustain? False
+T=+70 C: Voc_ss=13.60 V, loop max Voc_ss+Vf=14.05 V, Varc(Imin=0.5 A,gap1)=18.90 V -> sustain? False
+P_arc bound (D2 off, V_arc<=Voc_ss+Vf) = (Voc_ss+Vf)*Isc = 289 W STC; 307 W at -10 C
+
+== X-001: steady voltage across an opened SW-M-OUT (M15, S20) = |30*Voc(T) - V_node| ==
+(a) node at Vmpp STC                : STC   228.6 V | S20 at -10 C   343.9 V
+(a) node at MPPT window min 500 V   : STC   872.5 V | S20 at -10 C   987.8 V
+(b) node 0 V                        : STC  1372.5 V | S20 at -10 C  1487.8 V
+(c) parallel arc, node=30 V         : STC  1342.5 V | S20 at -10 C  1457.8 V
+(c) bolted, node=0 V                : STC  1372.5 V | S20 at -10 C  1487.8 V
+(a) both strings at -10 C, node at cold Vmpp 1240.0 V: 247.8 V  (Vmpp scaled by Voc coeff: ASSUMED)
+inverter relay open, S19 lit at Voc: |Voc_20-Voc_19| = 0 V same conditions; S19 at 200 W/m2: 98 V; S20 -10 C vs S19 25 C: 115.3 V
+SW-SS (inside bypass loop, forward current, D2 healthy): Voc_ss+Vf = 15.70 V STC, 16.98 V at -10 C
+SW-SS under reverse feed or D2 open: reverts to SW-M-OUT class (up to 1487.8 V)
+
+== cable / loop ==
+L_ext ln-form 0.613 uH/m (acosh-form 0.593, diff 3.4 %), C 36.3 pF/m, Z0 130 ohm, v 2.12e+08 m/s, delay 936 m 4.415 us
+L_hr(936 m) 0.667 mH; L_row(40 m at 1 m sep, ASSUMED) 0.109 mH; L_loop 0.777 mH
+R loop 936/931/600/5 m: 6.346/6.312/4.068/0.0339 ohm; string internal 0.108 ohm; 936 m drift per 30 K 0.748 ohm
+lumped-model validity (lambda/10 on loop 2x936 m): f < 11324 Hz; one-way lambda/10: 22648 Hz
+
+== stored energies ==
+0.5*L*I^2: home-run 936 m at 18.4 A = 0.1130 J (external only 0.0971 J); full loop at 17.31 A = 0.1164 J, at 18.4 A = 0.1315 J
+0.5*C*V^2: C_in 150 uF at Vmpp 98.1 J (range 32.7-327.1 J), at Voc STC 141.3 J, at Voc cold 166.0 J
+           DC link 2 mF at Vmpp 1309 J (range 654-2617 J); line C 936 m 0.0222 J
+unclamped L*dI/dt for 1 us turn-off of 17.31 A in L_loop: 13.4 kV
+
+== X-002: C2 parallel arc operating points (STC, gap 1 mm, n=1.2 fit) ==
+C2-far P0 pre-trip: I20=18.40 A, I19=18.37 A, Iarc=36.77 A, Varc=31.6 V, Parc=1164 W, node at inverter ~148 V
+C2-far after SW-STR-INV opens (S20 modules only): I=18.40 A (99.98 % of Isc), Varc=29.1 V, Parc=536 W
+C2-far after SW-STR-ARR opens (S19 via node + 931 m): I=18.37 A, Varc=29.1 V, Parc=535 W, cable loss 3505 W
+C2-near P0 pre-trip: Iarc=36.77 A, Varc=31.6 V, Parc=1164 W
+C2-near after SW-STR-INV opens (S20 modules via 931 m): I=18.38 A, Varc=29.1 V, Parc=535 W, cable loss 2133 W
+single-string residual at G=500 W/m2: I=9.20 A, Varc=26.8 V, Parc=246 W
+single-string residual at G=200 W/m2: I=3.68 A, Varc=24.0 V, Parc=88 W
+module V at 1.1 V gives I/Isc = 0.99979 (current-source approximation error 0.021 %)
+extinction by law needs I<0.5 A: G < 27 W/m2 (ILLUSTRATIVE)
+C_in into far arc: released 96.5 J, charge 0.149 C, at 30 V arc -> 4.5 J to arc, rest in 931 m R; zeta=1.50, RC=0.95 ms, Ipk~158 A
+C_in into near arc: 98 J, Z_surge=0.154 ohm, Ipk bound 7225 A, zeta(cable only)=0.11, LC period 145 us, arc floor at 30 V 5.0 J
+DC link (V_DIRECTBUS) into near arc: 1309 J, Z_surge=0.042 ohm, Ipk bound 26381 A, floor 67 J
+travelling-wave current step at inverter end, far arc: (Vmpp-Varc)/Z0 = 8.6 A per transit, arrives 4.39 us after inception
+
+== backfeed through a series arc in a DARK S20 (gap 1 mm) ==
+n=1.0: node held at Vmpp -> 0.48 A; node at Voc_STC (stiff) -> 9.1 A; S19 lit (STC) into dark S20 + arc, inverter off -> 4.45 A at Varc 24.6 V = 109 W
+n=1.2: node held at Vmpp -> 0.55 A; node at Voc_STC (stiff) -> 11.1 A; S19 lit (STC) into dark S20 + arc, inverter off -> 5.36 A at Varc 25.1 V = 135 W
+n=1.4: node held at Vmpp -> 0.73 A; node at Voc_STC (stiff) -> 13.6 A; S19 lit (STC) into dark S20 + arc, inverter off -> 6.34 A at Varc 25.6 V = 163 W
+
+== SW-M-OUT clamp energy / turn-off time (I=17.31 A, L_loop) ==
+Vc=600 V, Vsrc=228.6 V: t_off=36.2 us, E_clamp=0.188 J
+Vc=1200 V, Vsrc=228.6 V: t_off=13.8 us, E_clamp=0.144 J
+Vc=1200 V <= Vsrc=1342.5 V: clamp conducts indefinitely, P=22080 W
+Vc=1500 V, Vsrc=1342.5 V: t_off=85.4 us, E_clamp=1.108 J
+Vc=1500 V, Vsrc=1457.8 V: t_off=318.6 us, E_clamp=4.136 J
+
+== SW-STR-INV clamp (931 m loop of S20, 18.4 A) ==
+node at Vmpp: Vc=1500 V, Vsrc=1113.9 V: t_off=31.6 us, E_clamp=0.437 J
+node at Voc STC: Vc=1500 V, Vsrc=1342.5 V: t_off=77.6 us, E_clamp=1.070 J
+node at Voc cold: Vc=1500 V, Vsrc=1457.8 V: t_off=289.4 us, E_clamp=3.994 J
+
+== C3 hot connector (I=17.31 A, lumped thermal: C=8 J/K, G=0.25 W/K, ambient 35 C; ASSUMED) ==
+R=0.05 ohm: P=15.0 W, dV=0.87 V (0.08 % of Vmpp_string), dT_ss=60 K -> 95 C, E(3600 s)=54 kJ; tau=32 s
+R=0.20 ohm: P=59.9 W, dV=3.46 V (0.30 % of Vmpp_string), dT_ss=240 K -> 275 C, E(3600 s)=216 kJ; tau=32 s
+R=1.00 ohm: P=299.6 W, dV=17.31 V (1.51 % of Vmpp_string), dT_ss=1199 K -> 1234 C, E(3600 s)=1079 kJ; tau=32 s
+cable thermal drift signature for comparison: 13.0 V per 30 K on the 936 m route
+
+SCRIPT_SHA256 e8840777e373c5816883a3f4b22968019d7e5b1046adfe2760fd8d852a095d84

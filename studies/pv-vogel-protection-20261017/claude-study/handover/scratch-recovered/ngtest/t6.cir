@@ -1,0 +1,33 @@
+* save-only test with branch currents and differential voltages
+C_in   c_p   0      150e-6 ic=1143.9
+L_loop c_p   l_out  0.667368e-3 ic=0
+R_loop l_out r_out  6.34608
+S_close r_out s_out ctl 0 sw_close
+V_ctl  ctl   0      PWL(0 0 1e-9 1)
+.model sw_close SW(Ron=1e-3 Roff=1e9 Vt=0.5 Vh=0)
+V_sense s_out arc_p 0
+B_arc  arc_p 0      V = 20 * i(V_sense) * pow(i(V_sense)*i(V_sense) + 1e-12, (0.12 - 1)/2)
+.save v(arc_p) i(v_sense) v(c_p) i(l_loop) v(l_out) v(r_out) v(s_out)
+.options reltol=1e-4 abstol=1e-9 vntol=1e-6 method=gear itl4=100 gmin=1e-12
+.tran 1e-6 20e-3 0 1e-6 uic
+.control
+set noaskquit
+set numdgt=12
+set wr_vecnames
+run
+display
+let hp_v_arc = v(arc_p)
+let hp_i_arc = i(v_sense)
+let hp_v_cin = v(c_p)
+let hp_i_loop = i(l_loop)
+let hp_v_rloop = v(l_out,r_out)
+let hp_v_sw = v(r_out,s_out)
+wrdata export.dat hp_v_arc hp_i_arc hp_v_cin hp_i_loop hp_v_rloop hp_v_sw
+let hx_pf = hp_v_arc*hp_i_arc
+let hx_ef = integ(hx_pf)
+let hx_ef_last = hx_ef[length(hx_ef)-1]
+print hx_ef_last
+echo HARNESS_COMPLETE
+quit
+.endc
+.end
