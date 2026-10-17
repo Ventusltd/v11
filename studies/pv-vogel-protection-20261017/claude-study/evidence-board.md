@@ -72,3 +72,12 @@ Workers (model `opus`), waves aligned to barriers:
 - C3: 15/60/300 W; 0.87/3.5/17.3 V vs 13.0 V cable thermal drift per 30 K at Impp; lumped thermal steady 95/275/1234 °C (model unphysical above ≈ 200 K rise).
 - Backfeed: dark S20 on a live node passes 0.48–0.73 A reverse (switch closed); S19 lit into a dark-S20 series arc with inverter off: 4.4–6.3 A, 109–163 W.
 - Tokens 182,127; tool uses 38; duration 3407 s.
+
+### R-05 SUP-B (model `fable`, Track B supervisor) — completed 2026-10-17 ~21:40 BST
+- Files: review/track-B-charter-and-initial-attack.md (334 lines; 16-item checklist; 13 objections; proposed variants P1-IN, P1-BYP, P1-FB, P1-uni, P1-shared requested as NEW ledger keys); review/track-B-initial-attack-calcs.py (fixture-only reproducer, self-checks OK, exit 0).
+- Ran: calcs script only (algebra). Infineon product page fetch BLOCKED; RS distributor listings show IMZA65R027M1H as 650 V (manufacturer confirmation left to W04).
+- Clamp trade: t = L·I/(Vc−Vs), E = ½LI²·Vc/(Vc−Vs): at Vc 1600 V, 8–19 µs and 0.12–0.26 J for Vs 229–988 V; Vs 1458 V (node collapsed, cold) → 81 µs / 1.13 J (1600 V) or 48 µs / 0.70 J (1700 V). A clamp below Voc_s − V_node conducts continuously (1.6–1.9 kW). Distributed first step I·Z0 = 2.25 kV per 8.8 µs round trip → external clamp mandatory at every series interrupter.
+- SW-M-OUT: standing voltage 229 V (STC, node at Vmpp) … 1343–1488 V (parallel fault / node 0 / dawn last-to-close) → even case (a) excludes 60–200 V silicon; a 1700 V SiC pair ≈ 126 mΩ hot (ASSUMED) = 37.8 W = 5.7 % of module → **Track B prior: REJECT P1 as defined** unless Track A removes cases (c)–(e). SW-SS: off-state 16.98 V cold, bypass diode 7.8 W when open, D2-open failure puts 1343–1488 V on it (Vds-monitor re-close rule) → **KEEP**. SW-STR-INV: ±1488 V bidirectional; C2-near prospective 7.3 kA (312 A/µs) from C_in, 26.7 kA V_DIRECTBUS; 20/100 µH reactor (ASSUMED) with 1–10 µs trip → let-through 28–501 A, E_clamp 0.15–10.4 J; 330 mΩ budget easy.
+- Thermal screen (Rth_ja 15/30/60 K/W ASSUMED, Ta_box 70 °C, Tj ≤ 125 °C): Rds_hot ≤ 12.2/6.1/3.1 mΩ per device; thermal runaway gain ≥ 1 for 650 V SJ and 1700 V SiC at 30 K/W.
+- X-003 REJECT as a whole-circuit claim (4.7 mJ difference 1 vs 10 µs vs ≥ 0.100 J clamp and 0.52 J per ms latency), ACCEPT only as SW-STR-INV self-protection; X-004 REJECT (650 V < 873–1500 V duties); X-005 REJECT (29.96 W = 908 % of budget).
+- Tokens 179,016; tool uses 42; duration 3701 s.

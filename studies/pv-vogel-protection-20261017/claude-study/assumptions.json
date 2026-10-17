@@ -442,6 +442,120 @@
    "status": "UNKNOWN (2 vs 24 strings on the bus) - must be declared per scenario; default 2 (MPPT pair)",
    "bounds": "2-24",
    "used_by": "C2 V_DIRECTBUS fault current (36.8 A vs 177 A)"
+  },
+  {
+   "id": "A-046",
+   "name": "rth_ja_sealed_jbox_k_per_w",
+   "value": [
+    15,
+    30,
+    60
+   ],
+   "origin": "SUP-B",
+   "status": "ASSUMED",
+   "bounds": "15-62 K/W; W23 to model",
+   "used_by": "Tj screen"
+  },
+  {
+   "id": "A-047",
+   "name": "rth_ja_string_unit_heatsink_k_per_w",
+   "value": "2-5",
+   "origin": "SUP-B",
+   "status": "ASSUMED",
+   "bounds": "-",
+   "used_by": "string unit thermal"
+  },
+  {
+   "id": "A-048",
+   "name": "tj_screen_c",
+   "value": {
+    "steady": 125,
+    "peak": 175
+   },
+   "origin": "SUP-B",
+   "status": "ASSUMED (review criterion)",
+   "bounds": "-",
+   "used_by": "device screens"
+  },
+  {
+   "id": "A-049",
+   "name": "voltage_derating_fraction",
+   "value": 0.8,
+   "origin": "SUP-B",
+   "status": "ASSUMED",
+   "bounds": "0.7-0.9",
+   "used_by": "device class selection"
+  },
+  {
+   "id": "A-050",
+   "name": "reactor_sw_str_inv_uh",
+   "value": [
+    20,
+    100
+   ],
+   "origin": "SUP-B",
+   "status": "ASSUMED",
+   "bounds": "-",
+   "used_by": "C2-near let-through at SW-STR-INV"
+  },
+  {
+   "id": "A-051",
+   "name": "market_rds_hot_pair_mohm_by_class",
+   "value": {
+    "100V": 5,
+    "150V": 10,
+    "200V": 20,
+    "650V_SJ": 60,
+    "650V_SiC": 76,
+    "1200V_SiC": 40,
+    "1700V_SiC": 126
+   },
+   "origin": "SUP-B",
+   "status": "ASSUMED until W04 datasheet values",
+   "bounds": "-",
+   "used_by": "loss/thermal screens"
+  },
+  {
+   "id": "A-052",
+   "name": "rds_tempco_per_k",
+   "value": {
+    "Si": "0.006-0.0085",
+    "SiC": 0.004
+   },
+   "origin": "SUP-B",
+   "status": "ASSUMED",
+   "bounds": "-",
+   "used_by": "Tj iteration"
+  },
+  {
+   "id": "A-053",
+   "name": "stub_5m_loop_uh",
+   "value": 3.66,
+   "origin": "SUP-B from fixture line defaults",
+   "status": "DERIVED",
+   "bounds": "-",
+   "used_by": "C2-near"
+  },
+  {
+   "id": "A-054",
+   "name": "spd_up_v",
+   "value": [
+    2500,
+    4000
+   ],
+   "origin": "SUP-B",
+   "status": "ASSUMED (Type 2 PV SPD protection levels; standard NOT EXAMINED)",
+   "bounds": "-",
+   "used_by": "clamp coordination"
+  },
+  {
+   "id": "A-055",
+   "name": "module_unit_self_consumption_w",
+   "value": "0.05-0.2",
+   "origin": "SUP-B/SUP-C",
+   "status": "ASSUMED",
+   "bounds": "-",
+   "used_by": "loss column (36-144 W plant)"
   }
  ]
 }
