@@ -61,3 +61,14 @@ Workers (model `opus`), waves aligned to barriers:
 - C3: string-level electrical detection FALSIFIED (ratios 0.1/0.4/2.0 vs 20 K drift, all < 3); module-lead-span sensing survives only if sense points span the mated pair; C3 action must be alarm/derate, not trip (→ X-008 resolution path).
 - Lifecycle screen (algebra, ASSUMED): dies 1440/720/384/48; required unit failure rate for ≤ 1 added outage/yr 159–4756 FIT; P1 string-outage rate scales 30× λ_unit; 1.65 W/die free-air at 62 K/W → Tj ≈ 187 °C in an 85 °C box (not feasible without a thermal path). NO reliability/lifetime number permitted (UNKNOWN).
 - Objections X-E1..X-E5 logged. Tokens 180,221; tool uses 46; duration 2698 s.
+
+### R-04 SUP-A (model `fable`, Track A supervisor) — completed 2026-10-17 ~21:30 BST
+- Files: review/track-A-charter-and-initial-attack.md (258 lines, 14-item B1 checklist, 12 objections); review/track-A-check.py (deterministic reproducer, sha256 e8840777…; runs from claude-study/, exit 0).
+- Ran: track-A-check.py (algebra; fixed-n single-diode cross-check fit; two-string parallel-arc node solve; loop L/R/C; stored and clamp energies; backfeed; C3 thermal). Web: S–O provenance NOT VERIFIED (IOP blocked).
+- X-001 position (settles against "module Voc" for a lone SW-M-OUT): V_sw = 30·Voc_m(T) − V_node = 228.6 V (node at Vmpp, STC) / 343.9 V (S20 at −10 °C); 1372.5/1487.8 V (node 0 V); 1342.5/1457.8 V (parallel arc, node ≈ 30 V). A clamp below string class conducts continuously (11–22 kW). SW-SS: 15.70/16.98 V only with forward current and healthy D2; a dark module on a live node puts 1143.9–1487.8 V across an open SW-SS (new hazard for P1b).
+- X-002 position (claim false): after SW-STR-INV opens S20 feeds the far arc at 18.40 A, 29.1–32.2 V, 536–592 W STC (246 W at 500 W/m², 88 W at 200 W/m²); extinction under the fixture law only below ≈ 27 W/m². Pre-trip two-string far arc 36.8 A, 31.6 V, 1164 W, node collapses to ≈ 148 V. P3 (both ends) required. Agrees with SUP-C and SUP-E.
+- C1 as framed: D2 clamps the gap at ≤ 15.70 V STC < 18.9 V → cannot discriminate P0/P1/P2; D2-open / outside-loop variant ≈ 500 W sustained → supports appending C1loop (X-009).
+- Energies: ½LI² 936 m pair 0.113 J (0.667 mH; 0.777 mH with ASSUMED 40 m row return); C_in 98.1 J (32.7–327); DC link 1309 J (654–2617); far arc receives ≈ 4.5 J of C_in energy, near arc order 10² J (Z_surge 0.154 Ω, 7.2 kA undamped bound); unclamped 1 µs loop interruption 13.4 kV; clamped t_off 32–320 µs, E_clamp 0.44–4.1 J at 1500 V clamp. Cable lumped validity f < 22.6 kHz for 936 m.
+- C3: 15/60/300 W; 0.87/3.5/17.3 V vs 13.0 V cable thermal drift per 30 K at Impp; lumped thermal steady 95/275/1234 °C (model unphysical above ≈ 200 K rise).
+- Backfeed: dark S20 on a live node passes 0.48–0.73 A reverse (switch closed); S19 lit into a dark-S20 series arc with inverter off: 4.4–6.3 A, 109–163 W.
+- Tokens 182,127; tool uses 38; duration 3407 s.

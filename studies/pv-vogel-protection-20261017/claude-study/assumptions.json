@@ -388,6 +388,60 @@
    "status": "DERIVED from public source",
    "bounds": "law below I_t is an extrapolation",
    "used_by": "arc_model.py validity flag"
+  },
+  {
+   "id": "A-040",
+   "name": "row_return_loop_length_m",
+   "value": 40.0,
+   "origin": "SUP-A (30 modules x ~1.3 m pitch)",
+   "status": "ASSUMED",
+   "bounds": "39-72 m (SUP-C used 72)",
+   "used_by": "within-array loop inductance L_row ~0.109 mH"
+  },
+  {
+   "id": "A-041",
+   "name": "frame_capacitance_per_module_f",
+   "value": "5e-9 to 1.5e-7",
+   "origin": "SUP-A",
+   "status": "ASSUMED/UNKNOWN for fixture module",
+   "bounds": "as stated",
+   "used_by": "earth-fault capacitive current; common-mode transients"
+  },
+  {
+   "id": "A-042",
+   "name": "vmpp_string_cold_v",
+   "value": 1240.0,
+   "origin": "SUP-A scaling Vmpp with the Voc coefficient",
+   "status": "ASSUMED",
+   "bounds": "depends on Vmpp coefficient (A-002/pmpp)",
+   "used_by": "X-001 case (a) cold"
+  },
+  {
+   "id": "A-043",
+   "name": "connector_housing_limit_c",
+   "value": 150,
+   "origin": "SUP-A",
+   "status": "ASSUMED (SUP-E used 200 for damage)",
+   "bounds": "150-200 C",
+   "used_by": "C3 time-to-limit"
+  },
+  {
+   "id": "A-044",
+   "name": "c_in_night_initial_v_and_dc_link_night_state",
+   "value": null,
+   "origin": "none",
+   "status": "UNKNOWN - W03/W28 must declare per scenario",
+   "bounds": "-",
+   "used_by": "night backfeed cases"
+  },
+  {
+   "id": "A-045",
+   "name": "v_directbus_bus_membership",
+   "value": null,
+   "origin": "none",
+   "status": "UNKNOWN (2 vs 24 strings on the bus) - must be declared per scenario; default 2 (MPPT pair)",
+   "bounds": "2-24",
+   "used_by": "C2 V_DIRECTBUS fault current (36.8 A vs 177 A)"
   }
  ]
 }
