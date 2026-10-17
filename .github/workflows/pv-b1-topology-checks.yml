@@ -1,0 +1,49 @@
+name: PV B1 source-path and algebraic-energy screening
+on:
+  pull_request:
+    paths:
+      - 'studies/pv-vogel-protection-20261017/claude-study/barrier-b1/**'
+      - '.github/workflows/pv-b1-topology-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  b1-topology:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout draft
+        uses: actions/checkout@v4
+      - name: Python setup
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Connectivity and energy conservation regression suite
+        working-directory: studies/pv-vogel-protection-20261017/claude-study/barrier-b1
+        run: python -m unittest -v test_b1_network.py test_energy_ledger.py
+      - name: Generate algebra-grade illustrative results
+        working-directory: studies/pv-vogel-protection-20261017/claude-study/barrier-b1
+        run: |
+          python b1_network.py > b1-illustrative-results.json
+          python - <<'PY'
+          import json
+          from energy_ledger import energy_ledger
+          a = json.load(open("b1-illustrative-results.json", encoding="utf-8"))
+          assert a["status"].endswith("NOT_PROTECTION_VALIDATION")
+          assert not a["cases"]["C2-far"]["P3"]["pv_sources"]["S20"]["sustained_path"]
+          assert a["cases"]["C2-far"]["P2"]["pv_sources"]["S20"]["sustained_path"]
+          out = {loc:{act:energy_ledger(loc,act)
+                 for act in ("P0","P1","P1b","P2","P2b","P3")}
+                 for loc in ("C2-far","C2-near")}
+          with open("b1-conditional-energy-ledger.json","w",encoding="utf-8") as w:
+              json.dump(out,w,indent=2,sort_keys=True)
+          print("Model arithmetic only. Not validated hardware protection.")
+          PY
+      - name: Archive algebraic screening receipts (NOT safety evidence)
+        uses: actions/upload-artifact@v4
+        with:
+          name: pv-b1-conditional-source-path-algebra
+          path: |
+            studies/pv-vogel-protection-20261017/claude-study/barrier-b1/b1-illustrative-results.json
+            studies/pv-vogel-protection-20261017/claude-study/barrier-b1/b1-conditional-energy-ledger.json
