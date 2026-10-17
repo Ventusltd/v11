@@ -1,0 +1,42 @@
+name: PV B2 conditional RLC energy conservation
+on:
+  pull_request:
+    paths:
+      - 'studies/pv-vogel-protection-20261017/claude-study/barrier-b2/**'
+      - '.github/workflows/pv-b2-rlc-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  b2-lumped-rlc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run conditional numerical tests
+        working-directory: studies/pv-vogel-protection-20261017/claude-study/barrier-b2
+        run: python -m unittest -v test_pv_rlc_time_domain.py
+      - name: Produce source-resolved transient receipt
+        working-directory: studies/pv-vogel-protection-20261017/claude-study/barrier-b2
+        run: |
+          python pv_rlc_time_domain.py > b2-transient-screening.json
+          python - <<'PY'
+          import json
+          d=json.load(open('b2-transient-screening.json'))
+          assert set(d)=={'C2-far','C2-near'}
+          assert all(set(a)=={'P0','P2','P2b','P3'} for a in d.values())
+          for loc, cases in d.items():
+              for action,x in cases.items():
+                  assert x['status']=='B2_LUMPED_RLC_NUMERICAL_ONLY_NOT_ARC_OR_PROTECTION_VALIDATION'
+                  assert x['energy_residual_relative'] < .01, (loc,action,x['energy_residual_relative'])
+              print(loc,'conditional fault energy [J]:',[(k,v['energy_fault_resistor_j']) for k,v in cases.items()])
+          PY
+      - name: Archive conditional numerical results — not safety evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: pv-b2-conditional-lumped-rlc
+          path: studies/pv-vogel-protection-20261017/claude-study/barrier-b2/b2-transient-screening.json
