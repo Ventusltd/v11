@@ -174,7 +174,7 @@ def run(cfg=Config()):
                             "fault_v":round(fault_v,5),"cap_v":round(y[3],5)})
         # nudge the RK4 midpoint to preserve switch status *during* a step.
         # k stage at trip boundary belongs to post-trip segment.
-        y=_rk4(t+1e-11,y,cfg.step_s,cfg,f,p)
+        y=_rk4(t+(1e-11 if is_off else -1e-11),y,cfg.step_s,cfg,f,p)
     il=.5*sum(p["l_h"][j]*y[j]**2 for j in range(3))
     ec=.5*p["c_f"]*y[3]**2
     ein=ec0+y[4]
