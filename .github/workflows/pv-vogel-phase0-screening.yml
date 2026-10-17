@@ -1,0 +1,37 @@
+name: PV Vogel protection Phase 0 arithmetic screening
+on:
+  pull_request:
+    paths:
+      - 'studies/pv-vogel-protection-20261017/**'
+      - '.github/workflows/pv-vogel-phase0-screening.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-screening:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Eleven arithmetic and key ledger regression tests
+        shell: bash
+        run: |
+          cd studies/pv-vogel-protection-20261017
+          python -m unittest -v test_vogel_study.py
+      - name: Generate non-safety screening result
+        shell: bash
+        run: |
+          cd studies/pv-vogel-protection-20261017
+          python vogel_study.py > phase0-summary.json
+          python -c "import json; d=json.load(open('phase0-summary.json')); assert d['total_cases']==2560; assert d['status']=='ILLUSTRATIVE_SCREENING_ONLY_NOT_A_PROTECTION_VALIDATION'; print('Generated',d['total_cases'],'screening cases')"
+      - name: Archive provisional numeric results
+        uses: actions/upload-artifact@v4
+        with:
+          name: pv-vogel-phase0-non-safety-screens
+          path: studies/pv-vogel-protection-20261017/phase0-summary.json
