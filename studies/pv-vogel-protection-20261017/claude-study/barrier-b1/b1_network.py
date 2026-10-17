@@ -26,7 +26,10 @@ def _edges(protection: str, f: dict):
         raise ValueError("unknown action")
     # Only positive conductors carry the two explicitly drawn series switches.
     # minus conductors remain connected; residual voltage/dual earth faults unmodelled.
-    arr_open = protection in ("P2b", "P3")
+    # P1 opens the S20 generator output outside all substring bypass loops.
+    # This is only an electrical cut-set equivalent to array-end P2b;
+    # their semiconductor voltage stress and hardware risk are NOT equivalent.
+    arr_open = protection in ("P1", "P2b", "P3")
     inv_open = protection in ("P2", "P3")
     e = []
     for pole in ("p", "n"):
