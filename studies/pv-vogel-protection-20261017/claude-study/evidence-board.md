@@ -51,3 +51,13 @@ Workers (model `opus`), waves aligned to barriers:
 - First SW-M-OUT to open under C2-far sees 30·Voc − V_arc = 1332 V STC / 1448 V at −10 °C (input to X-001). Loop commutation floor L·I/V_clamp = 23–115 µs ≫ 4.4 µs wave delay (X-003).
 - Fixture flag: 936 m × 6 mm² home-run dissipates 1.9 kW ≈ 9.6 % of string Pmpp — cable sizing of the illustrative fixture is itself questionable (→ X-010).
 - Objections O-1..O-5 logged. Tokens 156,764; tool uses 23; duration 1598 s.
+
+### R-03 SUP-E (model `fable`, Track E supervisor, BLOCK authority) — completed 2026-10-17 ~20:55 BST
+- Files: review/track-E-charter-and-initial-attack.md (206 lines); review/track_e_screen.py (deterministic algebra, fixture-only, self-checks OK).
+- Ran: `python3 -I review/track_e_screen.py` PASS. WebFetch: IEC 27362 and 110893 public abstracts, Sandia SAND2012-4443C, NREL ESW2019-13, MDPI reference; IOP S–O original BLOCKED (not used).
+- **BLOCK E-C1-a (standing):** with the fixture arc law (≥ 18.9 V at I_min, 1 mm) the in-loop C1 arc cannot be sustained because the substring can present at most ≈ 16.98 V (Voc_ss,cold + Vf) → P0 self-extinguishes by construction and all C1 candidate comparisons are void; with a 12–13 V metallic-contact minimum (NOT VERIFIED) the branch flips to a sustained ≈ 225 W arc. Fixture is internally inconsistent (V_ignite 15 V vs law ≥ 18.9 V). No C1 energy claim passes B2 until W07 states a sourced intercept. Independently agrees with SUP-C (X-009).
+- **P1 100 V-class FALSIFIED for any single-device opening:** SW-M-OUT open with node at Vmpp → 207.8/228.6/255.4 V (−10/25/70 °C); node collapsed → 1343–1459 V; all-30 simultaneous opening → 7.6 V but survival window ≈ 144 µs skew (E_AS 0.3 J ASSUMED). Input to X-001.
+- C2-far: after SW-STR-INV opens, S20 keeps ≈ 18.4 A into the arc → P2 alone is a halving (5.36 → 2.68 kJ over 5 s, illustrative), not containment; P3 residual ≈ 5 J. Agrees with SUP-C (X-002 direction).
+- C3: string-level electrical detection FALSIFIED (ratios 0.1/0.4/2.0 vs 20 K drift, all < 3); module-lead-span sensing survives only if sense points span the mated pair; C3 action must be alarm/derate, not trip (→ X-008 resolution path).
+- Lifecycle screen (algebra, ASSUMED): dies 1440/720/384/48; required unit failure rate for ≤ 1 added outage/yr 159–4756 FIT; P1 string-outage rate scales 30× λ_unit; 1.65 W/die free-air at 62 K/W → Tj ≈ 187 °C in an 85 °C box (not feasible without a thermal path). NO reliability/lifetime number permitted (UNKNOWN).
+- Objections X-E1..X-E5 logged. Tokens 180,221; tool uses 46; duration 2698 s.

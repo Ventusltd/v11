@@ -316,6 +316,78 @@
    "status": "ASSUMED; fixture pitch 1.308 m gives 39 m \u2014 W03 to reconcile",
    "bounds": "39-72 m",
    "used_by": "within-array loop inductance"
+  },
+  {
+   "id": "A-032",
+   "name": "bypass_diode_vf_v",
+   "value": 0.45,
+   "origin": "SUP-E/fixture",
+   "status": "ASSUMED",
+   "bounds": "0.3-0.8 V",
+   "used_by": "in-loop arc voltage cap"
+  },
+  {
+   "id": "A-033",
+   "name": "conductor_temp_swing_k",
+   "value": 20,
+   "origin": "SUP-E",
+   "status": "ASSUMED (SUP-C used 40 K)",
+   "bounds": "20-60 K",
+   "used_by": "C3 detectability"
+  },
+  {
+   "id": "A-034",
+   "name": "connector_damage_temp_c",
+   "value": 200,
+   "origin": "SUP-E",
+   "status": "ASSUMED",
+   "bounds": "150-250 C",
+   "used_by": "C3 time-to-damage"
+  },
+  {
+   "id": "A-035",
+   "name": "mosfet_avalanche_energy_j",
+   "value": 0.3,
+   "origin": "SUP-E",
+   "status": "ASSUMED",
+   "bounds": "device dependent",
+   "used_by": "P1 single-open survival window"
+  },
+  {
+   "id": "A-036",
+   "name": "r_th_ja_unheatsunk_k_per_w",
+   "value": 62,
+   "origin": "PR5 review / SUP-E",
+   "status": "ASSUMED",
+   "bounds": "40-70 K/W TO-247 free air",
+   "used_by": "Tj screen"
+  },
+  {
+   "id": "A-037",
+   "name": "junction_box_ambient_c",
+   "value": 85,
+   "origin": "SUP-E",
+   "status": "ASSUMED",
+   "bounds": "60-95 C",
+   "used_by": "Tj screen"
+  },
+  {
+   "id": "A-038",
+   "name": "service_target_added_outages_per_year",
+   "value": 1.0,
+   "origin": "SUP-E proposed engineering target",
+   "status": "ASSUMED (owner approval required)",
+   "bounds": "-",
+   "used_by": "required unit FIT screen"
+  },
+  {
+   "id": "A-039",
+   "name": "arc_law_transition_current_a",
+   "value": "I_t = 10 + 0.2*gap_mm (NREL ESW2019-13 form)",
+   "origin": "S-012",
+   "status": "DERIVED from public source",
+   "bounds": "law below I_t is an extrapolation",
+   "used_by": "arc_model.py validity flag"
   }
  ]
 }
