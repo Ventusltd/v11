@@ -1,0 +1,15 @@
+# Contradiction and challenge register — cycle 1 (append-only)
+
+Rules: a disagreement is closed only by evidence (a file path + test) or by an explicit `UNRESOLVED` entry with the
+blocking experiment named. Never closed by vote, seniority or agent count. Track E may BLOCK.
+
+| ID | Raised by | Against | Claim challenged | Evidence offered | Status | Resolution / blocking experiment |
+|---|---|---|---|---|---|---|
+| X-001 | Orchestrator (from brief §6) | Track B | "A module-local series switch sees only module Voc when open" | Phase 0 README, PR5 review 1 | OPEN | Track A topology must solve post-trip node voltage for SW-M-OUT with inverter side at Vmpp, at 0 V (night/discharged) and under a parallel fault; result decides device voltage class |
+| X-002 | Orchestrator (from brief §3) | Track C | "A parallel arc at the far end can be cleared by the string breaker at the inverter end" | none yet | OPEN | Track A source graph for C2-far; Track B/C must show which sources remain after SW-STR-INV opens |
+| X-003 | Orchestrator (from brief §3) | Track B | "Sub-microsecond off-time is useful for a remote fault" | Phase 0: 4.415 us one-way wave delay at 936 m | OPEN | Track D/A line model: compare detection arrival time vs commanded off-time; Track B clamp energy with loop inductance |
+| X-004 | Orchestrator (from brief §7) | Track B | "IMZA65R027M1H is a 1700 V part" | PR5 review: manufacturer page says 650 V | REJECTED (carried) | Do not reuse; any device named must have a verified datasheet URL and voltage class |
+| X-005 | Orchestrator (from brief §7) | Track C | "0.1 ohm 1 W shunt is acceptable at 17.31 A" | 0.1*17.31^2 = 29.96 W | REJECTED (carried) | Sensing chain must separate DC current (low-mOhm Kelvin shunt or magnetic sensor) from HF arc channel |
+| X-006 | Orchestrator (from brief §4) | Track D | "Vogel sampling is inherently superior" | none | OPEN | Equal-budget benchmark vs Sobol/LHS/random/grid with synthetic counterexamples; report missed cases |
+| X-007 | Orchestrator (from brief §2) | All | "24 strings form one parallel bus" | Fixture: 12 MPPT x 2 strings | REJECTED (carried) | Only the paired string shares the MPPT node; V_DIRECTBUS variant is adversarial, not default |
+| X-008 | Orchestrator (from brief §12) | Track C | "A hot connector without arc can be detected by current/HF sensing" | none | OPEN | Track C must quantify detectability of 0.05/0.2/1.0 ohm against cable thermal drift; if undetectable, say so |
