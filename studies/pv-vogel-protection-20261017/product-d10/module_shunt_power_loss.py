@@ -129,6 +129,60 @@ def isolated_string_oc_v(failed_open=0,r_hot=.005):
     if not 0<=failed_open<=MODULES: raise ValueError("invalid failures")
     return failed_open*VOC+(MODULES-failed_open)*ISC*r_hot
 
+
+def sunlight_powered_bootstrap(illumination=1., mode="terminal_15v_gate",
+                              elapsed_s=1., reserve_cap_f=.001,
+                              fault_clear=True, full_sun_harvester_w=.25,
+                              conversion_eff=.60, control_w=.005):
+    """Counterfactual sunlight-powered reset of an unpowered *latched shunt*.
+
+    Sun is present but terminal-voltage sunlight detection (>15V, 2025
+    disclosure) is blind while terminal short is held (~0.092V). Additional
+    hypothetical photovoltaic-side harvester OR a verified converter starting
+    below ~100mV could solve energy, but neither exists in our tested circuit.
+    Clearance indication is an EXTERNAL ASSUMPTION; do not restart on light alone.
+    """
+    if mode not in ("terminal_15v_gate","independent_solar_harvester",
+                    "hypothetical_ultra_low_v_shunt_boost"):
+        raise ValueError("unknown proposed supply path")
+    if not 0<=illumination<=1 or elapsed_s<0 or reserve_cap_f<=0:
+        raise ValueError("invalid illumination, duration or reserve")
+    if not 0<=conversion_eff<=1 or full_sun_harvester_w<0 or control_w<0:
+        raise ValueError("invalid hypothetical efficiency / loads")
+    pv_terminal_v = steady_v(.005)*illumination
+    if mode=="terminal_15v_gate":
+        harvested_w = 0. if pv_terminal_v<15 else full_sun_harvester_w*illumination*conversion_eff
+    elif mode=="independent_solar_harvester":
+        harvested_w = full_sun_harvester_w*illumination*conversion_eff
+    else:
+        # Hypothetical ultra-low-input converter, not an identified device:
+        # maximum tap fraction .12 of bypass I2R, 40% efficiency and startup
+        # voltage >=50mV, while deliberately retaining shunt functionality.
+        harvested_w = (.12*.40*(ISC*illumination*pv_terminal_v)
+                       if pv_terminal_v>=.05 else 0.)
+    net_w = max(0.,harvested_w-control_w) if harvested_w>0 else 0.
+    cap_e_full_j = .5*reserve_cap_f*12.**2
+    cap_e_usable_j = .5*reserve_cap_f*(12.**2-6.**2)
+    available_j = min(cap_e_full_j,net_w*elapsed_s)
+    time_to_full_s = cap_e_full_j/net_w if net_w>0 else None
+    # A reset path is only conditionally possible if the sunlight-powered
+    # reservoir has fully recharged AND an INDEPENDENT fault clear check exists.
+    return {
+        "mode":mode, "illumination_fraction":illumination,
+        "terminal_voltage_while_shunted_v":float(pv_terminal_v),
+        "original_sun_gate_above_15v":bool(pv_terminal_v>=15.),
+        "hypothetical_harvest_net_w":float(net_w),
+        "full_reserve_energy_j":cap_e_full_j,
+        "usable_12_to_6v_j":cap_e_usable_j,
+        "time_to_full_reserve_s":time_to_full_s,
+        "elapsed_s":elapsed_s,
+        "reservoir_full":bool(available_j>=cap_e_full_j),
+        "fault_clear_assumed":bool(fault_clear),
+        "conditional_reset_possible":bool(
+            cap_e_usable_j>=.05 and available_j>=cap_e_full_j and fault_clear),
+        "real_harvester_or_fault_clearance_circuit_verified":False,
+    }
+
 def report():
     base=close_smooth()
     mechanisms=[
@@ -168,13 +222,19 @@ def report():
         "all_shorts_or_failed_open_30_module_isolated_string_v":{
             str(f):isolated_string_oc_v(f) for f in (0,1,5,30)},
         "36_control_ramp_stress_cases":sweep,
+        "solar_bootstrap_counterexamples": [
+            sunlight_powered_bootstrap(mode=mode,elapsed_s=1.)
+            for mode in ("terminal_15v_gate","independent_solar_harvester",
+                         "hypothetical_ultra_low_v_shunt_boost")],
+        "original_sun_logic_source": "https://github.com/Ventusltd/pv-arc-protection-circuit/blob/main/Open-Hardware-Disclosure.md; self-energised from >15V PV voltage, originally fail OPEN on loss of power",
         "abrupt_short_R_only_unphysical_initial_cap_current_a":VMPP/(.005+.001),
         "abrupt_model_warning":"R-only peak is NOT a prediction: module capacitance unknown and wiring L, ESR, SOA and gate speed missing",
-        "conclusion":"Near-zero terminal voltage under assumed shunt is supported; unpowered holding is mechanism-dependent; safe autonomous reset without any auxiliary/bootstrap power is NOT established",
+        "conclusion":"Near-zero terminal voltage under assumed shunt is supported; sunlight is the primary energy source, but original PV-terminal >15V detector browns out during hard short. A separate solar harvester or verified ultra-low-voltage conversion could recharge an unpowered latch, conditional on fault-clear confirmation. Neither implementation nor autonomous reset is validated.",
         "unverified":[
             "gate/coil/latch actual SOA and 30-40A backfeed",
             "hot contact/wire thermal endurance and 30-year life",
-            "PV power harvest or autonomous sunrise reboot while shorted",
+            "sunlight-powered cold-start/reset circuit while module terminals are shunted",
+            "independent analogue fault-clear evidence before controlled reopening",
             "real gate drive shaping, module capacitance and Ldi/dt",
             "inverter/cable energy, series/parallel arc plasma and safe isolation",
             "thermal hotspot, cell reverse breakdown and leakage to PE",
@@ -204,7 +264,8 @@ if __name__=="__main__":
             {"mechanism":x["mechanism"],
              "remain_short":x["remains_shorted_when_unpowered"]}
             for x in q["power_loss_logic"]],
-        "autonomous_reset_tested":False,
+        "sun_bootstrap_counterfactual_modelled":True,
+        "autonomous_reset_verified_in_hardware":False,
         "actual_arc_or_device_validation":False,
         "receipt_sha256":q["sha256"],
     },indent=2))
