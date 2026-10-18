@@ -1,0 +1,151 @@
+{
+  "schema": "v11.pv.module-protection.billion/1",
+  "namespace": "v11.pv.d4-billion/v1",
+  "size": 1000000000,
+  "axes": [
+    {
+      "name": "architecture",
+      "values": [
+        "passive_baseline",
+        "active_substring_pair",
+        "module_output_pair",
+        "hybrid_pair"
+      ]
+    },
+    {
+      "name": "fault_zone",
+      "values": [
+        "cell_series",
+        "substring_ribbon",
+        "bypass_diode",
+        "junction_solder",
+        "positive_connector",
+        "negative_connector",
+        "lead_parallel_short",
+        "string_cable_parallel",
+        "quiet_hot_contact",
+        "module_to_frame_leakage"
+      ]
+    },
+    {
+      "name": "passive_bypass_state",
+      "values": [
+        "healthy",
+        "failed_open",
+        "failed_short",
+        "high_series_r",
+        "high_reverse_leak"
+      ]
+    },
+    {
+      "name": "irradiance_profile",
+      "values": [
+        "full_1000",
+        "middle_10_percent",
+        "middle_dark",
+        "uniform_100",
+        "all_dark"
+      ]
+    },
+    {
+      "name": "cell_temperature_c",
+      "values": [
+        -30,
+        -10,
+        25,
+        65,
+        85
+      ]
+    },
+    {
+      "name": "externally_forced_current_a",
+      "values": [
+        0,
+        3,
+        10,
+        17.31,
+        25
+      ]
+    },
+    {
+      "name": "assumed_hot_pair_r_ohm",
+      "values": [
+        0.002,
+        0.005,
+        0.02,
+        0.05
+      ]
+    },
+    {
+      "name": "assumed_mppt_input_c_f",
+      "values": [
+        0,
+        0.00005,
+        0.00015,
+        0.0005,
+        0.001
+      ]
+    },
+    {
+      "name": "assumed_trip_latency_s",
+      "values": [
+        0.000002,
+        0.00002,
+        0.0002,
+        0.002,
+        0.02
+      ]
+    },
+    {
+      "name": "assumed_bus_state",
+      "values": [
+        "isolated",
+        "mppt_1143_9_v",
+        "collapsed_0_v",
+        "backfed_1500_v",
+        "reversed_source_1500_v"
+      ]
+    },
+    {
+      "name": "controller_state",
+      "values": [
+        "healthy",
+        "lost_gate_power",
+        "stuck_on",
+        "nuisance_command"
+      ]
+    },
+    {
+      "name": "fault_resistance_proxy_ohm",
+      "values": [
+        0.05,
+        0.075,
+        0.1,
+        0.15,
+        0.2,
+        0.3,
+        0.5,
+        0.8,
+        1,
+        1.5,
+        2,
+        3,
+        5,
+        8,
+        12,
+        20,
+        30,
+        50,
+        80,
+        120
+      ]
+    }
+  ],
+  "kuiper_math": {
+    "G32": 2654435769,
+    "angle": "2*pi*((key*G32) mod 2^32)/2^32",
+    "radius": "sqrt(key+0.5)",
+    "source_blob": "c506a252f27fa8b80e849eb63bbb6699eaf674f0"
+  },
+  "evidence_grade": "NOT_A_VALIDATED_ARC_OR_DIELECTRIC_MODEL"
+}
