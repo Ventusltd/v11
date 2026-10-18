@@ -1,0 +1,74 @@
+name: PV D6 module-local versus external fault energy
+on:
+  pull_request:
+    paths:
+      - 'studies/pv-vogel-protection-20261017/product-d6/**'
+      - '.github/workflows/pv-d6-physical-fault-zones.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ngspice-fault-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Checkout research branch, do not write to V11 main
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python for tests and receipts
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Inspect original D6 material under IEC public-release policy
+        working-directory: studies/pv-vogel-protection-20261017/product-d6
+        run: python ../product-d2/standards_license_guard.py .
+      - name: Structural tests and deliberate false-isolation test
+        working-directory: studies/pv-vogel-protection-20261017/product-d6
+        run: python -m unittest -v test_d6_fault_zone.py
+      - name: Install actual ngspice and identify solver
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ngspice
+          ngspice --version
+      - name: Run 12 actual electrical circuit simulations and conservation checks
+        working-directory: studies/pv-vogel-protection-20261017/product-d6
+        run: python d6_fault_zone_spice.py --run --out results
+      - name: Verify fault-site energy and deliberately limited interpretation
+        working-directory: studies/pv-vogel-protection-20261017/product-d6
+        run: |
+          python - <<'PY'
+          import json, math
+          r=json.load(open('results/observed-spice-results.json',encoding='utf8'))
+          assert r['status']=='NGSPICE_GENERIC_OHMIC_FAULT_ZONE_SCREEN_NOT_ARC_TEST'
+          assert r['cases_executed']==12
+          assert not r['arc_extinction_demonstrated']
+          assert not r['mppt_behaviour_modelled']
+          assert not r['dielectric_qualified']
+          assert len(r['paired_findings'])==6
+          extern=[x for x in r['paired_findings'] if x['fault_zone']=='outside_module']
+          assert len(extern)==2
+          for pair in extern:
+              assert pair['external_connector_not_isolated']
+              expected=17.31**2*.2*140e-6
+              assert abs(pair['energy_external_off_j']-expected)<.01*expected
+              assert abs(pair['energy_external_on_j']-expected)<.01*expected
+              print('External hot contact remains energised by 17.31 A source:',pair['irradiance_ss2_w_m2'],
+                    'off/on joules',pair['energy_external_off_j'],pair['energy_external_on_j'])
+          assert all(math.isfinite(v) for item in r['case_results']
+                     for v in item['measurements'].values())
+          PY
+      - name: Final IEC single-user copyright guard before evidence release
+        working-directory: studies/pv-vogel-protection-20261017/product-d6
+        run: python ../product-d2/standards_license_guard.py .
+      - name: Archive source decks, actual solver logs and compact results
+        uses: actions/upload-artifact@v4
+        with:
+          name: pv-d6-actual-ngspice-ohmic-fault-zones-not-arc-certification
+          path: |
+            studies/pv-vogel-protection-20261017/product-d6/results/manifest.json
+            studies/pv-vogel-protection-20261017/product-d6/results/observed-spice-results.json
+            studies/pv-vogel-protection-20261017/product-d6/results/*.cir
+            studies/pv-vogel-protection-20261017/product-d6/results/*.log
