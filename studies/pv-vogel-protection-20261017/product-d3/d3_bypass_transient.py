@@ -74,9 +74,9 @@ Cgd2 gate d2 1n
             transistor=transistor.replace(
                 "VDRIVE drv mid PULSE(0 12 40u 100n 100n 100u 500u)",
                 "VDRIVE drv mid DC 0")
-        vgs="v(gate,mid)"
-        vds1="v(d1,mid)"
-        vds2="v(d2,mid)"
+        vgs="v(gate)-v(mid)"
+        vds1="v(d1)-v(mid)"
+        vds2="v(d2)-v(mid)"
     else:
         # Intentionally compare the improper single FET orientation. Its
         # source/body at plus makes its body diode bypass illuminated PV when OFF.
@@ -91,9 +91,9 @@ Cgd1 gate d1 1n
             transistor=transistor.replace(
                 "VDRIVE drv plus PULSE(0 12 40u 100n 100n 100u 500u)",
                 "VDRIVE drv plus DC 0")
-        vgs="v(gate,plus)"
-        vds1="v(d1,plus)"
-        vds2="v(plus,plus)"  # zero, no second FET
+        vgs="v(gate)-v(plus)"
+        vds1="v(d1)-v(plus)"
+        vds2="v(plus)-v(plus)"  # zero, no second FET
     welded="RFAILED plus 0 .005" if control_fault=="stuck_short" else ""
     Iph=18.402067*g/1000.0
     expr={
