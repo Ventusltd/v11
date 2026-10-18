@@ -58,7 +58,7 @@ assert TOTAL==1_073_741_824
 assert math.gcd(FIBONACCI_44,TOTAL)==1
 
 def decode_offsets(case_index:int):
-    if not isinstance(case_index,int) or not 0<=case_index<TOTAL:
+    if isinstance(case_index,bool) or not isinstance(case_index,int) or not 0<=case_index<TOTAL:
         raise ValueError("case_index must be int within declared 2^30 lattice")
     out=[]
     for r in RADICES:
