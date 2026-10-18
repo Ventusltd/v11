@@ -62,3 +62,42 @@ Only previously public source-model parameters are present.
 Confidential standards and privately shared inverter documentation
 are excluded. V11 main is untouched and this work remains a
 stacked draft PR on D9.
+
+
+## Correction: original 2025 sunlight logic is the intended energy source
+
+The publicly disclosed source at
+https://github.com/Ventusltd/pv-arc-protection-circuit/blob/main/Open-Hardware-Disclosure.md
+explicitly uses PV terminal voltage above about 15 V as a sunlight-present
+analogue gate and powers its ORIGINAL **series-opening** circuit from PV.
+It additionally says that its original series circuit fails OPEN when
+power is lost. This is not the same circuit as the NEW normally-short
+hypothesis.
+
+**Sunlight can provide the restart energy. It is not necessary to assume
+a mains-fed or external supply.** The physical question is how to access
+it while the active whole-module terminal shunt holds PV+ to PV− at
+~0.09 V: the original >15 V terminal gate would see no voltage.
+
+The additional `sunlight_powered_bootstrap` tests compare:
+
+1. **Original 15 V PV-terminal gate:** cannot sense light or supply the
+   control circuit from the *hard-shorted* terminal voltage.
+2. **Independent auxiliary sun harvester:** one possible solar-sourced
+   means to charge a control-energy reservoir while the module stays
+   shunted. Illustrative 0.25 W full-sun harvester, 60% power conversion,
+   5 mW control draw and 1000 uF/12 V reservoir; these are NOT
+   identified components or hardware measurements.
+3. **Hypothetical converter from the 0.09 V shunt drop:** solar-powered
+   without a separate cell, but assumes conversion from below 100 mV
+   with unknown starting circuit, efficiency and thermal impact.
+   This is a falsification target, NOT a known viable design.
+
+The model's conditional *reset possible* result requires the reservoir
+to charge AND an independently credible **fault-cleared** indication.
+Illumination alone is not permission to re-energise a damaged string.
+The analog sensing and safe reopening mechanism are not demonstrated.
+
+**Next test:** simulate the harvest/start circuit with real device
+datasheets, including a shunted cold start, then test the actuator
+releasing and promptly re-closing the shunt under persistent faults.
