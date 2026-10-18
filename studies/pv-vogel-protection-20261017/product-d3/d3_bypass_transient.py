@@ -100,9 +100,9 @@ Cgd1 gate d1 1n
        "vsub":"v(plus)",
        "ibyp":"i(VDBS)",
        "isw":"i(VSW1)",
-       "vgs":vgs,
-       "vds1":vds1,
-       "vds2":vds2,
+       "vgs":"vgs_wave",
+       "vds1":"vds1_wave",
+       "vds2":"vds2_wave",
     }
     measures=[]
     for suffix,t in (("off",20),("on",100),("after",200)):
@@ -137,6 +137,9 @@ ILOAD plus 0 DC 17.31
 .control
 set noaskquit
 tran 0.05u 240u 0 0.05u
+let vgs_wave = ${vgs}
+let vds1_wave = ${vds1}
+let vds2_wave = ${vds2}
 {chr(10).join(measures)}
 quit
 .endc
