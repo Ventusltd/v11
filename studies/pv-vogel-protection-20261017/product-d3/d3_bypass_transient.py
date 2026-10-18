@@ -107,14 +107,16 @@ Cgd1 gate d1 1n
     measures=[]
     for suffix,t in (("off",20),("on",100),("after",200)):
         for name,e in expr.items():
-            measures.append(f".meas tran {name}_{suffix} FIND {e} AT={t}u")
+            measures.append(f"meas tran {name}_{suffix} FIND {e} AT={t}u")
     # Signed switch current can be negative in full sun: energy value from
     # computed terminal drop x current is positive for passive shunt flow.
     # The two ideal 0V sense sources do not represent shunt sensing hardware.
     measures+= [
-       ".meas tran sw_power_on FIND par('-v(plus)*i(VSW1)') AT=100u",
-       ".meas tran diode_power_on FIND par('-v(plus)*i(VDBS)') AT=100u",
-       ".meas tran peak_overshoot_v MAX v(plus) FROM=40u TO=140u",
+       "let p_shunt_screen = -v(plus)*i(vsw1)",
+       "let p_diode_screen = -v(plus)*i(vdbs)",
+       "meas tran sw_power_on FIND p_shunt_screen AT=100u",
+       "meas tran diode_power_on FIND p_diode_screen AT=100u",
+       "meas tran peak_overshoot_v MAX v(plus) FROM=40u TO=140u",
     ]
     return f"""* {STUDY_ID}: {cid}
 * DO NOT USE FOR ELECTRICAL HARDWARE OR FIELD PV INSTALLATION
