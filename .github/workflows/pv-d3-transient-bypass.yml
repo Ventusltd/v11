@@ -1,0 +1,64 @@
+name: PV D3 transient bypass switch and diode fault screens
+on:
+  pull_request:
+    paths:
+      - 'studies/pv-vogel-protection-20261017/product-d3/**'
+      - '.github/workflows/pv-d3-transient-bypass.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  actual-ngspice-transient:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout unmerged research branch
+        uses: actions/checkout@v4
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check IEC public release policy without reading copyrighted PDFs
+        working-directory: studies/pv-vogel-protection-20261017/product-d3
+        run: |
+          python ../product-d2/standards_license_guard.py .
+      - name: Check generated circuit topology and limitations
+        working-directory: studies/pv-vogel-protection-20261017/product-d3
+        run: python -m unittest -v test_d3_bypass_transient.py
+      - name: Install ngspice
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ngspice
+          ngspice --version
+      - name: Execute transistor-level ngspice switching runs
+        working-directory: studies/pv-vogel-protection-20261017/product-d3
+        run: python d3_bypass_transient.py --run --out results
+      - name: Check actual node voltages and failure-state receipts
+        working-directory: studies/pv-vogel-protection-20261017/product-d3
+        run: |
+          python - <<'PY'
+          import json
+          a=json.load(open('results/transient-results.json'))
+          assert len(a['cases']) == 9
+          assert a['status']=='ACTUAL_SPICE_RUN_GENERIC_SURROGATES_NOT_HARDWARE'
+          m=a['decision_screen']
+          assert m['pair_fets_off_full_sun_v']>5
+          assert m['single_fet_off_full_sun_v']<1.5
+          assert m['pair_shaded_switch_a_at_100us']>10
+          print('D3 numerical screening receipts:',json.dumps(m,indent=2))
+          print('NOT validated MOSFET, thermal, DC arc or dielectric design')
+          PY
+      - name: Recheck public artefact release
+        working-directory: studies/pv-vogel-protection-20261017/product-d3
+        run: python ../product-d2/standards_license_guard.py .
+      - name: Archive simulator decks and observed transient measurements
+        uses: actions/upload-artifact@v4
+        with:
+          name: pv-d3-substring-transient-generic-fet-not-qualification
+          path: |
+            studies/pv-vogel-protection-20261017/product-d3/results/cases.json
+            studies/pv-vogel-protection-20261017/product-d3/results/transient-results.json
+            studies/pv-vogel-protection-20261017/product-d3/results/*.cir
+            studies/pv-vogel-protection-20261017/product-d3/results/*.log
