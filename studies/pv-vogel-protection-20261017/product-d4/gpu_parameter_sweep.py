@@ -74,7 +74,7 @@ def independent_scalar(index):
     shunt_loss=math.pow(current*math.sqrt(r_hot),2)*duty
     if shunt_loss>LOSS_BUDGET_W: return 1
     passive_diode=(vf*current)*duty
-    if duty==0: return 3
+    if duty==0 or current==0: return 3
     if math.isclose(shunt_loss,passive_diode,rel_tol=1e-12,abs_tol=1e-12):
         return 4
     return 3 if shunt_loss>=passive_diode else 0
@@ -95,7 +95,7 @@ def kernel(xp, axes):
           1e-12*xp.maximum(1.0,xp.maximum(xp.abs(p),xp.abs(diode_p))))
     return xp.where(v>=rated,2,
                     xp.where(p>LOSS_BUDGET_W,1,
-                             xp.where(d==0,3,
+                             xp.where((d==0)|(i==0),3,
                                       xp.where(near,4,
                                                xp.where(p>=diode_p,3,0))))).astype(xp.int64)
 
