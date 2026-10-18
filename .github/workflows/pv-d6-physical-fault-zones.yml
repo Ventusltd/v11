@@ -27,7 +27,7 @@ jobs:
         run: python ../product-d2/standards_license_guard.py .
       - name: Structural tests and deliberate false-isolation test
         working-directory: studies/pv-vogel-protection-20261017/product-d6
-        run: python -m unittest -v test_d6_fault_zone.py
+        run: python -m unittest -v test_d6_fault_zone.py test_adaptive_kuiper_loop.py
       - name: Install actual ngspice and identify solver
         run: |
           sudo apt-get update -qq
@@ -60,6 +60,28 @@ jobs:
           assert all(math.isfinite(v) for item in r['case_results']
                      for v in item['measurements'].values())
           PY
+      - name: Execute 3 iterations of CPU screen, Kuiper log and adaptive algorithms
+        working-directory: studies/pv-vogel-protection-20261017/product-d6
+        run: |
+          python adaptive_kuiper_loop.py --backend cpu --iterations 3 --cases-per-iteration 768 --spice-results results/observed-spice-results.json --out results/iteration_loop
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from adaptive_kuiper_loop import verify_log
+          p=Path("results/iteration_loop")
+          d=json.loads((p/"loop-receipt.json").read_text())
+          assert d["iterations"]==3
+          assert d["actually_evaluated_distinct_synthetic_cases"]==2304
+          assert not d["CuPy_GPU_executed"]
+          assert d["physical_D6_spice"]["cases_executed"]==12
+          assert d["physical_D6_spice"]["no_external_isolation_evidence"]
+          assert d["physical_netlists_run_by_this_loop"]==0
+          assert d["global_Kuiper_keys_allocated"]==0
+          assert sum(sum(map(int,round["observed_counts"].values())) for round in d["cycles"])==2304
+          assert verify_log(p/"kuiper-evidence.jsonl")["unique_cases"]==2304
+          print("3 bounded cycles, 2,304 distinct synthetic cases, linked 12 D6 SPICE results.")
+          print("No GPU run, no true arc extinction or actual loss-of-current proof.")
+          PY
       - name: Final IEC single-user copyright guard before evidence release
         working-directory: studies/pv-vogel-protection-20261017/product-d6
         run: python ../product-d2/standards_license_guard.py .
@@ -72,3 +94,4 @@ jobs:
             studies/pv-vogel-protection-20261017/product-d6/results/observed-spice-results.json
             studies/pv-vogel-protection-20261017/product-d6/results/*.cir
             studies/pv-vogel-protection-20261017/product-d6/results/*.log
+            studies/pv-vogel-protection-20261017/product-d6/results/iteration_loop/*
