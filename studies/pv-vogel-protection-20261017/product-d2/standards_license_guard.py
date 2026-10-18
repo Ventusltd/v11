@@ -15,7 +15,7 @@ PUBLIC_TEXT_EXTENSIONS={".md",".txt",".csv",".json",".cir",".log",".py",
 RESTRICTED_EXTENSIONS={".pdf",".png",".jpg",".jpeg",".tiff",".tif",".webp"}
 RESTRICTED_NAMES=re.compile(
     r"(?:^|[_\-\s])(?:iec|bs[\s_\-]*en[\s_\-]*iec)\s*[_\-\s]*"
-    r"(?:62548|62738|60664|61730)\b",re.I)
+    r"(?:62548|62738|60664|61730)(?=$|[_.\-\s])",re.I)
 # Encode short watermark clues without shipping an actual watermark text block.
 MARKER1="Cus"+"tomer:"
 MARKER2="Lic"+"ence:"
