@@ -1,0 +1,56 @@
+name: V11 D8 original paper vs active bypass static physics audit
+on:
+  pull_request:
+    paths:
+      - 'studies/pv-vogel-protection-20261017/product-d8/**'
+      - '.github/workflows/pv-d8-disclosure-active-bypass.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-grounded-parameter-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout original public V11 research only
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Guard against copyrighted IEC/publication content
+        working-directory: studies/pv-vogel-protection-20261017/product-d8
+        run: python ../product-d2/standards_license_guard.py .
+      - name: Test both protection philosophies and independent circuit arithmetic
+        working-directory: studies/pv-vogel-protection-20261017/product-d8
+        run: python -m unittest -v test_original_paper_comparison.py
+      - name: Run comparative modelling and emit bounded results
+        working-directory: studies/pv-vogel-protection-20261017/product-d8
+        run: |
+          python original_paper_comparison.py --output results/comparison.json
+          python - <<'PY'
+          import json,math
+          s=json.load(open('results/comparison.json',encoding='utf8'))
+          assert math.isclose(s['original_losses_at_impp']['total_per_module_w'],46.1439594)
+          assert math.isclose(s['all_modules_active_bypass_oc_v_isolated'],2.76)
+          assert math.isclose(s['one_of_30_bypasses_fails_open_oc_v_isolated'],48.418)
+          assert len(s['peer_connected_results'])==5
+          assert all(x['inter_string_backfeed_a']>0 for x in s['peer_connected_results'])
+          assert len(s['iv_uncertainty_results_300m'])==5
+          assert len(s['not_validated'])>=6
+          assert 'NOT OEM' in s['assumed_150uf_bus_energy_j']['CAUTION']
+          print('D8 source-grounded static comparisons complete.')
+          print('No real arc, converter backfeed transient, device qualification or IEC assertion.')
+          PY
+      - name: Recheck release guard before artifact upload
+        working-directory: studies/pv-vogel-protection-20261017/product-d8
+        run: python ../product-d2/standards_license_guard.py .
+      - name: Archive only original public-source model numbers and limitations
+        uses: actions/upload-artifact@v4
+        with:
+          name: pv-d8-static-original-paper-comparison-NOT-arc-safety
+          path: studies/pv-vogel-protection-20261017/product-d8/results/comparison.json
