@@ -35,8 +35,16 @@ jobs:
           assert .09<x['single_module_5mohm_controlled_closure']['final_module_v']<.10
           assert len(x['36_control_ramp_stress_cases'])==36
           assert x['NOT_QUALIFICATION']
+          assert len(x['solar_bootstrap_counterexamples'])==3
+          sun=x['solar_bootstrap_counterexamples']
+          assert sun[0]['original_sun_gate_above_15v'] is False
+          assert sun[0]['conditional_reset_possible'] is False
+          assert sun[1]['conditional_reset_possible'] is True
+          assert sun[2]['conditional_reset_possible'] is True
+          assert all(z['real_harvester_or_fault_clearance_circuit_verified'] is False for z in sun)
+          print('Original paper sunlight logic reconciled; terminal short disables original >15V gate.')
           assert [y['remains_shorted_when_unpowered'] for y in x['power_loss_logic']]==[False,False,True,True]
-          print('Module-level calculations complete; real hardware and restart not validated.')
+          print('Module-level and sunlight-bootstrap conditional calculations complete; real hardware and reset not validated.')
           PY
       - name: Repeat licence guard
         working-directory: studies/pv-vogel-protection-20261017/product-d10
