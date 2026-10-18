@@ -3,7 +3,8 @@ import unittest
 import numpy as np
 from module_shunt_power_loss import (
     VOC,VMPP,IMPP,ISC,MODULES,ipv,steady_v,close_smooth,
-    available_pulse_j,power_failure,isolated_string_oc_v,report)
+    available_pulse_j,power_failure,isolated_string_oc_v,report,
+    sunlight_powered_bootstrap)
 
 class TestPowerLossShunt(unittest.TestCase):
     def test_pv_iv_three_public_reference_anchors(self):
@@ -76,5 +77,55 @@ class TestPowerLossShunt(unittest.TestCase):
         self.assertIn("backfeed",str(a["unverified"]))
         self.assertIn("no private IEC",a["confidentiality"])
         self.assertEqual(a["sha256"],b["sha256"])
+
+
+    def test_2025_sun_gate_does_not_see_over_15v_while_module_hard_shorted(self):
+        x=sunlight_powered_bootstrap(illumination=1.,mode="terminal_15v_gate",elapsed_s=10.)
+        self.assertLess(x["terminal_voltage_while_shunted_v"],.10)
+        self.assertFalse(x["original_sun_gate_above_15v"])
+        self.assertEqual(x["hypothetical_harvest_net_w"],0.)
+        self.assertFalse(x["conditional_reset_possible"])
+
+    def test_independent_sun_power_could_recharge_reserve_in_daylight(self):
+        x=sunlight_powered_bootstrap(
+            illumination=1.,mode="independent_solar_harvester",elapsed_s=1.)
+        self.assertAlmostEqual(x["hypothetical_harvest_net_w"],.145)
+        self.assertGreater(x["usable_12_to_6v_j"],.05)
+        self.assertLess(x["time_to_full_reserve_s"],1.)
+        self.assertTrue(x["conditional_reset_possible"])
+        self.assertFalse(x["real_harvester_or_fault_clearance_circuit_verified"])
+
+    def test_sun_not_sufficient_for_safe_restart_while_fault_active(self):
+        x=sunlight_powered_bootstrap(
+            illumination=1.,mode="independent_solar_harvester",
+            elapsed_s=10.,fault_clear=False)
+        self.assertTrue(x["reservoir_full"])
+        self.assertFalse(x["conditional_reset_possible"])
+
+    def test_no_sun_or_too_little_charge_prevents_reset(self):
+        for irr,secs in ((0.,1000.),(1.,0.),(.1,.01)):
+            with self.subTest(irr=irr,sec=secs):
+                x=sunlight_powered_bootstrap(
+                    illumination=irr,mode="independent_solar_harvester",
+                    elapsed_s=secs)
+                self.assertFalse(x["conditional_reset_possible"])
+
+    def test_ultra_low_input_boost_is_explicit_unverified_counterfactual(self):
+        x=sunlight_powered_bootstrap(
+            illumination=1.,mode="hypothetical_ultra_low_v_shunt_boost",
+            elapsed_s=2.)
+        self.assertTrue(x["conditional_reset_possible"])
+        self.assertFalse(x["real_harvester_or_fault_clearance_circuit_verified"])
+        shaded=sunlight_powered_bootstrap(
+            illumination=.2,mode="hypothetical_ultra_low_v_shunt_boost",
+            elapsed_s=100.)
+        self.assertFalse(shaded["conditional_reset_possible"])
+
+    def test_sun_logic_provenance_and_full_recovery_study_in_receipt(self):
+        r=report()
+        self.assertIn(">15V",r["original_sun_logic_source"])
+        self.assertEqual(len(r["solar_bootstrap_counterexamples"]),3)
+        self.assertTrue(any(x["conditional_reset_possible"] for x in r["solar_bootstrap_counterexamples"]))
+        self.assertTrue(any(not x["conditional_reset_possible"] for x in r["solar_bootstrap_counterexamples"]))
 
 if __name__=="__main__": unittest.main(verbosity=2)
