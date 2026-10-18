@@ -57,6 +57,33 @@ jobs:
           assert len(x["input_and_verdict_digest_sha256"])==64
           print("CPU complete, no NVIDIA/CuPy execution falsely claimed")
           PY
+      - name: Node 22 for source-pinned Kuiper Belt geometric proofs
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Billion-index source contract and Phase II test integrity
+        working-directory: studies/pv-vogel-protection-20261017/product-d4
+        run: |
+          python -m unittest -v test_billion_case_contract.py test_phase2_replay.py
+          node --test wafer/test_kuiper_core.mjs
+      - name: Bounded original CPU pilot of billion-case virtual namespace
+        working-directory: studies/pv-vogel-protection-20261017/product-d4
+        run: |
+          python billion_case_contract.py --pilot 4096 --receipt results/billion-cpu-pilot.json
+          python phase2_replay.py --pilot 4096 --stars 48 --out results/phase2
+          python - <<'PY'
+          import json
+          from billion_case_contract import scheme_sha256
+          a=json.load(open('results/billion-cpu-pilot.json'))
+          b=json.load(open('results/phase2/phase2-receipt.json'))
+          assert a['declared_unique_cases']==1_000_000_000
+          assert a['actually_examined_distinct_cases']==4096
+          assert a['cuda_cases_executed']==0 and a['ngspice_cases_executed_in_this_pilot']==0
+          assert b['actually_pilot_screened']==4096 and b['replay_candidates']==48
+          assert a['lattice_sha256']==scheme_sha256()==b['lattice_sha256']
+          assert b['no_risk_probabilities'] and not b['real_cuda_executed']
+          print('Indexed one billion; examined 4096; proposed 48 Phase II replays; no CUDA claim')
+          PY
       - name: Guard public receipt before upload
         working-directory: studies/pv-vogel-protection-20261017/product-d4
         run: python ../product-d2/standards_license_guard.py .
@@ -64,4 +91,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pv-d4-cpu-17k-independent-screen-not-hardware
-          path: studies/pv-vogel-protection-20261017/product-d4/results/cpu-parameter-receipt.json
+          path: |
+            studies/pv-vogel-protection-20261017/product-d4/results/cpu-parameter-receipt.json
+            studies/pv-vogel-protection-20261017/product-d4/results/billion-cpu-pilot.json
+            studies/pv-vogel-protection-20261017/product-d4/results/phase2/*.json
