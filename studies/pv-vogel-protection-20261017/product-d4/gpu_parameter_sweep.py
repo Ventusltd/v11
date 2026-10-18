@@ -41,6 +41,7 @@ LABELS={
  "1":"modelled shunt electrical loss above user target",
  "2":"hypothetical local voltage at/over nominal device rating; NO transient margin",
  "3":"no modelled dissipative benefit over passive diode (includes 0-duty state)",
+ "4":"NUMERIC_BOUNDARY: shunt loss and passive-diode loss equal to floating tolerance; do not force a favourable verdict",
 }
 EXPECTED_D3_W=1.196517
 D3_SHUNT_A=15.46965
@@ -73,12 +74,15 @@ def independent_scalar(index):
     shunt_loss=math.pow(current*math.sqrt(r_hot),2)*duty
     if shunt_loss>LOSS_BUDGET_W: return 1
     passive_diode=(vf*current)*duty
+    if duty==0: return 3
+    if math.isclose(shunt_loss,passive_diode,rel_tol=1e-12,abs_tol=1e-12):
+        return 4
     return 3 if shunt_loss>=passive_diode else 0
 
 def kernel(xp, axes):
     """Reusable Engine contract: identical xp kernel for NumPy or CuPy.
 
-    Compact 4-bin receipt. The stable case id is the integer mixed-radix index.
+    Compact 5-bin receipt with explicit floating-point threshold boundary. The stable case id is the integer mixed-radix index.
     No probability or IEC 'pass' labels can arise from these codes.
     """
     i,r,d,v,rated,vf=(
@@ -87,9 +91,13 @@ def kernel(xp, axes):
     )
     p=(i*i)*r*d
     diode_p=(i*vf)*d
+    near=(xp.abs(p-diode_p) <=
+          1e-12*xp.maximum(1.0,xp.maximum(xp.abs(p),xp.abs(diode_p))))
     return xp.where(v>=rated,2,
                     xp.where(p>LOSS_BUDGET_W,1,
-                             xp.where(p>=diode_p,3,0))).astype(xp.int64)
+                             xp.where(d==0,3,
+                                      xp.where(near,4,
+                                               xp.where(p>=diode_p,3,0))))).astype(xp.int64)
 
 def closed_forms(np, space, fn):
     """Checks independent fixture arithmetic BEFORE engine's sweep."""
@@ -105,7 +113,7 @@ def closed_forms(np, space, fn):
     return True
 
 def independent_counts():
-    counts=[0,0,0,0]
+    counts=[0,0,0,0,0]
     for idx in range(SIZE):
         counts[independent_scalar(idx)]+=1
     if sum(counts)!=SIZE: raise AssertionError("did not enumerate all distinct cases")
@@ -124,7 +132,7 @@ def run(backend,receipt_path):
     checked=eng.verify(n=SIZE,against="cpu")
     if not checked.passed:
         raise RuntimeError("CPU and requested backend DISAGREE on declared case grid")
-    result=eng.run(nbins=4)
+    result=eng.run(nbins=5)
     if result.totals!=scalar:
         raise RuntimeError(f"Independent scalar oracle mismatch {scalar} != {result.totals}")
     # Hash assumptions and all verdict counts, but not wall-clock performance.
