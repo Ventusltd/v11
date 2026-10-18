@@ -34,6 +34,12 @@ OUTPUT_CASES=[
 # V(panel_out) is relative to a circuit datum that models string- negative,
 # not mechanically grounded chassis or exposed metal. Frame insulation is
 # a separate barrier even if the local substring differential is 15 V.
+BLOCKING_CASES=[
+    ("night_high_bus",0.0,1500.0),
+    ("module_low_bus_high",45.75,1500.0),
+    ("module_nominal_bus",1143.9,1143.9),
+    ("reverse_test_cold",0.0,1487.79)
+]
 BYPASS_CASES=[
     ("unshaded_normal",1000.,17.31,1e10,False),
     ("shaded_normal",100.,17.31,1e10,False),
@@ -102,12 +108,36 @@ quit
 .end
 """
 
+def _blocking_deck(name,array_v,bus_v):
+    return f"""* {STUDY_ID} series BLOCKING diode reverse screen: {name}
+* Demonstrates VRRM boundary, not PV surge rating or avalanche survival.
+* This diode is NOT a substring bypass diode.
+VARRAY array 0 DC {array_v:.12g}
+VBUS bus 0 DC {bus_v:.12g}
+DBLOCK array bus D_BLOCK_PLACEHOLDER
+.model D_BLOCK_PLACEHOLDER D(Is=1e-12 N=1.5 BV=1e5)
+.control
+set noaskquit
+op
+let vrblock = v(bus)-v(array)
+print vrblock
+quit
+.endc
+.end
+"""
+
 def cases():
     for id,tag,rest,mod,mppt in OUTPUT_CASES:
         yield {"case_id":"D2-OUTPUT-"+id,"kind":"output_open","tag":tag,
                "deck":_output_deck(id,rest,mod,mppt),
                "input":{"rest_v":rest,"module_v":mod,"mppt_v":mppt},
                "expected_vds_v":rest+mod-mppt}
+    for id,array_v,bus_v in BLOCKING_CASES:
+        yield {"case_id":"D2-BLOCK-"+id,"kind":"blocking_diode",
+               "tag":"SERIES_STRING_BLOCKING_REVERSE_NOT_BYPASS",
+               "deck":_blocking_deck(id,array_v,bus_v),
+               "input":{"array_node_v":array_v,"bus_node_v":bus_v},
+               "expected_vrblock_v":bus_v-array_v}
     for id,g,load,sw,opened in BYPASS_CASES:
         yield {"case_id":"D2-BYPASS-"+id,"kind":"substring_bypass",
                "tag":"UNVERIFIED_SUBSTRING",
@@ -115,7 +145,7 @@ def cases():
                "input":{"irradiance_w_m2":g,"load_a":load,"shunt_r_ohm":sw,
                         "bypass_diode_open":opened}}
 
-VALUES=("vds","vcm","v_sub","ibyp","isw","p_by","p_sw")
+VALUES=("vds","vcm","vrblock","v_sub","ibyp","isw","p_by","p_sw")
 PAT=re.compile(r"^\s*("+("|".join(VALUES))+r")\s*=\s*([-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)\s*$",re.M)
 
 def parse_log(log):
@@ -158,6 +188,10 @@ def run_ngspice(items,out_dir):
             if set(values)!={"vds","vcm"}: raise ValueError(f"missing output vectors {values}")
             if abs(values["vds"]-case["expected_vds_v"])>0.05:
                 raise AssertionError(f"open switch voltage deviates {case['case_id']} {values}")
+        elif case["kind"]=="blocking_diode":
+            if set(values)!={"vrblock"}: raise ValueError(f"missing blocking diode vector {values}")
+            if abs(values["vrblock"]-case["expected_vrblock_v"])>0.05:
+                raise AssertionError(f"series blocking diode VRRM screen deviates {case['case_id']} {values}")
         else:
             if set(values)!={"v_sub","ibyp","isw","p_by","p_sw"}:
                 raise ValueError(f"missing bypass vectors {values}")
@@ -171,11 +205,14 @@ def insulation_worksheet(records):
     # Voltage stress must not be mistaken for dielectric spacing approval.
     voltages=[abs(r["values"]["vds"]) for r in records if r["kind"]=="output_open"]
     bypass=[max(0,r["values"]["v_sub"]) for r in records if r["kind"]=="substring_bypass"]
+    blocking=[max(0,r["values"]["vrblock"]) for r in records if r["kind"]=="blocking_diode"]
     bounds=[
         ("MODULE_OUT_SWITCH_DIFF",max(voltages),"switch differential",
          "actual Vds magnitude and both polarity blocking","IEC 61730-1 and applicable switching standard"),
         ("BYPASS_DIODE_VRRM",max(bypass),"diode cathode to anode",
          "VRRM, leakage(T), surge, open/short failure","OEM bypass diode datasheet; IEC 61730-1"),
+        ("SERIES_BLOCKING_DIODE_VRRM",max(blocking),"series blocking diode reverse bias",
+         "VRRM, IF, I2t, reverse leakage(T), actual transient BV","OEM blocking diode datasheet; IEC 61730-1"),
         ("SUBSTRING_LOGIC_TO_FRAME",1500.0,"working common mode (assumed system class)",
          "material CTI, pollution degree, solid insulation, impulse","IEC 60664-1:2020+AMD1:2025; IEC 61730-1"),
         ("MODULE_CIRCUIT_TO_FRAME",1500.0,"system voltage (design input, NOT a simulated stress)",
