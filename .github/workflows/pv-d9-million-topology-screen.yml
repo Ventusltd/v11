@@ -1,0 +1,66 @@
+name: V11 D9 million-case topology screen vs original public disclosure
+on:
+  pull_request:
+    paths:
+      - 'studies/pv-vogel-protection-20261017/product-d9/**'
+      - '.github/workflows/pv-d9-million-topology-screen.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  million-source-screen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout V11 draft research branch only
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Pin CPU array engine (NO CUDA or GPU access)
+        run: python -m pip install numpy==2.3.5
+      - name: Guard against private IEC/inverter source documents
+        working-directory: studies/pv-vogel-protection-20261017/product-d9
+        run: python ../product-d2/standards_license_guard.py .
+      - name: Physics negative controls and seeded receipts
+        working-directory: studies/pv-vogel-protection-20261017/product-d9
+        run: python -m unittest -v test_million_topology_screen.py
+      - name: Execute ONE MILLION unique synthetic scenarios per candidate topology
+        working-directory: studies/pv-vogel-protection-20261017/product-d9
+        run: |
+          python million_topology_screen.py \
+            --iterations 1000000 \
+            --seed 20261018 \
+            --chunk-size 100000 \
+            --top 3 \
+            --output results/topologies-to-test-vs-2025-original.json
+      - name: Enforce one-million count, three-candidate shortlist and no safety claims
+        working-directory: studies/pv-vogel-protection-20261017/product-d9
+        run: |
+          python - <<'PY'
+          import json
+          data=json.load(open('results/topologies-to-test-vs-2025-original.json',encoding='utf8'))
+          assert data['scenario_count']==1_000_000
+          assert data['candidate_topologies_evaluated']==6
+          assert len(data['only_priority_topologies_for_followup'])==3
+          assert all(x['statistics']['scenarios']==1_000_000
+                     for x in data['only_priority_topologies_for_followup'])
+          assert all(x['requires_both_strings_commanded']
+                     for x in data['only_priority_topologies_for_followup'])
+          assert data['original_paper_baseline_conditional']['arc_interrupt_success']=='NOT MEASURED'
+          assert 'NOT one million SPICE/arc experiments' in data['interpretation']
+          print('D9: 1,000,000 scenarios per topology; 3 shortlisted; no real arc validation.')
+          PY
+      - name: Source guard again before release artifact
+        working-directory: studies/pv-vogel-protection-20261017/product-d9
+        run: python ../product-d2/standards_license_guard.py .
+      - name: Publish shortlist and original-paper baseline only
+        uses: actions/upload-artifact@v4
+        with:
+          name: pv-d9-million-topology-shortlist-NOT-arc-or-hardware-validation
+          path: studies/pv-vogel-protection-20261017/product-d9/results/topologies-to-test-vs-2025-original.json
