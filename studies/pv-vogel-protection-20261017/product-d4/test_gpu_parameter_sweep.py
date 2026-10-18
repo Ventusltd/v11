@@ -78,7 +78,8 @@ class V11D4Tests(unittest.TestCase):
             self.assertEqual(len(out["input_and_verdict_digest_sha256"]),64)
             again=json.loads(p.read_text())
             self.assertEqual(again["verdict_counts"],out["verdict_counts"])
-            self.assertIn("NOT_PRODUCT_VALIDATION",str(out["not_proven"])+str(out["evidence_grade"]))
+            self.assertEqual(out["evidence_grade"],"synthetic_electrical_screen_only")
+            self.assertIn("PV arc extinction",out["not_proven"])
     def test_gpu_never_masquerades_as_numpy(self):
         if not os.environ.get("V11_GPU_ENGINE_DIR"):
             self.skipTest("reference engine unavailable")
