@@ -36,7 +36,7 @@ class D3Tests(unittest.TestCase):
     def test_no_iec_text_or_vendor_approval(self):
         for c in IDS:
             s=netlist(c)
-            self.assertIn("NOT a",s)
+            self.assertIn("MOSFET generic L1 surrogate",s)
             self.assertIn("DO NOT USE FOR ELECTRICAL HARDWARE",s)
     def test_generation(self):
         with tempfile.TemporaryDirectory() as d:
