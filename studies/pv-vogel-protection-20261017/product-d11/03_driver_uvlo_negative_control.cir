@@ -1,0 +1,20 @@
+D11 test 03: simulated UCC27511A power-loss behavior FAILS TO HOLD SHUNT
+.include device_envelopes.lib
+.options reltol=1e-5 abstol=1e-10 gmin=1e-12
+Iphoto 0 pv DC 18.4
+Dpv pv 0 PV_MODULE_660
+Rload pv 0 2.202772963605
+Cterminal pv 0 10n
+* Driver rails are IDEALISED; a UCC27511A output is low under UVLO.
+* Gate goes high to shunt, then loses bias; module voltage returns.
+Vgate drv 0 PWL(0 0 180u 0 200u 10 580u 10 600u 0 2m 0)
+Rgate drv gate 47
+Rpull gate 0 100k
+Vsense pv dp 0
+Xshunt dp gate 0 INF_IPT034N15NM6_SURROGATE
+.tran 100n 2m 0 100n
+.meas tran v_normal FIND v(pv) AT=100u
+.meas tran v_closed FIND v(pv) AT=400u
+.meas tran v_reenergized FIND v(pv) AT=1m
+.meas tran gate_lost FIND v(gate) AT=1m
+.end
