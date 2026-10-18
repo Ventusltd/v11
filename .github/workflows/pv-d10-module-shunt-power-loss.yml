@@ -1,0 +1,55 @@
+name: V11 D10 single-module shunt research
+on:
+  pull_request:
+    paths:
+      - 'studies/pv-vogel-protection-20261017/product-d10/**'
+      - '.github/workflows/pv-d10-module-shunt-power-loss.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install numpy==2.3.5
+      - name: Source licence guard
+        working-directory: studies/pv-vogel-protection-20261017/product-d10
+        run: python ../product-d2/standards_license_guard.py .
+      - name: Test electrical assumptions
+        working-directory: studies/pv-vogel-protection-20261017/product-d10
+        run: python -m unittest -v test_module_shunt_power_loss.py
+      - name: Generate research test receipt
+        working-directory: studies/pv-vogel-protection-20261017/product-d10
+        run: |
+          python module_shunt_power_loss.py --output results/module-power-loss.json
+          python - <<'PY'
+          import json
+          x=json.load(open('results/module-power-loss.json'))
+          assert .09<x['single_module_5mohm_controlled_closure']['final_module_v']<.10
+          assert len(x['36_control_ramp_stress_cases'])==36
+          assert x['NOT_QUALIFICATION']
+          assert len(x['solar_bootstrap_counterexamples'])==3
+          sun=x['solar_bootstrap_counterexamples']
+          assert sun[0]['original_sun_gate_above_15v'] is False
+          assert sun[0]['conditional_reset_possible'] is False
+          assert sun[1]['conditional_reset_possible'] is True
+          assert sun[2]['conditional_reset_possible'] is True
+          assert all(z['real_harvester_or_fault_clearance_circuit_verified'] is False for z in sun)
+          print('Original paper sunlight logic reconciled; terminal short disables original >15V gate.')
+          assert [y['remains_shorted_when_unpowered'] for y in x['power_loss_logic']]==[False,False,True,True]
+          print('Module-level and sunlight-bootstrap conditional calculations complete; real hardware and reset not validated.')
+          PY
+      - name: Repeat licence guard
+        working-directory: studies/pv-vogel-protection-20261017/product-d10
+        run: python ../product-d2/standards_license_guard.py .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pv-d10-simulated-shunt-and-power-loss-NOT-hardware-proof
+          path: studies/pv-vogel-protection-20261017/product-d10/results/module-power-loss.json
