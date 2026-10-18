@@ -1,0 +1,62 @@
+name: V11 D11 actual ngspice component-circuit tests
+on:
+  pull_request:
+    paths:
+      - 'studies/pv-vogel-protection-20261017/product-d11/**'
+      - '.github/workflows/pv-d11-component-spice.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  actual-ngspice:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Checkout draft research
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install real ngspice circuit simulator
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ngspice
+          ngspice --version
+      - name: Guard against private documents
+        working-directory: studies/pv-vogel-protection-20261017/product-d11
+        run: python ../product-d2/standards_license_guard.py .
+      - name: Validate simulation input and source assumptions
+        working-directory: studies/pv-vogel-protection-20261017/product-d11
+        run: python -m unittest -v test_spice_structure.py
+      - name: Run four actual SPICE transient circuit experiments
+        working-directory: studies/pv-vogel-protection-20261017/product-d11
+        run: python run_component_spice.py --output-dir results
+      - name: Assert tests are explicitly NOT OEM macro or hardware validated
+        working-directory: studies/pv-vogel-protection-20261017/product-d11
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open('results/receipt.json'))
+          assert r['passed_circuits']==4
+          assert r['hardware_validation'] is False
+          assert 'manufacturer MOSFET macro or actual gate driver/vendor PSpice' in r['not_proven']
+          assert 0<r['test_results']['single']['v_closed']<0.5
+          assert r['test_results']['power_loss']['v_reenergized']>35
+          assert abs(r['test_results']['paired_strings']['shunt_a_peer'])>28
+          print('D11 actual ngspice pass, but no manufacturer macro/hardware/arc validation.')
+          PY
+      - name: Copyright/license guard before results release
+        working-directory: studies/pv-vogel-protection-20261017/product-d11
+        run: python ../product-d2/standards_license_guard.py .
+      - name: Archive sourced circuit measurements only
+        uses: actions/upload-artifact@v4
+        with:
+          name: pv-d11-real-ngspice-datasheet-envelope-NOT-vendor-device-qualification
+          path: |
+            studies/pv-vogel-protection-20261017/product-d11/results/*.json
+            studies/pv-vogel-protection-20261017/product-d11/results/*.log
