@@ -1,0 +1,19 @@
+D11 test 01: Infineon IPT034N15NM6 datasheet-envelope, commanded shunt
+.include device_envelopes.lib
+.options reltol=1e-5 abstol=1e-10 gmin=1e-12
+Iphoto 0 pv DC 18.4
+Dpv pv 0 PV_MODULE_660
+Rload pv 0 2.202772963605
+Cterminal pv 0 10n
+* Gate source is a TEST STIMULUS; actual UCC27511A macro NOT installed.
+Vgate drv 0 PWL(0 0 180u 0 200u 10 2m 10)
+Rgate drv gate 47
+Rpulldown gate 0 100k
+Vsense pv dp 0
+Xshunt dp gate 0 INF_IPT034N15NM6_SURROGATE
+.tran 100n 2m 0 100n
+.meas tran v_normal FIND v(pv) AT=100u
+.meas tran v_closed FIND v(pv) AT=1m
+.meas tran i_closed FIND i(Vsense) AT=1m
+.meas tran gate_closed FIND v(gate) AT=1m
+.end

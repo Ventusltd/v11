@@ -1,0 +1,21 @@
+* D11 DATSHEET-ANCHORED SURROGATES (NOT MANUFACTURER SPICE MACROMODELS)
+* Infineon IPT034N15NM6: 150V Vds, Rds(on) max 3.4mOhm Vgs=10V, 84A, Tj=25C;
+* Qg typ 69nC; Ciss typ 4900pF; Coss typ 1500pF; Crss typ 19pF.
+* BELOW: fitted LEVEL1 MOSFET, fixed approximate charge/body diode.
+* Not a validated transient, avalanche, reverse recovery, SOA or thermal model.
+.subckt INF_IPT034N15NM6_SURROGATE D G S
+Rpkg D ND 0.00215
+Mcore ND G S S INF150N L=1 W=1
+Dbody S D INFBD
+Cgs G S 4.88n
+Cgd G D 19p
+Cds D S 1.48n
+.model INF150N NMOS (LEVEL=1 VTO=3.5 KP=126 LAMBDA=0)
+.model INFBD D (IS=5n N=1.5 RS=0.003)
+.ends INF_IPT034N15NM6_SURROGATE
+* 660Wp PV: SINGLE DIODE AGGREGATE fitted only to STC public fixture:
+* Voc=45.75V Vmpp=38.13V Impp=17.31A Isc=18.4A.
+* No Rs, Rsh, shading, cell temperature, bypass diode or cell breakdown.
+.model PV_MODULE_660 D (IS=7.863925882139342e-7 N=104.29468823668483)
+* String equivalent (30x Voc, 30x Vmpp, same current, no module granularity)
+.model PV_STRING_30 D (IS=7.863925882139342e-7 N=3128.840647100545)

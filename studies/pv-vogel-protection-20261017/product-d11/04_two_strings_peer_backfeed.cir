@@ -1,0 +1,28 @@
+D11 test 04: two same-MPPT strings; coordinated module-level bypass proxy
+.include device_envelopes.lib
+.options reltol=1e-5 abstol=1e-10 gmin=1e-12
+* Each independent string represents 30 modules; no real inverter.
+IphotoA 0 a DC 18.4
+DpvA a 0 PV_STRING_30
+IphotoB 0 b DC 18.4
+DpvB b 0 PV_STRING_30
+* 16 m home run, both conductors 6mm2 Cu, assumed 20C.
+RwireA a mppt 0.09856
+RwireB b mppt 0.09856
+* NEVER connect a physical 150V MOSFET across a 1500V string!
+* Here only a distributed 30-unit total shunt is abstracted to 0.102 Ohm.
+* These S proxies are NOT real MOSFET SPICE models.
+VsenseA a as 0
+SstringA as 0 ctlA 0 SWPROXY
+SstringB b 0 ctlB 0 SWPROXY
+VctlA ctlA 0 DC 10
+VctlB ctlB 0 PWL(0 0 480u 0 500u 10 2m 10)
+.model SWPROXY SW (RON=0.102 ROFF=1e12 VT=5 VH=0.5)
+.tran 1u 1m 0 1u
+.meas tran bus_peer_live FIND v(mppt) AT=300u
+.meas tran bus_both_shunted FIND v(mppt) AT=800u
+.meas tran shunt_A_peer FIND i(VsenseA) AT=300u
+.meas tran shunt_A_both FIND i(VsenseA) AT=800u
+.meas tran v_A_late FIND v(a) AT=800u
+.meas tran v_B_late FIND v(b) AT=800u
+.end
