@@ -1,0 +1,22 @@
+D11 test 02: opposed back-to-back Infineon IPT034N15NM6 approximations
+.include device_envelopes.lib
+.options reltol=1e-5 abstol=1e-10 gmin=1e-12
+Iphoto 0 pv DC 18.4
+Dpv pv 0 PV_MODULE_660
+Rload pv 0 2.202772963605
+Cterminal pv 0 10n
+Vsense pv dp 0
+* Opposed intrinsic body diodes; common source MID.
+Xsh1 dp gate mid INF_IPT034N15NM6_SURROGATE
+Xsh2 0 gate mid INF_IPT034N15NM6_SURROGATE
+* An ideal floating 10V gate drive: NOT a powered real driver.
+Vgate drv mid PWL(0 0 180u 0 200u 10 2m 10)
+Rgate drv gate 47
+Rpull gate mid 100k
+Rmid mid 0 100meg
+.tran 100n 2m 0 100n
+.meas tran v_normal FIND v(pv) AT=100u
+.meas tran v_closed FIND v(pv) AT=1m
+.meas tran i_closed FIND i(Vsense) AT=1m
+.meas tran gate_to_mid FIND v(gate,mid) AT=1m
+.end
