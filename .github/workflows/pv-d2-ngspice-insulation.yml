@@ -20,6 +20,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Licence guard and synthetic regression tests
+        working-directory: studies/pv-vogel-protection-20261017/product-d2
+        run: |
+          python3 -m unittest -v test_standards_license_guard.py
+          python3 standards_license_guard.py .
       - name: Install actual ngspice
         run: |
           sudo apt-get update -qq
