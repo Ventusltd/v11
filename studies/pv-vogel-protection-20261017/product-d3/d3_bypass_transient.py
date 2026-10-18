@@ -137,9 +137,9 @@ ILOAD plus 0 DC 17.31
 .control
 set noaskquit
 tran 0.05u 240u 0 0.05u
-let vgs_wave = ${vgs}
-let vds1_wave = ${vds1}
-let vds2_wave = ${vds2}
+let vgs_wave = {vgs}
+let vds1_wave = {vds1}
+let vds2_wave = {vds2}
 {chr(10).join(measures)}
 quit
 .endc
