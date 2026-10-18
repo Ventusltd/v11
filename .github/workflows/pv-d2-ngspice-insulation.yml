@@ -1,0 +1,67 @@
+name: PV D2 ngspice insulation stress screening
+on:
+  pull_request:
+    paths:
+      - 'studies/pv-vogel-protection-20261017/product-d2/**'
+      - '.github/workflows/pv-d2-ngspice-insulation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  actual-ngspice:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout draft PR
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Licence guard and synthetic regression tests
+        working-directory: studies/pv-vogel-protection-20261017/product-d2
+        run: |
+          python3 -m unittest -v test_standards_license_guard.py
+          python3 standards_license_guard.py .
+      - name: Install actual ngspice
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ngspice
+          ngspice --version
+      - name: Verify source records and safety gates
+        working-directory: studies/pv-vogel-protection-20261017/product-d2
+        run: python3 -m unittest -v test_d2_spice_campaign.py
+      - name: Run all DC-operating-point SPICE networks
+        working-directory: studies/pv-vogel-protection-20261017/product-d2
+        run: python3 d2_spice_campaign.py --run --out results
+      - name: Inspect VRRM/voltage and refuse false insulation PASS
+        working-directory: studies/pv-vogel-protection-20261017/product-d2
+        run: |
+          python3 - <<'PY'
+          import csv,json
+          data=json.load(open("results/electrical-stress-results.json"))
+          cases={x['case_id']:x for x in data['cases']}
+          assert len(cases)==15
+          assert abs(cases['D2-OUTPUT-cold_mppt_collapsed']['values']['vds']-1487.79)<.05
+          assert abs(cases['D2-OUTPUT-reverse_feed_stress']['values']['vds']+1500)<.05
+          assert abs(cases['D2-BLOCK-night_high_bus']['values']['vrblock']-1500)<.05
+          with open("results/insulation-boundary-worksheet.csv",newline="") as f:
+              rows=list(csv.DictReader(f))
+          assert all(x['product_design_state']=='HOLD' for x in rows)
+          assert all(x['creepage_mm'].startswith('TBD_') for x in rows)
+          assert all(x['transient_peak_v']=='UNKNOWN' for x in rows)
+          assert all(x['voltage_rating_qualified']=='NO' for x in rows)
+          print('15 actual ngspice operating-point cases. Six insulation boundaries HOLD.')
+          PY
+      - name: Archive simulation evidence and unsatisfied insulation worksheet
+        uses: actions/upload-artifact@v4
+        with:
+          name: pv-d2-ngspice-dc-stress-not-certification
+          path: |
+            studies/pv-vogel-protection-20261017/product-d2/results/case-manifest.json
+            studies/pv-vogel-protection-20261017/product-d2/results/electrical-stress-results.json
+            studies/pv-vogel-protection-20261017/product-d2/results/insulation-boundary-worksheet.csv
+            studies/pv-vogel-protection-20261017/product-d2/results/*.cir
+            studies/pv-vogel-protection-20261017/product-d2/results/*.log
