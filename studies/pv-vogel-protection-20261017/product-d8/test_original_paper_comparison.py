@@ -62,7 +62,7 @@ class D8PhysicalAssumptionsTests(unittest.TestCase):
   x=report()
   self.assertTrue(any("actual DC series" in k for k in x["not_validated"]))
   self.assertIn("hypothetical",x["assumed_150uf_bus_energy_j"]["CAUTION"].lower())
-  self.assertIn("NOT",x["source_and_hypothesis_parameters"]["pv_curve"].upper())
+  self.assertIn("UNCALIBRATED",x["source_and_hypothesis_parameters"]["pv_curve"])
  def test_cross_string_not_twenty_four_parallel(self):
   self.assertIn("not a common 24-string",report()["source_and_hypothesis_parameters"]["mppt_pairing"])
  def test_vendor_claim_corrected_without_claiming_voltage_sharing(self):
