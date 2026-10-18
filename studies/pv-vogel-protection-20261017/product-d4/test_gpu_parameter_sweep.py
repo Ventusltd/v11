@@ -43,13 +43,22 @@ class V11D4Tests(unittest.TestCase):
             current,r,d,v,rated,vf=decode_scalar(idx)
             if v>=rated:
                 self.assertEqual(independent_scalar(idx),2)
+    def test_boundary_equal_loss_is_not_forced_to_agree(self):
+        from gpu_parameter_sweep import independent_scalar,decode_scalar
+        ids=[]
+        for k in range(SIZE):
+            i,r,d,v,rating,vf=decode_scalar(k)
+            if i==20 and r==.02 and d==.1 and v==0 and rating==30 and vf==.4:
+                ids.append(k)
+        self.assertEqual(len(ids),1)
+        self.assertEqual(independent_scalar(ids[0]),4)
     def test_no_pass_label(self):
         from gpu_parameter_sweep import LABELS
-        self.assertEqual(set(LABELS),{"0","1","2","3"})
+        self.assertEqual(set(LABELS),{"0","1","2","3","4"})
         self.assertNotIn("CERTIFIED",str(LABELS).upper())
     def test_scalar_oracle_counts_are_complete(self):
         c=independent_counts()
-        self.assertEqual(len(c),4)
+        self.assertEqual(len(c),5)
         self.assertEqual(sum(c),SIZE)
         self.assertGreater(min(c),0)
     def test_required_reference_engine_pinned(self):
