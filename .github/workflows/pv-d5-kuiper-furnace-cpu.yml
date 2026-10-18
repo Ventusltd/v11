@@ -1,0 +1,88 @@
+name: PV D5 Python + Kuiper billion-scope CPU evidence
+on:
+  pull_request:
+    paths:
+      - 'studies/pv-vogel-protection-20261017/product-d5/**'
+      - '.github/workflows/pv-d5-kuiper-furnace-cpu.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python-evidence-and-visual-projection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Checkout unmerged V11 research branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Node 22 for exact live Kuiper law
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Guard IEC single-user source policy before any outputs
+        working-directory: studies/pv-vogel-protection-20261017/product-d5
+        run: python ../product-d2/standards_license_guard.py .
+      - name: Compile all D5 Python modules without importing CuPy
+        working-directory: studies/pv-vogel-protection-20261017/product-d5
+        run: |
+          python -m py_compile billion_case_space.py cpu_preflight.py kuiper_projection.py phase2_evidence.py cupy_furnace.py
+      - name: Run Python identities, deliberate negative tests and Phase II reviews
+        working-directory: studies/pv-vogel-protection-20261017/product-d5
+        run: python -m unittest -v test_billion_case_space.py test_projection_and_phase2.py
+      - name: Run independent 65k+ CPU scalar/offset verification and mismatch injection
+        working-directory: studies/pv-vogel-protection-20261017/product-d5
+        run: python cpu_preflight.py --out results/cpu-preflight.json
+      - name: Build bounded 4096-point Kuiper source projection and Phase II evidence graph
+        working-directory: studies/pv-vogel-protection-20261017/product-d5
+        run: |
+          python kuiper_projection.py --n 4096 --law live-kuiper-g32 --output results/kuiper-live-4096.json
+          python kuiper_projection.py --n 512 --law legacy-golden-angle --output results/kuiper-legacy-corners.json
+          python phase2_evidence.py --projection results/kuiper-live-4096.json --shortlist 48 --output results/phase2-evidence.json
+      - name: Verify live Kuiper JavaScript against independent Python projections
+        working-directory: studies/pv-vogel-protection-20261017/product-d5
+        run: |
+          node --check kuiper_viewer.mjs
+          node --check test_kuiper_parity.mjs
+          node test_kuiper_parity.mjs results/kuiper-live-4096.json
+      - name: Verify original model is not falsely promoted to physical tests
+        working-directory: studies/pv-vogel-protection-20261017/product-d5
+        run: |
+          python - <<'PY'
+          import json
+          from billion_case_space import TOTAL
+          cpu=json.load(open("results/cpu-preflight.json"))
+          live=json.load(open("results/kuiper-live-4096.json"))
+          phase=json.load(open("results/phase2-evidence.json"))
+          assert TOTAL==1_073_741_824
+          assert 65000<=cpu["distinct_cpu_cases_evaluated"]<TOTAL
+          assert cpu["two_cpu_expressions_agree"] and cpu["planted_mismatch_caught"]
+          assert sum(cpu["counts"].values())==cpu["distinct_cpu_cases_evaluated"]
+          assert live["distinct_projected"]==4096
+          assert live["declared_input_space"]==TOTAL
+          assert live["GPU_execution_claimed"] is False
+          assert phase["n_projected"]==4096
+          assert phase["review_count"]==48
+          assert phase["graph"]["causal_edges_claimed"] is False
+          assert phase["global_faraday_numbers_assigned"] is False
+          print("Verified: limited CPU cases, 4096 plotted, 48 Phase II synthetic review cases.")
+          print("NOT executed: full 1.073b, GPU kernel, ngspice in D5, physical PV protection.")
+          PY
+      - name: Copyright scan before publishing bounded original evidence
+        working-directory: studies/pv-vogel-protection-20261017/product-d5
+        run: python ../product-d2/standards_license_guard.py .
+      - name: Upload small non-certified evidence files only
+        uses: actions/upload-artifact@v4
+        with:
+          name: pv-d5-cpu-kuiper-phase2-not-billion-gpu
+          path: |
+            studies/pv-vogel-protection-20261017/product-d5/results/cpu-preflight.json
+            studies/pv-vogel-protection-20261017/product-d5/results/kuiper-live-4096.json
+            studies/pv-vogel-protection-20261017/product-d5/results/kuiper-legacy-corners.json
+            studies/pv-vogel-protection-20261017/product-d5/results/phase2-evidence.json

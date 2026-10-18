@@ -1,0 +1,65 @@
+name: PV D5 billion-address Kuiper and Phase II CPU proof
+on:
+  pull_request:
+    paths:
+      - 'studies/pv-vogel-protection-20261017/product-d5/**'
+      - '.github/workflows/pv-d5-billion-kuiper-cpu-proof.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-cpu-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Copyright release guard, original D5 material only
+        working-directory: studies/pv-vogel-protection-20261017/product-d5
+        run: python ../product-d2/standards_license_guard.py .
+      - name: Python proof: case ID, Fibonacci stride, Kuiper versions, Phase II
+        working-directory: studies/pv-vogel-protection-20261017/product-d5
+        run: python -m unittest -v test_billion_case_space.py test_projection_and_phase2.py
+      - name: Produce deterministic bounded 4096-dot Kuiper chart receipt
+        working-directory: studies/pv-vogel-protection-20261017/product-d5
+        run: |
+          python kuiper_projection.py --n 4096 --law live-kuiper-g32 --output results/kuiper-live-4096.json
+          python kuiper_projection.py --n 512 --law legacy-golden-angle --output results/kuiper-legacy-512.json
+          python phase2_evidence.py --projection results/kuiper-live-4096.json --output results/phase2-graph-48.json --shortlist 48
+          python - <<'PY'
+          import json
+          from billion_case_space import TOTAL
+          a=json.load(open('results/kuiper-live-4096.json'))
+          b=json.load(open('results/kuiper-legacy-512.json'))
+          p=json.load(open('results/phase2-graph-48.json'))
+          assert TOTAL==1_073_741_824
+          assert a["projected"]==a["distinct_projected"]==4096
+          assert b["projected"]==b["distinct_projected"]==512
+          assert a["coordinate_law"]!=b["coordinate_law"]
+          assert a["input_space_not_physically_simulated"]
+          assert not a["GPU_execution_claimed"]
+          assert p["review_count"]==48
+          assert not p["graph"]["causal_edges_claimed"]
+          assert all(e[2]!="proven" for e in p["graph"]["edges"])
+          print('D5 CPU preparation PASS. No billion-case execution or SPICE validation is claimed.')
+          PY
+      - name: Verify browser viewer JS syntax (no browser deployment)
+        working-directory: studies/pv-vogel-protection-20261017/product-d5
+        run: node --check kuiper_viewer.mjs
+      - name: Copyright release guard before public artifacts
+        working-directory: studies/pv-vogel-protection-20261017/product-d5
+        run: python ../product-d2/standards_license_guard.py .
+      - name: Archive compact proof only, not billion results
+        uses: actions/upload-artifact@v4
+        with:
+          name: v11-d5-kuiper-bounded-cpu-evidence-not-gpu
+          path: |
+            studies/pv-vogel-protection-20261017/product-d5/results/kuiper-live-4096.json
+            studies/pv-vogel-protection-20261017/product-d5/results/kuiper-legacy-512.json
+            studies/pv-vogel-protection-20261017/product-d5/results/phase2-graph-48.json

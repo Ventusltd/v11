@@ -1,0 +1,79 @@
+name: PV D5 manual CUDA Furnace on owner GPU
+on:
+  workflow_dispatch:
+    inputs:
+      approve_cuda:
+        type: boolean
+        required: true
+        default: false
+        description: 'I approve using my separately configured CUDA GPU'
+      full_billion:
+        type: boolean
+        required: true
+        default: false
+        description: 'Separately authorise all 1,073,741,824 synthetic evaluations'
+
+permissions:
+  contents: read
+
+jobs:
+  cuda-furnace-explicit-only:
+    if: ${{ inputs.approve_cuda == true }}
+    runs-on: [self-hosted, pv-furnace]
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact V11 research commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Probe existing local NVIDIA/CuPy environment
+        shell: bash
+        working-directory: studies/pv-vogel-protection-20261017/product-d5
+        run: |
+          set -euo pipefail
+          nvidia-smi
+          python3 - <<'PY'
+          import cupy
+          n=cupy.cuda.runtime.getDeviceCount()
+          assert n>0, 'No CUDA device available; refuse CPU fallback'
+          x=cupy.arange(8,dtype=cupy.float64)
+          assert float(cupy.sum(x).get())==28
+          print('Real CuPy CUDA compute demonstrated on',n,'device(s)')
+          PY
+      - name: Enforce IEC licensing policy before running
+        shell: bash
+        working-directory: studies/pv-vogel-protection-20261017/product-d5
+        run: python3 ../product-d2/standards_license_guard.py .
+      - name: Run explicitly approved limited or billion-case synthetic CUDA Furnace
+        shell: bash
+        env:
+          V11_GPU_APPROVED: '1'
+          FULL_BILLION: ${{ inputs.full_billion }}
+        working-directory: studies/pv-vogel-protection-20261017/product-d5
+        run: |
+          set -euo pipefail
+          if [ "$FULL_BILLION" = "true" ]; then
+            python3 cupy_furnace.py --approve-furnace --execute-billion --cases 1073741824 --output results/cuda-execution-receipt.json
+          else
+            python3 cupy_furnace.py --approve-furnace --cases 65536 --output results/cuda-execution-receipt.json
+          fi
+          python3 - <<'PY'
+          import json,os
+          r=json.load(open('results/cuda-execution-receipt.json'))
+          assert r['cuPy_cuda_hardware_executed']
+          assert r['gpu_channel_mismatches']==0
+          assert r['scalar_probe_differences']==0
+          assert r['injected_failure_detected']
+          assert r['actually_executed_gpu_cases']==(1073741824 if os.environ['FULL_BILLION']=='true' else 65536)
+          assert r['all_billion_executed']==(os.environ['FULL_BILLION']=='true')
+          print('Actual CUDA arithmetic run verified; no PV fault or SPICE result claimed.')
+          PY
+      - name: Guard receipt and upload bounded evidence
+        shell: bash
+        working-directory: studies/pv-vogel-protection-20261017/product-d5
+        run: python3 ../product-d2/standards_license_guard.py .
+      - name: Upload only compact, non-certification GPU receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: pv-d5-owner-cuda-furnace-arithmetic-only
+          path: studies/pv-vogel-protection-20261017/product-d5/results/cuda-execution-receipt.json
