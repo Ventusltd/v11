@@ -38,19 +38,25 @@ def analysis(projection,shortlist=48):
     # Maximal variety by fault and topology within the labelled sample, NOT
     # automatic determination of the safest architecture.
     selected=[];seen=set()
-    for code in PRIORITY:
-        rows=groups[code]
-        rows=sorted(rows,key=lambda x:(x["fault"],x["arch"],x["local_index"]))
+    quota=max(1,shortlist//len(PRIORITY))
+    # Quota per severity code prevents one populous code from drowning out
+    # healthy controls or passive heating. Remaining slots are filled later.
+    for pass_no in (0,1):
+     for code in PRIORITY:
+        rows=sorted(groups[code],key=lambda x:(x["fault"],x["arch"],x["local_index"]))
         by=defaultdict(list)
-        for p in rows:by[(p["arch"],p["fault"])].append(p)
-        while by and len(selected)<shortlist:
+        for p in rows:
+            if p["local_case_id"] not in seen:by[(p["arch"],p["fault"])].append(p)
+        chosen=0
+        max_take=quota if pass_no==0 else shortlist-len(selected)
+        while by and chosen<max_take and len(selected)<shortlist:
             for key in sorted(tuple(by)):
-                if len(selected)>=shortlist:break
+                if chosen>=max_take or len(selected)>=shortlist:break
                 candidate=by[key].pop(0)
                 if not by[key]:del by[key]
                 if candidate["local_case_id"] not in seen:
                     selected.append(candidate);seen.add(candidate["local_case_id"])
-        if len(selected)>=shortlist:break
+                    chosen+=1
     bycode={str(c):len(groups[c]) for c in PRIORITY}
     nodes=[
         {"id":"study:D5","kind":"study","status":"synthetic_model_only"},
