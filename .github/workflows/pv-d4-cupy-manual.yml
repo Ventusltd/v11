@@ -1,0 +1,58 @@
+name: PV D4 future CuPy on existing MSI runner - opt in only
+on:
+  workflow_dispatch:
+    inputs:
+      approve_gpu_execution:
+        description: 'Run real CuPy verification on already configured MSI runner (uses GPU resources)'
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  future-real-gpu:
+    if: ${{ inputs.approve_gpu_execution == true }}
+    runs-on: [self-hosted, msi, gpu]
+    timeout-minutes: 5
+    steps:
+      - name: Checkout V11 source without write credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Reference only - PIN existing Ventus GPU Engine
+        uses: actions/checkout@v4
+        with:
+          repository: Ventusltd/gpu-drivers-for-global-grid
+          ref: bfdc344289c0f03093e0c65979487e9916ea1ef4
+          path: gpu-reference
+          persist-credentials: false
+      - name: Prove real CUDA and CPU parity - REFUSE fake GPU
+        shell: powershell
+        env:
+          V11_GPU_PYTHON: ${{ vars.V11_GPU_PYTHON }}
+        working-directory: studies/pv-vogel-protection-20261017/product-d4
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:V11_GPU_PYTHON)) {
+            throw "REQUIRED GitHub repository variable V11_GPU_PYTHON is absent. Point it to an EXISTING local Python with NumPy and CuPy. No automatic installation."
+          }
+          if (-not (Test-Path $env:V11_GPU_PYTHON)) {
+            throw "V11_GPU_PYTHON does not exist. No GPU test was run."
+          }
+          $env:V11_GPU_ENGINE_DIR = Join-Path $env:GITHUB_WORKSPACE 'gpu-reference\engine'
+          $env:V11_D4_REQUIRE_GPU = '1'
+          nvidia-smi
+          & $env:V11_GPU_PYTHON -c "import cupy as c; n=c.cuda.runtime.getDeviceCount(); assert n > 0, 'real CUDA GPU missing'; print('real CuPy device count',n); x=c.arange(8,dtype=c.float64); assert float(c.sum(x).get())==28.0"
+          if ($LASTEXITCODE -ne 0) { throw "GPU not available; refusing false success" }
+          & $env:V11_GPU_PYTHON -m unittest -v test_gpu_parameter_sweep.py
+          if ($LASTEXITCODE -ne 0) { throw "GPU/CPU parity tests FAILED" }
+          & $env:V11_GPU_PYTHON gpu_parameter_sweep.py --backend gpu --receipt results/gpu-parameter-receipt.json
+          if ($LASTEXITCODE -ne 0) { throw "GPU execution FAILED" }
+          & $env:V11_GPU_PYTHON ../product-d2/standards_license_guard.py .
+          if ($LASTEXITCODE -ne 0) { throw "Licensing release guard FAILED" }
+      - name: Preserve bounded CuPy receipt (only after actual GPU pass)
+        uses: actions/upload-artifact@v4
+        with:
+          name: pv-d4-real-cupy-parity-opt-in-not-product-qualification
+          path: studies/pv-vogel-protection-20261017/product-d4/results/gpu-parameter-receipt.json
