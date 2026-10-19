@@ -130,12 +130,13 @@ set noaskquit
 set numdgt=9
 tran .015u 210u 0 .015u
 let ish = i(vshsense)
-let ps = v(p,n)*ish
-let vg = v(gate,n)
-let vd = v(fet_d,n)
-meas tran v20_v FIND v(p,n) AT=20u
-meas tran v80_v FIND v(p,n) AT=80u
-meas tran v150_v FIND v(p,n) AT=150u
+let vmod = v(p)-v(n)
+let ps = vmod*ish
+let vg = v(gate)-v(n)
+let vd = v(fet_d)-v(n)
+meas tran v20_v FIND vmod AT=20u
+meas tran v80_v FIND vmod AT=80u
+meas tran v150_v FIND vmod AT=150u
 meas tran vg80_v FIND vg AT=80u
 meas tran vg150_v FIND vg AT=150u
 meas tran peak_shunt_a MAX ish FROM=30u TO=190u
