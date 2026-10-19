@@ -84,3 +84,41 @@ provided standards data are committed. V11 main stays unchanged.
 source/case/receipt hash in Kuiper; (3) optimise R/L/C and safe
 sun-powered gate/actuator choice with SOA guards; (4) run more
 physical iterations, later on the user's own CuPy/Furnace if warranted.
+
+## Verified GitHub Actions observations (19 October 2026)
+
+CI succeeded on the actual ngspice CPU runner: 10 transient decks executed
+and 9 Python negative-control tests passed. Run:
+https://github.com/Ventusltd/v11/actions/runs/39272913713
+
+| Unmeasured PV capacitance fixture | NGSPICE peak bypass current |
+|---|---:|
+| 1 nF | 18.3583 A |
+| 100 nF | 61.1908 A |
+| 1 uF | 179.9927 A |
+| 100 uF | 1242.152 A |
+
+All four fixtures include additional cable, device and frame capacitance.
+The 100 uF / 50 nH case showed V_module=-2.3153 V at 80 us and
+V_module=0.0314 V at 150 us, while changing 50 nH to 500 nH left
+V_module=17.242 V at 80 us and -5.1026 V at 150 us.
+These are **consequences of our specific unverified circuit parameters**;
+the simplified PV diode has no validated reverse-bias or avalanche cell
+physics, and the fixed-C behavioural MOSFET has no manufacturer SOA model.
+**Do not claim 1242 A is a real module inrush prediction, or that negative
+voltages can be tolerated.** The relevant finding is that charge storage
+and cable/lead inductance can dominate the transient and invalidate an
+Isc-only switch-current rating.
+
+Power-loss control: case 09 showed ~0.0918 V at 80 us while the externally
+powered gate was on, then 38.1314 V at 150 us after gate supply was
+removed. This falsifies any claim that an ordinary enhancement-mode
+MOSFET alone remains fail-to-short. A latching contact or separately
+sun-powered gate/hold circuit still needs its own verified schematic.
+
+**Next highest-value experiment:** measure actual small- and large-signal
+module-terminal capacitance as a function of voltage and irradiance,
+then use vendor PSpice models (under their licence), a measured gate-drive
+source and a realistic series inductance/R-C network. Until then the
+capacitance range is a sensitivity study, NOT a vendor-validated stress
+prediction or hardware component qualification.
