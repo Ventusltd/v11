@@ -1,0 +1,57 @@
+name: V11 D11 ngspice real-part-target shunt feasibility
+on:
+  pull_request:
+    paths:
+      - 'studies/pv-vogel-protection-20261017/product-d11/**'
+      - '.github/workflows/pv-d11-ngspice-device-proxies.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ngspice-d11:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install public open-source circuit simulator
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ngspice
+      - name: Check only public/original files
+        working-directory: studies/pv-vogel-protection-20261017/product-d11
+        run: python ../product-d2/standards_license_guard.py .
+      - name: Inspect source-model and wiring regression constraints
+        working-directory: studies/pv-vogel-protection-20261017/product-d11
+        run: python -m unittest -v test_spice_cases.py
+      - name: Actually run four ngspice transient circuits
+        working-directory: studies/pv-vogel-protection-20261017/product-d11
+        run: |
+          python spice_cases.py --output-dir results
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('results/receipt.json').read_text())
+          assert r['real_ngspice_executed']
+          assert not r['vendor_mosfet_macro_model_executed']
+          assert not r['vendor_gate_driver_macro_model_executed']
+          assert len(r['cases'])==4
+          assert 0<r['cases']['closed']['v_during']<1
+          assert 34<r['cases']['power_loss']['v_after']<42
+          assert r['cases']['sun_aux']['v_boot1']>12
+          print('D11 ngspice proxy circuits ran; manufacturer macro-models NOT tested.')
+          PY
+      - name: Re-run public-source guard before publishing
+        working-directory: studies/pv-vogel-protection-20261017/product-d11
+        run: python ../product-d2/standards_license_guard.py .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pv-d11-four-real-ngspice-runs-GENERIC-device-proxies
+          path: |
+            studies/pv-vogel-protection-20261017/product-d11/results/*.cir
+            studies/pv-vogel-protection-20261017/product-d11/results/*.log
+            studies/pv-vogel-protection-20261017/product-d11/results/receipt.json
