@@ -1,0 +1,67 @@
+name: V11 D11 ngspice parasitic-capacitance module shunt tests
+on:
+  pull_request:
+    paths:
+      - 'studies/pv-vogel-protection-20261017/product-d11/**'
+      - '.github/workflows/pv-d11-parasitic-spice.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parasitic-transients:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install actual ngspice CPU simulator
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ngspice
+          ngspice --version
+      - name: No proprietary IEC/inverter source text
+        working-directory: studies/pv-vogel-protection-20261017/product-d11
+        run: python ../product-d2/standards_license_guard.py .
+      - name: Structural physics tests and negative controls
+        working-directory: studies/pv-vogel-protection-20261017/product-d11
+        run: python -m unittest -v test_d11_parasitic_spice.py
+      - name: Execute 10 actual ngspice transient circuits with parasitic C/L
+        working-directory: studies/pv-vogel-protection-20261017/product-d11
+        run: python d11_parasitic_spice.py --out results
+      - name: Verify measured collapse and power-loss counterexample
+        working-directory: studies/pv-vogel-protection-20261017/product-d11
+        run: |
+          python - <<'PY'
+          import json,math
+          d=json.load(open('results/parasitic-spice-receipt.json'))
+          assert d['status']=='NGSPICE_TRANSIENT_DATASHEET_EQUIVALENT'
+          assert d['case_count']==10
+          rec={x['case']['name']:x['observed'] for x in d['cases']}
+          assert rec['01_open_control']['v80_v']>20
+          assert rec['02_close_small_charge']['v80_v']<2
+          assert rec['03_close_typical_hypothesis']['v150_v']<2
+          assert rec['09_power_loss_low_charge']['v80_v']<2
+          assert rec['09_power_loss_low_charge']['v150_v']>20
+          assert rec['05_close_large_charge']['peak_shunt_a']>rec['02_close_small_charge']['peak_shunt_a']
+          assert d['actual_arc_simulated'] is False
+          assert d['sunrise_bootstrap_demonstrated'] is False
+          print('D11 REAL ngspice transients executed. Device/cable capacitance is material.')
+          print('This is NOT a vendor MOSFET macro, arc-proof or certified switch.')
+          PY
+      - name: Repeat source confidentiality guard before artifacts
+        working-directory: studies/pv-vogel-protection-20261017/product-d11
+        run: python ../product-d2/standards_license_guard.py .
+      - name: Archive raw netlists, ngspice logs and bounded receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: pv-d11-parasitic-spice-real-simulator-DATASHEET-EQUIVALENT
+          path: |
+            studies/pv-vogel-protection-20261017/product-d11/results/*.cir
+            studies/pv-vogel-protection-20261017/product-d11/results/*.log
+            studies/pv-vogel-protection-20261017/product-d11/results/*.json
