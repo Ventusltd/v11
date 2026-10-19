@@ -77,8 +77,8 @@ Vgate gate src {gate}
 .meas tran v_before FIND v(pv) AT=0.5m
 .meas tran v_during FIND v(pv) AT=1.7m
 .meas tran v_after FIND v(pv) AT=3.5m
-.meas tran v_gate_on FIND v(gate,src) AT=1.7m
-.meas tran v_gate_after FIND v(gate,src) AT=3.5m
+.meas tran v_gate_on FIND v(gate) AT=1.7m
+.meas tran v_gate_after FIND v(gate) AT=3.5m
 .end
 """
 
